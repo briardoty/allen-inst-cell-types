@@ -21,7 +21,8 @@ data_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/"
 
 # params
 run_params = {
-    data_dir: data_dir
+    data_dir: data_dir,
+    train_script: "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
 }
 
 # job settings
@@ -40,7 +41,7 @@ if __name__=="__main__":
     
     # kick off HPC job
     PythonJob(
-        run_params["fit_script"],
+        run_params["train_script"],
         python_executable,
         python_args = args_string,
         jobname = job_title,
