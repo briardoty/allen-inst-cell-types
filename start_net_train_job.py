@@ -14,7 +14,7 @@ sys.path.append("/allen/programs/braintv/workgroups/nc-ophys/nick.ponvert/src/pb
 from pbstools import PythonJob
 
 # path to python executable
-python_executable = "/home/briar.doty/anaconda3/bin/python"
+python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
 
 # params
 run_params = {
