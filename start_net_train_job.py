@@ -21,8 +21,8 @@ data_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/"
 
 # params
 run_params = {
-    data_dir: data_dir,
-    train_script: "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
+    "data_dir": data_dir,
+    "train_script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
 }
 
 # job settings
