@@ -16,13 +16,11 @@ from pbstools import PythonJob
 # path to python executable
 python_executable = "/home/briar.doty/anaconda3/bin/python"
 
-# path to data directory
-data_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/"
-
 # params
 run_params = {
-    "data_dir": data_dir,
-    "train_script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
+    "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
+    "train_script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py",
+    "job_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 }
 
 # job settings
