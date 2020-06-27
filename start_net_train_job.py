@@ -29,7 +29,8 @@ job_settings = {
     "mem": "1g",
     "walltime": "1:00:00",
     "ppn": 4,
-    "gpus": 1
+    "gpus": 1,
+    "nodes": 1
 }
 
 if __name__=="__main__":
