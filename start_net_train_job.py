@@ -30,7 +30,7 @@ job_settings = {
     "walltime": "1:00:00",
     "ppn": 4,
     "gpus": 1,
-    "nodes": 1
+    "nodes": "n69"
 }
 
 if __name__=="__main__":
