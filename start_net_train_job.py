@@ -28,7 +28,8 @@ job_settings = {
     "queue": "braintv",
     "mem": "1g",
     "walltime": "1:00:00",
-    "ppn": 4
+    "ppn": 4,
+    "gpus": 1
 }
 
 if __name__=="__main__":
