@@ -30,6 +30,7 @@ job_settings = {
     "mem": "2g",
     "walltime": "1:00:00",
     "ppn": 16,
+    "nodes": 1,
     "gpus": 1,
 }
 
