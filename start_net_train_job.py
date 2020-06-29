@@ -16,12 +16,14 @@ from pbstools import PythonJob
 # path to python executable
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
 conda_env = "/home/briar.doty/anaconda3/envs/dlct"
+train_script = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
+job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # params
 run_params = {
     "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
-    "train_script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py",
-    "job_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
+    "net_name": "vgg11",
+    "n_classes": 10
 }
 
 # job settings
@@ -36,17 +38,17 @@ job_settings = {
 
 if __name__=="__main__":
     # prepare args
-    args = [str(run_params)]
-    args_string = " ".join(args)
+    run_params = [str(run_params)]
+    params_string = " ".join(run_params)
     job_title = "test job"
     
     # kick off HPC job
     PythonJob(
-        run_params["train_script"],
+        train_script,
         python_executable,
         conda_env = conda_env,
-        python_args = args_string,
+        python_args = params_string,
         jobname = job_title,
-        jobdir = run_params["job_dir"],
+        jobdir = job_dir,
         **job_settings
     ).run(dryrun=False)
