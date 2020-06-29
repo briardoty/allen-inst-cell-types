@@ -71,6 +71,7 @@ class NetManager():
         self.n_classes = n_classes
         self.snapshot_epoch = 0
         
+        print(os.environ["CONDA_DEFAULT_ENV"])
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
             self.device = torch.device("cuda:0")
