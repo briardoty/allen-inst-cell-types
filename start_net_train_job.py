@@ -8,6 +8,9 @@ Created on Thu Jun 25 17:01:34 2020
 import os
 import json
 import sys
+
+# import pbstools (Python 3 version)
+sys.path.append("/home/briar.doty/pbstools")
 from pbstools import PythonJob
 
 # path to python executable
