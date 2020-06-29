@@ -15,7 +15,7 @@ from pbstools import PythonJob
 
 # path to python executable
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
-conda_env = "/home/briar.doty/anaconda3/envs/dlct",
+conda_env = "/home/briar.doty/anaconda3/envs/dlct"
 
 # params
 run_params = {
