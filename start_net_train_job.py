@@ -27,11 +27,10 @@ run_params = {
 # job settings
 job_settings = {
     "queue": "braintv",
-    "mem": "1g",
+    "mem": "2g",
     "walltime": "1:00:00",
-    "ppn": 4,
+    "ppn": 16,
     "gpus": 1,
-    "nodes": "n69"
 }
 
 if __name__=="__main__":
