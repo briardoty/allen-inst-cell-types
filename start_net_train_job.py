@@ -8,9 +8,6 @@ Created on Thu Jun 25 17:01:34 2020
 import os
 import json
 import sys
-
-# import pbstools (Python 3 version)
-sys.path.append("/allen/programs/braintv/workgroups/nc-ophys/nick.ponvert/src/pbstools")
 from pbstools import PythonJob
 
 # path to python executable
