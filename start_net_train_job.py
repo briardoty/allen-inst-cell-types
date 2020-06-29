@@ -15,6 +15,7 @@ from pbstools import PythonJob
 
 # path to python executable
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
+conda_env = "/home/briar.doty/anaconda3/envs/dlct",
 
 # params
 run_params = {
@@ -43,6 +44,7 @@ if __name__=="__main__":
     PythonJob(
         run_params["train_script"],
         python_executable,
+        conda_env = conda_env,
         python_args = args_string,
         jobname = job_title,
         jobdir = run_params["job_dir"],
