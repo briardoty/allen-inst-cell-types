@@ -17,6 +17,7 @@ def main(data_dir="data/", net_name="vgg11", n_classes=10):
 
     print(data_dir)
     print(net_name)
+    print(str(n_classes))
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
@@ -27,6 +28,7 @@ def main(data_dir="data/", net_name="vgg11", n_classes=10):
 
 if __name__=="__main__":
     args = parser.parse_args()
+    print(args)
     main(**vars(args))
     
     

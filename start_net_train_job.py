@@ -8,6 +8,7 @@ Created on Thu Jun 25 17:01:34 2020
 import os
 import json
 import sys
+from itertools import chain
 
 # import pbstools (Python 3 version)
 sys.path.append("/home/briar.doty/pbstools")
@@ -38,8 +39,8 @@ job_settings = {
 
 if __name__=="__main__":
     # prepare args
-    run_params = [str(run_params)]
-    params_string = " ".join(run_params)
+    params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
+    params_string = " ".join(params_list)
     job_title = "test job"
     
     # kick off HPC job
