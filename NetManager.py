@@ -157,8 +157,8 @@ class NetManager():
 
         TODO: accept configurations of activation fns
         """
-        n_features = manager.net.features[i_layer - 1].out_channels
-        manager.net.features[i_layer] = MixedActivationLayer(n_features)
+        n_features = self.net.features[i_layer - 1].out_channels
+        self.net.features[i_layer] = MixedActivationLayer(n_features)
         self.net = self.net.to(self.device)
         
     def evaluate_net(self, criterion):
