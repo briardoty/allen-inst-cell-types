@@ -43,6 +43,12 @@ def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/",
     # evaluate
     manager.evaluate_net(criterion)
     
+    # train
+    manager.run_training_loop(0, criterion, optimizer, exp_lr_scheduler, 10)
+    
+    # evaluate
+    manager.evaluate_net(criterion)
+    
     print("Test run successful!!!")
     return
 
