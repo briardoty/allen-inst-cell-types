@@ -106,6 +106,10 @@ class NetManager():
         net_tag = get_net_tag(self.net_name, epoch)
         filename = f"{net_tag}.pt"
         net_output_dir = os.path.join(self.data_dir, f"nets/trial{trial}/")
+        
+        if not os.path.exists(net_output_dir):
+            os.makedirs(net_output_dir)
+        
         net_filepath = os.path.join(net_output_dir, filename)
         
         snapshot_state = {
