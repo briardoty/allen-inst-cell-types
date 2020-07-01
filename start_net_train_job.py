@@ -35,6 +35,8 @@ job_settings = {
     "ppn": 16,
     "nodes": 1,
     "gpus": 1,
+    "email": "briar.doty@alleninstitute.org",
+    "email_options": "a"
 }
 
 if __name__=="__main__":
