@@ -12,6 +12,7 @@ import os
 import math
 import time
 import copy
+from MixedActivationLayer import MixedActivationLayer
 
 
 # function for getting an identifier for a given net state
@@ -71,7 +72,6 @@ class NetManager():
         self.n_classes = n_classes
         self.snapshot_epoch = 0
         
-        print(os.environ["CONDA_DEFAULT_ENV"])
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
             self.device = torch.device("cuda:0")
@@ -150,6 +150,16 @@ class NetManager():
          self.val_loader, 
          self.dataset_sizes, 
          self.n_classes) = load_imagenette(self.data_dir)
+        
+    def replace_layer(self, i_layer):
+        """
+        Replace the given layer with a MixedActivationLayer.
+
+        TODO: accept configurations of activation fns
+        """
+        n_features = manager.net.features[i_layer - 1].out_channels
+        manager.net.features[i_layer] = MixedActivationLayer(n_features)
+        self.net = self.net.to(self.device)
         
     def evaluate_net(self, criterion):
         # set to validate mode
