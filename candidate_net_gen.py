@@ -27,7 +27,7 @@ def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/",
     # build and save nets
     for i in range(n_samples):
         manager.init_net(case_id, i+1)
-        manager.save_net_snapshot(case_id, sample=i+1)
+        manager.save_net_snapshot()
     
     print("candidate_net_gen.py completed")
     return
