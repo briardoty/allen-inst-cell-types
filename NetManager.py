@@ -20,7 +20,7 @@ def get_net_tag(net_name, case_id, sample, epoch):
     net_tag = f"{net_name}"
     
     if (case_id is not None):
-        net_tag += f"case-{case_id}"
+        net_tag += f"_case-{case_id}"
         
     if (sample is not None):
         net_tag += f"_sample-{sample}"
