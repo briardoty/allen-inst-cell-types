@@ -16,9 +16,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artiphysiology/data/", type=str, help="Set value for data_dir")
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
+parser.add_argument("--case_id", default=None, type=str, help="Set value for case_id")
+
 
 def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
-         net_name="vgg11", n_classes=10):
+         net_name="vgg11", n_classes=10, case_id=None):
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)

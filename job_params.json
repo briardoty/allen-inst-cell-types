@@ -1,6 +1,6 @@
 {
-    "net_train": {
-        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py",
+    "train_net": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/train_net.py",
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
@@ -17,8 +17,8 @@
             "email_options": "a"
         }
     },
-    "candidate_net_gen": {
-        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/candidate_net_gen.py",
+    "gen_candidate_nets": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_candidate_nets.py",
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",

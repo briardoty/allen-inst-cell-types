@@ -122,6 +122,8 @@ class NetManager():
         
         snapshot_state = {
             "epoch": epoch,
+            "case": self.case_id,
+            "sample": self.sample,
             "val_acc": val_acc,
             "state_dict": self.net.state_dict()
         }
@@ -148,9 +150,7 @@ class NetManager():
             net_filepath = os.path.join(net_output_dir, filename)
             
             snapshot_state = torch.load(net_filepath, map_location=self.device)
-            
-            # null check for backward compatibility
-            state_dict = snapshot_state.get("state_dict") if snapshot_state.get("state_dict") is not None else snapshot_state
+            state_dict = snapshot_state.get("state_dict")
         
         self.init_net(case_id, sample)
         self.net.load_state_dict(state_dict)
