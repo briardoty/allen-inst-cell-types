@@ -11,8 +11,8 @@ import sys
 from itertools import chain
 
 # import pbstools (Python 3 version)
-sys.pathools .append("/home/briar.doty/pbstools")
-from pbstimport PythonJob
+sys.path.append("/home/briar.doty/pbstools")
+from pbstools import PythonJob
 
 # paths
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
