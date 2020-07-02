@@ -16,10 +16,17 @@ from MixedActivationLayer import MixedActivationLayer
 
 
 # function for getting an identifier for a given net state
-def get_net_tag(net_name, epoch):
+def get_net_tag(net_name, case_id, sample, epoch):
     net_tag = f"{net_name}"
+    
+    if (case_id is not None):
+        net_tag += f"case-{case_id}"
+        
+    if (sample is not None):
+        net_tag += f"_sample-{sample}"
+    
     if (epoch is not None):
-        net_tag += f"_epoch_{epoch}"
+        net_tag += f"_epoch-{epoch}"
         
     return net_tag
 
@@ -78,10 +85,11 @@ class NetManager():
         else:
             self.device = torch.device("cpu")
             print("GPU speedup NOT enabled.")
-            
-        self.init_net()
         
-    def init_net(self):
+    def init_net(self, case_id, sample):
+        self.case_id = case_id
+        self.sample = sample        
+                
         if self.net_name == "vgg11":
             self.net = models.vgg11(pretrained=self.pretrained)
         
@@ -100,12 +108,12 @@ class NetManager():
         self.net.classifier[-1] = nn.Linear(n_features, self.n_classes)
         self.net = self.net.to(self.device)
     
-    def save_net_snapshot(self, trial, epoch, val_acc):
+    def save_net_snapshot(self, epoch=0, val_acc=None):
         print(f"Saving network snapshot at epoch {epoch}")
         
-        net_tag = get_net_tag(self.net_name, epoch)
+        net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
-        net_output_dir = os.path.join(self.data_dir, f"nets/trial{trial}/")
+        net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
         
         if not os.path.exists(net_output_dir):
             os.makedirs(net_output_dir)
@@ -119,7 +127,7 @@ class NetManager():
         }
         torch.save(snapshot_state, net_filepath)
     
-    def load_net_snapshot(self, trial, epoch, state_dict=None):
+    def load_net_snapshot(self, case_id, sample, epoch, state_dict=None):
         """
         Load a network snapshot.
         
@@ -134,9 +142,9 @@ class NetManager():
         
         # load state from disk if not provided
         if (state_dict is None):
-            net_tag = get_net_tag(self.net_name, self.snapshot_epoch)
+            net_tag = get_net_tag(self.net_name, case_id, sample, self.snapshot_epoch)
             filename = f"{net_tag}.pt"
-            net_output_dir = os.path.join(self.data_dir, f"nets/trial{trial}/")
+            net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{case_id}/sample-{sample}/")
             net_filepath = os.path.join(net_output_dir, filename)
             
             snapshot_state = torch.load(net_filepath, map_location=self.device)
@@ -144,7 +152,7 @@ class NetManager():
             # null check for backward compatibility
             state_dict = snapshot_state.get("state_dict") if snapshot_state.get("state_dict") is not None else snapshot_state
         
-        self.init_net()
+        self.init_net(case_id, sample)
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
@@ -239,7 +247,7 @@ class NetManager():
             phase, epoch_loss, epoch_acc))
         
     
-    def run_training_loop(self, trial, criterion, optimizer, scheduler, n_epochs=25, 
+    def run_training_loop(self, criterion, optimizer, scheduler, n_epochs=25, 
                           n_snapshots=None):
         """
         Run n_epochs of training and validation
@@ -252,7 +260,7 @@ class NetManager():
     
         # save initial random state if no snapshot loaded
         if (self.snapshot_epoch == 0):
-            self.save_net_snapshot(trial, self.snapshot_epoch, math.nan)
+            self.save_net_snapshot(self.snapshot_epoch, math.nan)
     
         epochs = range(self.snapshot_epoch + 1, self.snapshot_epoch + n_epochs + 1)
         for epoch in epochs:
@@ -267,7 +275,7 @@ class NetManager():
     
             # check if we should take a scheduled snapshot
             if (n_snapshots is not None and epoch % math.ceil(n_epochs/n_snapshots) == 0):
-                self.save_net_snapshot(trial, epoch, epoch_acc)
+                self.save_net_snapshot(epoch, epoch_acc)
     
             # copy net if best yet
             if epoch_acc > best_acc:
@@ -283,8 +291,8 @@ class NetManager():
         print('Best val Acc: {:4f} on epoch {}'.format(best_acc, best_epoch))
         
         # load best net state from training and save it to disk
-        self.load_net_snapshot(trial, best_epoch, best_net_state)
-        self.save_net_snapshot(trial, best_epoch, best_acc)
+        self.load_net_snapshot(self.case_id, self.sample, best_epoch, best_net_state)
+        self.save_net_snapshot(best_epoch, best_acc)
 
 
 

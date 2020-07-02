@@ -19,10 +19,6 @@ parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_c
 
 def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
          net_name="vgg11", n_classes=10):
-
-    print(data_dir)
-    print(net_name)
-    print(str(n_classes))
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
@@ -49,7 +45,7 @@ def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/",
     # evaluate
     manager.evaluate_net(criterion)
     
-    print("Test run successful!!!")
+    print("net_train.py completed")
     return
 
 
