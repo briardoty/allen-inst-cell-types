@@ -54,7 +54,7 @@ def main(n_samples, case_id):
             python_executable,
             conda_env = conda_env,
             python_args = params_string,
-            jobname = job_title,
+            jobname = job_title + f" c-{case_id} s-{sample}",
             jobdir = job_dir,
             **job_settings
         ).run(dryrun=False)
