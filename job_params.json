@@ -1,0 +1,21 @@
+{
+    "net_train": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py",
+        "run_params": {
+            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
+            "net_name": "vgg11",
+            "n_classes": 10
+        },
+        "job_settings": {
+            "queue": "braintv",
+            "mem": "32g",
+            "walltime": "1:00:00",
+            "ppn": 16,
+            "nodes": 1,
+            "gpus": 1,
+            "email": "briar.doty@alleninstitute.org",
+            "email_options": "a"
+        }
+    },
+    "candidate_net_gen": {},
+}

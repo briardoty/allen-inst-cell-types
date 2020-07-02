@@ -5,7 +5,7 @@ Created on Thu Jun 25 17:01:34 2020
 
 @author: briardoty
 """
-import os
+import argparse
 import json
 import sys
 from itertools import chain
@@ -14,40 +14,32 @@ from itertools import chain
 sys.path.append("/home/briar.doty/pbstools")
 from pbstools import PythonJob
 
-# path to python executable
+# paths
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
 conda_env = "/home/briar.doty/anaconda3/envs/dlct"
-train_script = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/net_train.py"
 job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
-# params
-run_params = {
-    "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
-    "net_name": "vgg11",
-    "n_classes": 10
-}
+# args
+parser = argparse.ArgumentParser()
+parser.add_argument("--job_title", type=str, help="Set value for job_title")
 
-# job settings
-job_settings = {
-    "queue": "braintv",
-    "mem": "32g",
-    "walltime": "1:00:00",
-    "ppn": 16,
-    "nodes": 1,
-    "gpus": 1,
-    "email": "briar.doty@alleninstitute.org",
-    "email_options": "a"
-}
-
-if __name__=="__main__":
+def main(job_title):
+    
+    # script, run_params and job_settings
+    with open("job_params.json", "r") as json_file:
+        job_params = json.load(json_file)
+    
+    script = job_params["script"]
+    run_params = job_params["run_params"]   
+    job_settings = job_params["job_settings"]
+    
     # prepare args
     params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
     params_string = " ".join(params_list)
-    job_title = "test job"
     
     # kick off HPC job
     PythonJob(
-        train_script,
+        script,
         python_executable,
         conda_env = conda_env,
         python_args = params_string,
@@ -55,3 +47,8 @@ if __name__=="__main__":
         jobdir = job_dir,
         **job_settings
     ).run(dryrun=False)
+
+if __name__=="__main__":
+    args = parser.parse_args()
+    print(args)
+    main(**vars(args))
