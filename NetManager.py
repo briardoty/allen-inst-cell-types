@@ -258,10 +258,6 @@ class NetManager():
         best_acc = 0.0
         best_epoch = -1
     
-        # save initial random state if no snapshot loaded
-        if (self.snapshot_epoch == 0):
-            self.save_net_snapshot(self.snapshot_epoch, math.nan)
-    
         epochs = range(self.snapshot_epoch + 1, self.snapshot_epoch + n_epochs + 1)
         for epoch in epochs:
             print('Epoch {}/{}'.format(epoch, self.snapshot_epoch + n_epochs))
