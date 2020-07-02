@@ -8,7 +8,7 @@
         },
         "job_settings": {
             "queue": "braintv",
-            "mem": "32g",
+            "mem": "16g",
             "walltime": "1:00:00",
             "ppn": 16,
             "nodes": 1,
@@ -27,7 +27,7 @@
         },
         "job_settings": {
             "queue": "braintv",
-            "mem": "32g",
+            "mem": "2g",
             "walltime": "1:00:00",
             "ppn": 16,
             "nodes": 1,
