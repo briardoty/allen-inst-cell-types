@@ -40,8 +40,10 @@ def main(n_samples, case_id):
     # kick off a job for each net
     for i in range(n_samples):
         
+        sample = i+1
+        
         # update params for this net
-        run_params["sample"] = i+1
+        run_params["sample"] = sample
         run_params["case_id"] = case_id
         
         # prepare args
