@@ -29,6 +29,7 @@ def main(job_title):
     with open("job_params.json", "r") as json_file:
         job_params = json.load(json_file)
     
+    job_params = job_params[job_title]
     script = job_params["script"]
     run_params = job_params["run_params"]   
     job_settings = job_params["job_settings"]

@@ -11,14 +11,13 @@ from MixedActivationLayer import MixedActivationLayer
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artiphysiology/data/", type=str, help="Set value for data_dir")
-parser.add_argument("--exprmt_n", default=1, type=int, help="Set value for exprmt_n")
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
 
 
 def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
-         net_name="vgg11", n_classes=10, n_samples=10, exprmt_n=1):
+         net_name="vgg11", n_classes=10, n_samples=10):
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
