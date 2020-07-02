@@ -11,8 +11,8 @@ import sys
 from itertools import chain
 
 # import pbstools (Python 3 version)
-sys.path.append("/home/briar.doty/pbstools")
-from pbstools import PythonJob
+# sys.path.append("/home/briar.doty/pbstools")
+# from pbstools import PythonJob
 
 # paths
 python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
@@ -39,15 +39,15 @@ def main(job_title):
     params_string = " ".join(params_list)
     
     # kick off HPC job
-    PythonJob(
-        script,
-        python_executable,
-        conda_env = conda_env,
-        python_args = params_string,
-        jobname = job_title,
-        jobdir = job_dir,
-        **job_settings
-    ).run(dryrun=False)
+    # PythonJob(
+    #     script,
+    #     python_executable,
+    #     conda_env = conda_env,
+    #     python_args = params_string,
+    #     jobname = job_title,
+    #     jobdir = job_dir,
+    #     **job_settings
+    # ).run(dryrun=False)
 
 if __name__=="__main__":
     args = parser.parse_args()
