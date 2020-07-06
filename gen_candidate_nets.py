@@ -8,13 +8,14 @@ Created on Wed Jul  1 12:11:26 2020
 import argparse
 from NetManager import NetManager
 from MixedActivationLayer import MixedActivationLayer
+import json
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artiphysiology/data/", type=str, help="Set value for data_dir")
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
-parser.add_argument("--config", type=dict, help="Set value for config")
+parser.add_argument("--config", type=json.loads, help="Set value for config")
 
 
 def main(config, data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
