@@ -28,22 +28,8 @@
                 "case_id": "mixed-1",
                 "layer_name": "relu8",
                 "n_repeat": 1,
-                "act_fns": [{
-                    "name": "relu",
-                    "params": []
-                },
-                {
-                    "name": "renlu",
-                    "params": {
-                        "alpha": 1.5
-                    }
-                },
-                {
-                    "name": "swish",
-                    "params": {
-                        "beta": 2.0
-                    }
-                }]
+                "act_fns": ["relu", "renlu", "swish"],
+                "act_fn_params": [null, 0.5, 1.0]
             }
         },
         "job_settings": {
