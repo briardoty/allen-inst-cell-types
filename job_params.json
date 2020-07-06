@@ -24,13 +24,11 @@
             "net_name": "vgg11",
             "n_classes": 10,
             "n_samples": 10,
-            "config": {
-                "case_id": "mixed-1",
-                "layer_name": "relu8",
-                "n_repeat": 1,
-                "act_fns": ["relu", "renlu", "swish"],
-                "act_fn_params": [null, 0.5, 1.0]
-            }
+            "case_id": "mixed-1",
+            "layer_name": "relu8",
+            "n_repeat": 1,
+            "act_fns": ["relu", "renlu", "swish"],
+            "act_fn_params": [null, 0.5, 1.0]
         },
         "job_settings": {
             "queue": "braintv",
