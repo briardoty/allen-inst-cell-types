@@ -37,8 +37,11 @@ def main(case_id, layer_name, n_repeat, act_fns, act_fn_params,
     #     manager.init_net(case_id, i+1)
     #     manager.save_net_snapshot()
     
-    case_id = "param test"
-    print(config)
+    print(case_id)
+    print(layer_name)
+    print(n_repeat)
+    print(act_fns)
+    print(act_fn_params)
     
     print(f"candidate_net_gen.py completed case {case_id}")
     return
