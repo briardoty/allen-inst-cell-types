@@ -23,7 +23,28 @@
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
             "n_classes": 10,
-            "n_samples": 10
+            "n_samples": 10,
+            "config": {
+                "case_id": "mixed-1",
+                "layer_name": "relu8",
+                "n_repeat": 1,
+                "act_fns": [{
+                    "name": "relu",
+                    "params": []
+                },
+                {
+                    "name": "renlu",
+                    "params": {
+                        "alpha": 1.5
+                    }
+                },
+                {
+                    "name": "swish",
+                    "params": {
+                        "beta": 2.0
+                    }
+                }]
+            }
         },
         "job_settings": {
             "queue": "braintv",

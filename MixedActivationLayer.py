@@ -7,7 +7,6 @@ Created on Tue Jun 30 13:03:23 2020
 """
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.autograd import Variable
 
 

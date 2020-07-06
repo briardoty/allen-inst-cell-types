@@ -14,22 +14,26 @@ parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artip
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
+parser.add_argument("--config", type=dict, help="Set value for config")
 
 
-def main(data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
+def main(config, data_dir="/home/briardoty/Source/neuro511-artiphysiology/data/", 
          net_name="vgg11", n_classes=10, n_samples=10):
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
     
-    case_id = "control"
+    # case_id = "control"
     
-    # build and save nets
-    for i in range(n_samples):
-        manager.init_net(case_id, i+1)
-        manager.save_net_snapshot()
+    # # build and save nets
+    # for i in range(n_samples):
+    #     manager.init_net(case_id, i+1)
+    #     manager.save_net_snapshot()
     
-    print("candidate_net_gen.py completed")
+    case_id = "param test"
+    print(config)
+    
+    print(f"candidate_net_gen.py completed case {case_id}")
     return
 
 if __name__=="__main__":
