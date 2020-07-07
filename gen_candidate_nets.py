@@ -19,8 +19,8 @@ parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_s
 parser.add_argument("--case_id", type=str, help="Set value for case_id")
 parser.add_argument("--layer_name", type=str, help="Set value for layer_name")
 parser.add_argument("--n_repeat", type=int, help="Set value for n_repeat")
-parser.add_argument("--act_fns", type=str, help="Set value for act_fns")
-parser.add_argument("--act_fn_params", type=str, help="Set value for act_fn_params")
+parser.add_argument("--act_fn", type=str, help="Set value for act_fns")
+parser.add_argument("--act_fn_param", type=str, help="Set value for act_fn_params")
 
 
 def main(case_id, layer_name, n_repeat, act_fns, act_fn_params, 
