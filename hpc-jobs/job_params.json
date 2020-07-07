@@ -18,7 +18,7 @@
         }
     },
     "gen_nets": {
-        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_candidate_nets.py",
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
         "configs": [{
             "case_id": "mixed-1",
             "layer_name": "relu8",

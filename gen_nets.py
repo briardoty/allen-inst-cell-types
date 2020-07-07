@@ -43,7 +43,7 @@ def main(case_id, layer_name, n_repeat, act_fns, act_fn_params,
     print(act_fns)
     print(act_fn_params)
     
-    print(f"candidate_net_gen.py completed case {case_id}")
+    print(f"gen_nets.py completed case {case_id}")
     return
 
 if __name__=="__main__":
