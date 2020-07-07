@@ -45,8 +45,8 @@ def main():
         run_params["case_id"] = case_id
         run_params["layer_name"] = config["layer_name"]
         run_params["n_repeat"] = config["n_repeat"]
-        run_params["act_fns"] = config["act_fns"]
-        run_params["act_fn_params"] = config["act_fn_params"]
+        run_params["act_fns"] = " ".join(config["act_fns"])
+        run_params["act_fn_params"] = " ".join(str(p) for p in config["act_fn_params"])
         
         # prepare args
         params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
