@@ -171,6 +171,8 @@ class NetManager():
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
+        return self.net
+        
     def load_imagenette(self):
         (self.image_datasets,
          self.train_loader, 
