@@ -75,6 +75,7 @@ class Visualizer():
 
         # below here it's all about saving
         if not self.save_fig:
+            print("Not saving.")
             return
         
         sub_dir = self.sub_dir(f"figures/{self.net_manager.net_name}/{self.net_manager.case_id}/sample-{self.net_manager.sample}/")
@@ -82,6 +83,7 @@ class Visualizer():
                               self.net_manager.epoch)
         filename = f"{net_tag}.png"
         filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
         plt.savefig(filename, dpi=100)    
         
     def sub_dir(self, sub_dir):
