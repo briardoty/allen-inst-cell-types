@@ -36,7 +36,7 @@ def main():
     net_configs = job_params["configs"]
     job_settings = job_params["job_settings"]
     
-    # kick off set of jobs for each net configuration
+    # kick off job for each net configuration
     for config in net_configs:
         
         case_id = config["case_id"]

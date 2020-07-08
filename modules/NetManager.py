@@ -12,8 +12,23 @@ import os
 import math
 import time
 import copy
-from MixedActivationLayer import MixedActivationLayer
+from .MixedActivationLayer import MixedActivationLayer
 
+# structural data
+nets = {
+    "vgg11": {
+        "layers_of_interest": {
+            "conv1": 0,
+            "conv2": 3,
+            "conv3": 6,
+            "conv4": 8,
+            "conv5": 11,
+            "conv6": 13,
+            "conv7": 16,
+            "conv8": 18,
+        }
+    }
+}
 
 # function for getting an identifier for a given net state
 def get_net_tag(net_name, case_id, sample, epoch):
@@ -77,7 +92,7 @@ class NetManager():
         self.pretrained = pretrained
         self.data_dir = os.path.expanduser(data_dir)
         self.n_classes = n_classes
-        self.snapshot_epoch = 0
+        self.epoch = 0
         
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
@@ -140,11 +155,11 @@ class NetManager():
         state_dict : TYPE, optional
             Optional net state if not loading from disk. The default is None.
         """
-        self.snapshot_epoch = epoch
+        self.epoch = epoch
         
         # load state from disk if not provided
         if (state_dict is None):
-            net_tag = get_net_tag(self.net_name, case_id, sample, self.snapshot_epoch)
+            net_tag = get_net_tag(self.net_name, case_id, sample, self.epoch)
             filename = f"{net_tag}.pt"
             net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{case_id}/sample-{sample}/")
             net_filepath = os.path.join(net_output_dir, filename)
@@ -258,9 +273,9 @@ class NetManager():
         best_acc = 0.0
         best_epoch = -1
     
-        epochs = range(self.snapshot_epoch + 1, self.snapshot_epoch + n_epochs + 1)
+        epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
         for epoch in epochs:
-            print('Epoch {}/{}'.format(epoch, self.snapshot_epoch + n_epochs))
+            print('Epoch {}/{}'.format(epoch, self.epoch + n_epochs))
             print('-' * 10)
     
             # training phase

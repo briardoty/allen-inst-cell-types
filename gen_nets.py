@@ -6,7 +6,7 @@ Created on Wed Jul  1 12:11:26 2020
 @author: briardoty
 """
 import argparse
-from NetManager import NetManager
+from ..NetManager import NetManager
 
 # general params with defaults
 parser = argparse.ArgumentParser()

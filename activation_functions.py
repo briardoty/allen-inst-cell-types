@@ -9,6 +9,9 @@ import torch
 import torch.nn as nn
 
 class Swish(nn.Module):
+    """
+    Pytorch nn module implementation of swish activation function
+    """
     
     def __init__(self, beta=1.0):
         
@@ -20,6 +23,11 @@ class Swish(nn.Module):
         return input_tensor * torch.sigmoid(input_tensor)
 
 class Renlu(nn.Module):
+    """
+    Pytorch nn module implementation of "renlu" activation function
+    
+    where renlu(x, alpha) = 0 if x <=0 else x^alpha
+    """
     
     def __init__(self, alpha=0.5):
         
