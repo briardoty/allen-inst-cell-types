@@ -59,10 +59,10 @@ def get_activation_fns(act_fn_names, act_fn_params):
         act_fns = []
         
         for n, p in zip(act_fn_names, act_fn_params):
-            if p is not None:
-                act_fns.append(act_fn_dict[n](p))
-            else:
+            if p is None or p == "None":
                 act_fns.append(act_fn_dict[n])
+            else:
+                act_fns.append(act_fn_dict[n](p))
             
         return act_fns
 
