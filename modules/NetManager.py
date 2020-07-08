@@ -125,12 +125,13 @@ class NetManager():
         self.net = self.net.to(self.device)
     
     def save_net_snapshot(self, epoch=0, val_acc=None):
-        print(f"Saving network snapshot at epoch {epoch}")
         
         net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
         net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
         
+        print(f"Saving network snapshot {filename}")
+
         if not os.path.exists(net_output_dir):
             os.makedirs(net_output_dir)
         

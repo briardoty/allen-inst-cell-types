@@ -32,10 +32,14 @@ def main(case_id, layer_name, n_repeat_arr, act_fns, act_fn_params,
     
     # build and save nets
     for n_repeat in n_repeat_arr:
+        
+        # each n_repeat deserves its own case
+        case_id_nr = f"{case_id}_nr-{n_repeat}"
+        
         for i in range(n_samples):
             
             # init net
-            manager.init_net(case_id, i+1)
+            manager.init_net(case_id_nr, i+1)
             
             # modify
             manager.replace_layer(layer_name, n_repeat, act_fns, act_fn_params)
@@ -50,3 +54,11 @@ if __name__=="__main__":
     args = parser.parse_args()
     print(args)
     main(**vars(args))
+
+
+
+
+
+
+
+
