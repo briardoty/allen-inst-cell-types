@@ -142,7 +142,8 @@ class NetManager():
             "case": self.case_id,
             "sample": self.sample,
             "val_acc": val_acc,
-            "state_dict": self.net.state_dict()
+            "state_dict": self.net.state_dict(),
+            "mixed_layer": self.mixed_layer
         }
         torch.save(snapshot_state, net_filepath)
     
@@ -196,6 +197,13 @@ class NetManager():
             None.
 
         """
+        # set mixed layer state
+        self.mixed_layer = {
+            "layer_name": layer_name,
+            "n_repeat": n_repeat,
+            "act_fns": act_fns,
+            "act_fn_params": act_fn_params
+        }
         
         # get layer index
         i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
