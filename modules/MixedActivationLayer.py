@@ -5,10 +5,12 @@ Created on Tue Jun 30 13:03:23 2020
 
 @author: briardoty
 """
+import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from .ActivationFunctions import Renlu, Swish
+
 
 # map act fn names to fns themselves
 act_fn_dict = {
