@@ -40,7 +40,7 @@ class Visualizer():
         net = self.net_manager.load_net_snapshot(case_id, sample, epoch)
         
         # extract kernels
-        layer = net.features[i_layer]
+        layer = net.features[i_layer].weight.data
         if not isinstance(layer, nn.Conv2d):
             print()
             return
