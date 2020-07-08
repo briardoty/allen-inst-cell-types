@@ -44,7 +44,7 @@ def main():
         # update params for this net config
         run_params["case_id"] = case_id
         run_params["layer_name"] = config["layer_name"]
-        run_params["n_repeat_arr"] = " ".join(config["n_repeat_arr"])
+        run_params["n_repeat_arr"] = " ".join(str(v) for v in config["n_repeat_arr"])
         run_params["act_fns"] = " ".join(config["act_fns"])
         run_params["act_fn_params"] = " ".join(str(p) for p in config["act_fn_params"])
         
