@@ -26,9 +26,14 @@ def main(case_id, layer_name,
     
     # init visualizer
     visualizer = Visualizer(data_dir, net_name, n_classes, True)
-    visualizer.plot_filters(nets[net_name]["layers_of_interest"][layer_name])
     
-    print(f"vis_kernels.py completed case {case_id}")
+    # plot
+    visualizer.plot_filters(nets[net_name]["layers_of_interest"][layer_name],
+                            case_id, sample=1, epoch=0)
+    visualizer.plot_filters(nets[net_name]["layers_of_interest"][layer_name],
+                            case_id, sample=1, epoch=9)
+    
+    print(f"vis_kernels.py completed")
     return
 
 if __name__=="__main__":
