@@ -30,18 +30,16 @@ def main(case_id, layer_name, n_repeat, act_fns, act_fn_params,
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
     
-    # case_id = "control"
-    
     # # build and save nets
-    # for i in range(n_samples):
-    #     manager.init_net(case_id, i+1)
-    #     manager.save_net_snapshot()
-    
-    print(case_id)
-    print(layer_name)
-    print(n_repeat)
-    print(act_fns)
-    print(act_fn_params)
+    for i in range(n_samples):
+        # init net
+        manager.init_net(case_id, i+1)
+        
+        # modify
+        manager.replace_layer(layer_name, n_repeat, act_fns, act_fn_params)
+        
+        # save
+        manager.save_net_snapshot()
     
     print(f"gen_nets.py completed case {case_id}")
     return

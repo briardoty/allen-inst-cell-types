@@ -26,6 +26,7 @@ nets = {
             "conv6": 13,
             "conv7": 16,
             "conv8": 18,
+            "relu8": 19,
         }
     }
 }
@@ -180,14 +181,32 @@ class NetManager():
          self.dataset_sizes, 
          self.n_classes) = load_imagenette(self.data_dir)
         
-    def replace_layer(self, i_layer):
+    def replace_layer(self, layer_name, n_repeat, act_fns, act_fn_params):
         """
         Replace the given layer with a MixedActivationLayer.
 
-        TODO: accept configurations of activation fns
+        Args:
+            layer_name (str): Name of layer to replace.
+            n_repeat (int): Activation fn config.
+            act_fns (list): Activation function names.
+            act_fn_params (list): Params corresponding to activation fns.
+
+        Returns:
+            None.
+
         """
+        
+        # get layer index
+        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
+        
+        # modify layer
         n_features = self.net.features[i_layer - 1].out_channels
-        self.net.features[i_layer] = MixedActivationLayer(n_features)
+        self.net.features[i_layer] = MixedActivationLayer(n_features, 
+                                                          n_repeat, 
+                                                          act_fns, 
+                                                          act_fn_params)
+        
+        # send net to gpu if available
         self.net = self.net.to(self.device)
         
     def evaluate_net(self, criterion):
