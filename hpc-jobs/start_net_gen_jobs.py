@@ -39,14 +39,14 @@ def main():
     # kick off job for each net configuration
     for config in net_configs:
         
-        case = config["case"]
+        case = config.get("case")
         
         # update params for this net config
         run_params["case"] = case
-        run_params["layer_name"] = config["layer_name"]
-        run_params["n_repeat_arr"] = " ".join(str(v) for v in config["n_repeat_arr"])
-        run_params["act_fns"] = " ".join(config["act_fns"])
-        run_params["act_fn_params"] = " ".join(str(p) for p in config["act_fn_params"])
+        run_params["layer_name"] = config.get("layer_name")
+        run_params["n_repeat_arr"] = " ".join(str(v) for v in config.get("n_repeat_arr"))
+        run_params["act_fns"] = " ".join(config.get("act_fns"))
+        run_params["act_fn_params"] = " ".join(str(p) for p in config.get("act_fn_params"))
         
         # prepare args
         params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
