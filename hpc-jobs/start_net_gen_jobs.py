@@ -44,9 +44,9 @@ def main():
         # update params for this net config
         run_params["case"] = case
         run_params["layer_name"] = config.get("layer_name")
-        run_params["n_repeat_arr"] = " ".join(str(v) for v in config.get("n_repeat_arr"))
-        run_params["act_fns"] = " ".join(config.get("act_fns"))
-        run_params["act_fn_params"] = " ".join(str(p) for p in config.get("act_fn_params"))
+        run_params["n_repeat_arr"] = param_arr_helper(config.get("n_repeat_arr"))
+        run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
+        run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
         
         # prepare args
         params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
@@ -62,7 +62,13 @@ def main():
             jobdir = job_dir,
             **job_settings
         ).run(dryrun=False)
-        
+      
+def param_arr_helper(param_arr):
+    
+    if param_arr is None or len(param_arr) == 0:
+        return None
+    
+    return " ".join(str(p) for p in param_arr)
         
 
 if __name__=="__main__":
