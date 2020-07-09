@@ -149,7 +149,7 @@ class NetManager():
     
     def load_net_snapshot(self, case_id, sample, epoch, state_dict=None):
         """
-        Load a network snapshot.
+        Load a network snapshot based on the given params.
         
         Parameters
         ----------
@@ -167,15 +167,34 @@ class NetManager():
             net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{case_id}/sample-{sample}/")
             net_filepath = os.path.join(net_output_dir, filename)
             
-            snapshot_state = torch.load(net_filepath, map_location=self.device)
-            state_dict = snapshot_state.get("state_dict")
+            return self.load_net_snapshot_from_path(net_filepath)
+            
+        # otherwise load the provided state_dict
+        else:
+            self.init_net(case_id, sample)
+            self.net.load_state_dict(state_dict)
+            self.net.eval()
         
-        self.init_net(case_id, sample)
+            return self.net
+        
+    def load_net_snapshot_from_path(self, net_filepath):
+        # load snapshot
+        snapshot_state = torch.load(net_filepath, map_location=self.device)
+        
+        # extract state
+        state_dict = snapshot_state.get("state_dict")
+        self.case_id = snapshot_state.get("case")
+        self.sample = snapshot_state.get("sample")
+        self.mixed_layer = snapshot_state.get("mixed_layer")
+        self.epoch = snapshot_state.get("epoch")
+        
+        # load net state
+        self.init_net(self.case_id, self.sample)
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
         return self.net
-        
+    
     def load_imagenette(self):
         (self.image_datasets,
          self.train_loader, 

@@ -4,7 +4,8 @@
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
-            "n_classes": 10
+            "n_classes": 10,
+            "epochs": 10
         },
         "job_settings": {
             "queue": "braintv",
