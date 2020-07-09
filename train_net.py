@@ -6,7 +6,7 @@ Created on Thu Jun 25 17:22:40 2020
 @author: briardoty
 """
 import argparse
-from NetManager import NetManager
+from modules.NetManager import NetManager
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
