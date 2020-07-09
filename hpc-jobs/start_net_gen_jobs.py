@@ -29,17 +29,21 @@ def main():
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
         job_params = json.load(json_file)
+        
+    with open("net_configs.json", "r") as json_file:
+        net_configs = json.load(json_file)
     
     job_params = job_params[job_title]
     script = job_params["script"]
     run_params = job_params["run_params"]
-    net_configs = job_params["configs"]
+    cases = job_params["cases"]
     job_settings = job_params["job_settings"]
     
     # kick off job for each net configuration
-    for config in net_configs:
+    for case in cases:
         
-        case = config.get("case")
+        # get net config
+        config = net_configs[case]
         
         # update params for this net config
         run_params["case"] = case

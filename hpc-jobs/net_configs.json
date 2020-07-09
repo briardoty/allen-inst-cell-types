@@ -1,0 +1,10 @@
+{
+    "control": {
+    },
+    "mixed-1": {
+        "layer_name": "relu8",
+        "n_repeat_arr": [1],
+        "act_fns": ["relu", "renlu", "swish"],
+        "act_fn_params": [null, 0.5, 1.0]
+    }
+}
