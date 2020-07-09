@@ -27,6 +27,8 @@ nets = {
             "conv7": 16,
             "conv8": 18,
             "relu8": 19,
+            "relu9": 22,
+            "relu10": 25
         }
     }
 }
@@ -229,11 +231,21 @@ class NetManager():
         i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
         
         # modify layer
-        n_features = self.net.features[i_layer - 1].out_channels
-        self.net.features[i_layer] = MixedActivationLayer(n_features, 
-                                                          n_repeat, 
-                                                          act_fns, 
-                                                          act_fn_params)
+        if i_layer < len(self.net.features):
+            # target layer is in "features"
+            n_features = self.net.features[i_layer - 1].out_channels
+            self.net.features[i_layer] = MixedActivationLayer(n_features, 
+                                                              n_repeat, 
+                                                              act_fns, 
+                                                              act_fn_params)
+        else:
+            # target layer must be in fc layers under "classifier"
+            i_layer = i_layer - len(self.net.features)
+            n_features = self.net.classifier[i_layer - 1].out_features
+            self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
+                                                              n_repeat, 
+                                                              act_fns, 
+                                                              act_fn_params)
         
         # send net to gpu if available
         self.net = self.net.to(self.device)
