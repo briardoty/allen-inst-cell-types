@@ -94,6 +94,7 @@ class NetManager():
         self.data_dir = os.path.expanduser(data_dir)
         self.n_classes = n_classes
         self.epoch = 0
+        self.mixed_layer = None
         
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
