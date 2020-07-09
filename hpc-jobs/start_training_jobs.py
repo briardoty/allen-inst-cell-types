@@ -22,7 +22,7 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
-parser.add_argument("--case_id", type=str, help="Set value for case_id")
+parser.add_argument("--case_id", type=str, help="Set value for case_id", required=True)
 
 def main(case_id):
     
