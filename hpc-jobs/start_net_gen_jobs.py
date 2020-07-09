@@ -39,10 +39,10 @@ def main():
     # kick off job for each net configuration
     for config in net_configs:
         
-        case_id = config["case_id"]
+        case = config["case"]
         
         # update params for this net config
-        run_params["case_id"] = case_id
+        run_params["case"] = case
         run_params["layer_name"] = config["layer_name"]
         run_params["n_repeat_arr"] = " ".join(str(v) for v in config["n_repeat_arr"])
         run_params["act_fns"] = " ".join(config["act_fns"])
@@ -58,7 +58,7 @@ def main():
             python_executable,
             conda_env = conda_env,
             python_args = params_string,
-            jobname = job_title + f" c-{case_id}",
+            jobname = job_title + f" c-{case}",
             jobdir = job_dir,
             **job_settings
         ).run(dryrun=False)
