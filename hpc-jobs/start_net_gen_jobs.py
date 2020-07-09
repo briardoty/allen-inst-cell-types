@@ -43,10 +43,18 @@ def main():
         
         # update params for this net config
         run_params["case"] = case
-        run_params["layer_name"] = config.get("layer_name")
-        run_params["n_repeat_arr"] = param_arr_helper(config.get("n_repeat_arr"))
-        run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
-        run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
+        
+        if config.get("layer_name") is not None:
+            run_params["layer_name"] = config.get("layer_name")
+            
+        if config.get("n_repeat_arr") is not None:
+            run_params["n_repeat_arr"] = param_arr_helper(config.get("n_repeat_arr"))
+        
+        if config.get("act_fns") is not None:
+            run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
+        
+        if config.get("act_fn_params") is not None:
+            run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
         
         # prepare args
         params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))

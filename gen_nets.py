@@ -15,7 +15,7 @@ parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
 
-# required config params
+# config params without defaults
 parser.add_argument("--case", type=str, help="Set value for case")
 parser.add_argument("--layer_name", type=str, help="Set value for layer_name")
 parser.add_argument("--n_repeat_arr", type=int, nargs="+", help="Set value for n_repeat_arr")
