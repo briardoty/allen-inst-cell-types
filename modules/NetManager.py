@@ -198,6 +198,58 @@ class NetManager():
         
         return self.net
     
+    def load_snapshot_metadata(self, net_filepath):
+        # load snapshot
+        snapshot_state = torch.load(net_filepath, map_location=self.device)
+        
+        return {
+            "epoch": snapshot_state.get("epoch"),
+            "case": snapshot_state.get("case"),
+            "sample": snapshot_state.get("sample"),
+            "val_acc": snapshot_state.get("val_acc")
+        }
+    
+    def load_accuracy_df(self, case_ids):
+        """
+        Loads dataframe with accuracy over training for different experimental 
+        cases.
+
+        Args:
+            cases (list): Experimental cases to include in figure.
+
+        Returns:
+            acc_df (dataframe): Dataframe containing training accuracy.
+
+        """
+        acc_mat = []
+            
+        # walk dir looking for net snapshots
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        for root, dirs, files in os.walk(net_dir):
+            
+            # only interested in locations files (nets) are saved
+            if len(files) <= 0:
+                continue
+            
+            # only interested in the given cases
+            if not any(c in root for c in case_ids):
+                continue
+            
+            # consider all nets...
+            for net_filename in files:
+                
+                net_filepath = os.path.join(root, net_filename)
+                net_metadata = self.net_manager.load_snapshot_metadata(net_filepath)
+                
+                sample = snapshot_state.get("sample")
+                epoch = snapshot_state.get("epoch")
+                val_acc = snapshot_state.get("val_acc")
+                
+                acc_mat.append([case_id, sample, epoch, val_acc])
+                
+        # make dataframe
+        return acc_mat
+    
     def load_imagenette(self):
         (self.image_datasets,
          self.train_loader, 

@@ -41,7 +41,7 @@ def main(case_id):
     net_dir = os.path.join(run_params["data_dir"], f"nets/{run_params['net_name']}")
     for root, dirs, files in os.walk(net_dir):
         
-        # only interested in locatons files (nets) are saved
+        # only interested in locations files (nets) are saved
         if len(files) <= 0:
             continue
 

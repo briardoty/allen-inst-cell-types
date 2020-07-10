@@ -13,6 +13,7 @@ import matplotlib.backends.backend_pdf
 from .NetManager import get_net_tag, NetManager
 
 
+
 class Visualizer():
     
     def __init__(self, data_dir, net_name, n_classes=10, save_fig=False):
@@ -21,6 +22,22 @@ class Visualizer():
         self.save_fig = save_fig
         
         self.net_manager = NetManager(net_name, n_classes, data_dir)
+        
+    def plot_accuracy(self, case_ids):
+        """
+        Plots accuracy over training for different experimental cases.
+
+        Args:
+            cases (list): Experimental cases to include in figure.
+
+        Returns:
+            None.
+
+        """
+        acc_df = self.net_manager.load_accuracy_df(case_ids)
+        
+        print(acc_df)
+                    
         
     def plot_filters(self, i_layer, case_id, sample, epoch):
         """
@@ -40,11 +57,12 @@ class Visualizer():
         net = self.net_manager.load_net_snapshot(case_id, sample, epoch)
         
         # extract kernels
-        layer = net.features[i_layer].weight.data
+        layer = net.features[i_layer]
+        kernels = layer.weight.data
         if not isinstance(layer, nn.Conv2d):
             print()
             return
-        n_kernels = layer.shape[0]
+        n_kernels = kernels.shape[0]
         
         # define sub plots
         n_cols = 20
@@ -58,7 +76,7 @@ class Visualizer():
             ax = fig.add_subplot(n_rows, n_cols, i+1)
             
             # denormalize and convert
-            npimg = np.array(layer[i].numpy(), np.float32)
+            npimg = np.array(kernels[i].numpy(), np.float32)
             npimg = (npimg - np.mean(npimg)) / np.std(npimg)
             npimg = np.minimum(1, np.maximum(0, (npimg + 0.5)))
             npimg = npimg.transpose((1, 2, 0))
