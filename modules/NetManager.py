@@ -333,7 +333,7 @@ class NetManager():
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             phase, epoch_loss, epoch_acc))
         
-        return epoch_acc
+        return epoch_acc.item()
     
     def train_net(self, criterion, optimizer, scheduler):
         """
