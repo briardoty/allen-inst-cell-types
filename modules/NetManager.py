@@ -239,13 +239,14 @@ class NetManager():
             for net_filename in files:
                 
                 net_filepath = os.path.join(root, net_filename)
-                net_metadata = self.net_manager.load_snapshot_metadata(net_filepath)
+                net_metadata = self.load_snapshot_metadata(net_filepath)
                 
-                sample = snapshot_state.get("sample")
-                epoch = snapshot_state.get("epoch")
-                val_acc = snapshot_state.get("val_acc")
+                sample = net_metadata.get("sample")
+                epoch = net_metadata.get("epoch")
+                val_acc = net_metadata.get("val_acc")
+                case = net_metadata.get("case")
                 
-                acc_mat.append([case_id, sample, epoch, val_acc])
+                acc_mat.append([case, sample, epoch, val_acc])
                 
         # make dataframe
         return acc_mat
