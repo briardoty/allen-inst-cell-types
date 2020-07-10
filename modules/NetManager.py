@@ -10,6 +10,7 @@ import torch.nn as nn
 from torchvision import datasets, models, transforms
 import os
 import math
+import pandas as pd
 import time
 import copy
 from .MixedActivationLayer import MixedActivationLayer
@@ -221,7 +222,7 @@ class NetManager():
             acc_df (dataframe): Dataframe containing training accuracy.
 
         """
-        acc_mat = []
+        acc_arr = []
             
         # walk dir looking for net snapshots
         net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
@@ -246,10 +247,11 @@ class NetManager():
                 val_acc = net_metadata.get("val_acc")
                 case = net_metadata.get("case")
                 
-                acc_mat.append([case, sample, epoch, val_acc])
+                acc_arr.append([case, sample, epoch, val_acc])
                 
         # make dataframe
-        return acc_mat
+        acc_df = pd.DataFrame(acc_arr, columns =["case", "sample", "epoch", "acc"])  
+        return acc_df
     
     def load_imagenette(self):
         (self.image_datasets,
@@ -387,6 +389,10 @@ class NetManager():
         best_net_state = copy.deepcopy(self.net.state_dict())
         best_acc = 0.0
         best_epoch = -1
+    
+        # validate initial state for science
+        epoch_acc = self.evaluate_net(criterion)
+        self.save_net_snapshot(self.epoch, epoch_acc)
     
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
         for epoch in epochs:
