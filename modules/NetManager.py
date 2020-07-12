@@ -245,12 +245,14 @@ class NetManager():
                 sample = net_metadata.get("sample")
                 epoch = net_metadata.get("epoch")
                 val_acc = net_metadata.get("val_acc")
+                if torch.is_tensor(val_acc):
+                    val_acc = val_acc.item()
                 case = net_metadata.get("case")
                 
                 acc_arr.append([case, sample, epoch, val_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns =["case", "sample", "epoch", "acc"])  
+        acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "epoch", "acc"])  
         return acc_df
     
     def load_imagenette(self):

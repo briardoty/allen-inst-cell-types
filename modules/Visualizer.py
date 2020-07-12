@@ -34,9 +34,27 @@ class Visualizer():
             None.
 
         """
+        # pull data
         acc_df = self.net_manager.load_accuracy_df(case_ids)
+
+        # group and compute stats        
+        acc_df.set_index(["case", "epoch"], inplace=True)
+        acc_df_groups = acc_df.groupby(["case", "epoch"])
+        acc_df_stats = acc_df_groups.agg({ "acc": [np.mean, np.std] })
+        acc_df_stats_groups = acc_df_stats.groupby("case")
         
-        print(acc_df)
+        # plot
+        fig, ax = plt.subplots()
+        
+        for name, group in acc_df_stats_groups:
+            ax.plot(group["acc"]["mean"].values, label=name)
+            
+        ax.set_title("Classification accuracy during training")
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Validation accuracy")
+        ax.legend()
+        
+        plt.show()
                     
         
     def plot_filters(self, i_layer, case_id, sample, epoch):
@@ -124,5 +142,10 @@ class Visualizer():
         return sub_dir
         
         
-
+if __name__=="__main__":
+    # init visualizer
+    visualizer = Visualizer(data_dir, net_name, n_classes, True)
+    
+    # plot
+    visualizer.plot_accuracy(case_ids)
 
