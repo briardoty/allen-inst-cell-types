@@ -47,7 +47,11 @@ class Visualizer():
         fig, ax = plt.subplots()
         
         for name, group in acc_df_stats_groups:
-            ax.plot(group["acc"]["mean"].values, label=name)
+            
+            # error bars = 2 standard devs
+            yvals = group["acc"]["mean"].values
+            yerr = group["acc"]["std"].values * 2
+            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=name)
             
         ax.set_title("Classification accuracy during training")
         ax.set_xlabel("Epoch")
