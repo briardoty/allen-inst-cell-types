@@ -54,7 +54,18 @@ class Visualizer():
         ax.set_ylabel("Validation accuracy")
         ax.legend()
         
-        plt.show()
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+        
+        sub_dir = self.sub_dir(f"figures/{self.net_manager.net_name}/")
+        cases = " & ".join(case_ids)
+        filename = f"{cases} accuracy.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=100)  
                     
         
     def plot_filters(self, i_layer, case_id, sample, epoch):
