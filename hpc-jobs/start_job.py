@@ -35,7 +35,7 @@ def main(job_title, case_ids):
     run_params = job_params["run_params"]   
     job_settings = job_params["job_settings"]
     
-    if len(case_ids > 0):
+    if len(case_ids) > 0:
         run_params["case_ids"] = param_arr_helper(case_ids)
     
     # prepare args
