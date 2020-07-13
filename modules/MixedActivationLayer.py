@@ -9,14 +9,15 @@ import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from .ActivationFunctions import Renlu, Swish
+from .ActivationFunctions import Renlu, Swish, SanityCheck
 
 
 # map act fn names to fns themselves
 act_fn_dict = {
     "relu": torch.relu,
     "renlu": Renlu,
-    "swish": Swish
+    "swish": Swish,
+    "sanityCheck": SanityCheck
 }
 
 def generate_masks(n_features, n_fns, n_repeat):

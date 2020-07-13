@@ -25,7 +25,6 @@ class Swish(nn.Module):
 class Renlu(nn.Module):
     """
     Pytorch nn module implementation of "renlu" activation function
-    
     where renlu(x, alpha) = 0 if x <=0 else x^alpha
     """
     
@@ -37,3 +36,21 @@ class Renlu(nn.Module):
     def forward(self, input_tensor):
         
         return torch.relu(input_tensor) ** self.alpha
+    
+class SanityCheck(nn.Module):
+    """
+    Pytorch nn module to implement sanity check activation function
+    """
+    
+    def __init__(self):
+        
+        super(SanityCheck, self).__init__()
+    
+    def forward(self, input_tensor):
+        
+        return input_tensor * 0
+    
+    
+    
+    
+    
