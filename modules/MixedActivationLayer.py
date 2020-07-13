@@ -69,12 +69,15 @@ def get_activation_fns(act_fn_names, act_fn_params):
 
 class MixedActivationLayer(nn.Module):
     
-    def __init__(self, n_features, n_repeat, act_fn_names, act_fn_params):
+    def __init__(self, n_features, n_repeat, act_fn_names, act_fn_params, 
+                 verbose=False):
         
         super(MixedActivationLayer, self).__init__()
         
         self.act_fns = get_activation_fns(act_fn_names, act_fn_params)
         self.masks = generate_masks(n_features, len(self.act_fns), n_repeat)
+        
+        self.verbose = verbose
         
     def forward(self, input_tensor):
         output = Variable(input_tensor.new(input_tensor.size()))
@@ -82,6 +85,10 @@ class MixedActivationLayer(nn.Module):
         for act_fn, mask in zip(self.act_fns, self.masks):
             output[:,mask] = act_fn(input_tensor[:,mask])
             
+        if self.verbose:
+            print(f"Input: {input_tensor}")
+            print(f"Output: {output}")
+        
         return output
     
     
