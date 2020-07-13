@@ -9,7 +9,10 @@ import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from .ActivationFunctions import Renlu, Swish, SanityCheck
+try:
+    from .ActivationFunctions import Renlu, Swish, SanityCheck
+except:
+    from ActivationFunctions import Renlu, Swish, SanityCheck
 
 
 # map act fn names to fns themselves
@@ -75,11 +78,16 @@ class MixedActivationLayer(nn.Module):
         super(MixedActivationLayer, self).__init__()
         
         self.act_fns = get_activation_fns(act_fn_names, act_fn_params)
+        print("Initialized MixedActivationLayer with the following activation"
+              + f"functions: {self.act_fns}")
         self.masks = generate_masks(n_features, len(self.act_fns), n_repeat)
         
         self.verbose = verbose
         
     def forward(self, input_tensor):
+        
+        print("MixedLayer called!!!")
+        
         output = Variable(input_tensor.new(input_tensor.size()))
         
         for act_fn, mask in zip(self.act_fns, self.masks):

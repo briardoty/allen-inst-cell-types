@@ -42,14 +42,18 @@ class SanityCheck(nn.Module):
     Pytorch nn module to implement sanity check activation function
     """
     
-    def __init__(self):
+    def __init__(self, _):
         
         super(SanityCheck, self).__init__()
+        self._ = _ # throwaway param
     
     def forward(self, input_tensor):
         
-        return input_tensor * 0
-    
+        print("SanityCheck called!!!")
+        print(f"INPUT: {input_tensor}")
+        output = input_tensor * 0
+        print(f"OUTPUT: {output}")
+        return output
     
     
     

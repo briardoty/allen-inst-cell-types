@@ -13,7 +13,12 @@ import math
 import pandas as pd
 import time
 import copy
-from .MixedActivationLayer import MixedActivationLayer
+
+try:
+    from .MixedActivationLayer import MixedActivationLayer
+except:
+    from MixedActivationLayer import MixedActivationLayer
+    
 
 # structural data
 nets = {
@@ -262,7 +267,8 @@ class NetManager():
          self.dataset_sizes, 
          self.n_classes) = load_imagenette(self.data_dir)
         
-    def replace_layer(self, layer_name, n_repeat, act_fns, act_fn_params):
+    def replace_layer(self, layer_name, n_repeat, act_fns, act_fn_params, 
+                      verbose=False):
         """
         Replace the given layer with a MixedActivationLayer.
 
@@ -294,7 +300,8 @@ class NetManager():
             self.net.features[i_layer] = MixedActivationLayer(n_features, 
                                                               n_repeat, 
                                                               act_fns, 
-                                                              act_fn_params)
+                                                              act_fn_params,
+                                                              verbose=verbose)
         else:
             # target layer must be in fc layers under "classifier"
             i_layer = i_layer - len(self.net.features)
@@ -302,10 +309,38 @@ class NetManager():
             self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
                                                               n_repeat, 
                                                               act_fns, 
-                                                              act_fn_params)
+                                                              act_fn_params,
+                                                              verbose=verbose)
         
         # send net to gpu if available
         self.net = self.net.to(self.device)
+        
+    def set_output_hook(self, layer_name):
+        # store responses here...
+        self.responses = []
+        
+        # define hook fn
+        def _hook(module, inp, output):
+            self.responses.append(output)
+        
+        # just hook up single layer for now
+        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
+        if i_layer < len(self.net.features):
+            # target layer is in "features"
+            self.net.features[i_layer].register_forward_hook(_hook)
+            
+        else:
+            # target layer must be in fc layers under "classifier"
+            i_layer = i_layer - len(self.net.features)
+            self.net.classifier[i_layer].register_forward_hook(_hook)
+        
+        
+        
+        # set ReLU layer in place rectification to false to get unrectified responses
+        potential_relu_layer = self.net.features[i_layer + 1]
+        if isinstance(potential_relu_layer, nn.ReLU):
+            print("Setting inplace rectification to false!")
+            potential_relu_layer.inplace = False
         
     def evaluate_net(self, criterion):
         # set to validate mode

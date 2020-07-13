@@ -5,7 +5,7 @@
         "layer_name": "relu10",
         "n_repeat_arr": [1],
         "act_fns": ["sanityCheck"],
-        "act_fn_params": [null]
+        "act_fn_params": [-1]
     },
     "mixed-1": {
         "layer_name": "relu8",
