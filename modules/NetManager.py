@@ -34,7 +34,8 @@ nets = {
             "conv8": 18,
             "relu8": 19,
             "relu9": 22,
-            "relu10": 25
+            "relu10": 25,
+            "dropout2": 26
         }
     }
 }
@@ -267,6 +268,29 @@ class NetManager():
          self.dataset_sizes, 
          self.n_classes) = load_imagenette(self.data_dir)
         
+    def save_net_responses(self):
+        # store responses as tensor
+        self.responses_input = torch.stack(self.responses_input)
+        self.responses_output = torch.stack(self.responses_output)
+        
+        # output location
+        net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
+        output_filename = f"output_{net_tag}.pt"
+        input_filename = f"input_{net_tag}.pt"
+        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
+        
+        print(f"Saving network responses to {resp_dir}")
+
+        if not os.path.exists(resp_output_dir):
+            os.makedirs(resp_output_dir)
+        
+        output_filepath = os.path.join(resp_output_dir, output_filename)
+        input_filepath = os.path.join(resp_output_dir, input_filename)
+        
+        # save
+        torch.save(self.responses_output, output_filepath)
+        torch.save(self.responses_input, input_filepath)
+        
     def replace_layer(self, layer_name, n_repeat, act_fns, act_fn_params, 
                       verbose=False):
         """
@@ -314,27 +338,50 @@ class NetManager():
         
         # send net to gpu if available
         self.net = self.net.to(self.device)
-        
-    def set_output_hook(self, layer_name):
+    
+    def set_input_hook(self, layer_name):
         # store responses here...
-        self.responses = []
+        self.responses_input = []
         
         # define hook fn
-        def _hook(module, inp, output):
-            self.responses.append(output)
+        def input_hook(module, inp, output):
+            self.responses_input.append(inp)
         
         # just hook up single layer for now
         i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
         if i_layer < len(self.net.features):
             # target layer is in "features"
-            self.net.features[i_layer].register_forward_hook(_hook)
+            self.net.features[i_layer].register_forward_hook(input_hook)
             
         else:
             # target layer must be in fc layers under "classifier"
             i_layer = i_layer - len(self.net.features)
-            self.net.classifier[i_layer].register_forward_hook(_hook)
+            self.net.classifier[i_layer].register_forward_hook(input_hook)
         
+        # set ReLU layer in place rectification to false to get unrectified responses
+        potential_relu_layer = self.net.features[i_layer + 1]
+        if isinstance(potential_relu_layer, nn.ReLU):
+            print("Setting inplace rectification to false!")
+            potential_relu_layer.inplace = False
+    
+    def set_output_hook(self, layer_name):
+        # store responses here...
+        self.responses_output = []
         
+        # define hook fn
+        def output_hook(module, inp, output):
+            self.responses_output.append(output)
+        
+        # just hook up single layer for now
+        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
+        if i_layer < len(self.net.features):
+            # target layer is in "features"
+            self.net.features[i_layer].register_forward_hook(output_hook)
+            
+        else:
+            # target layer must be in fc layers under "classifier"
+            i_layer = i_layer - len(self.net.features)
+            self.net.classifier[i_layer].register_forward_hook(output_hook)
         
         # set ReLU layer in place rectification to false to get unrectified responses
         potential_relu_layer = self.net.features[i_layer + 1]
@@ -372,7 +419,7 @@ class NetManager():
         
         return epoch_acc.item()
     
-    def train_net(self, criterion, optimizer, scheduler):
+    def train_net(self, criterion, optimizer, scheduler, batches=None):
         """
         Run a single training epoch
 
@@ -384,7 +431,13 @@ class NetManager():
         running_loss = 0.0
         running_corrects = 0
 
+        i = 0
+
         for inputs, labels in self.train_loader:
+            
+            if batches is not None and i > batches:
+                break
+            
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
 
@@ -405,6 +458,8 @@ class NetManager():
             # statistics
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
+            
+            i = i+1
         
         # step through the learning rate scheduler
         scheduler.step()
