@@ -18,25 +18,6 @@
             "email_options": "a"
         }
     },
-    "sanity_check": {
-        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/sanity_check.py",
-        "run_params": {
-            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
-            "net_name": "vgg11",
-            "n_classes": 10,
-            "net_filepath": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/nets/vgg11/case-sanityCheck1_relu10_nr-1/sample-0/vgg11_case-sanityCheck1_relu10_nr-1_sample-0_epoch-0.pt"
-        },
-        "job_settings": {
-            "queue": "braintv",
-            "mem": "16g",
-            "walltime": "1:00:00",
-            "ppn": 16,
-            "nodes": 1,
-            "gpus": 1,
-            "email": "briar.doty@alleninstitute.org",
-            "email_options": "a"
-        }
-    },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
         "cases": ["sanityCheck1"],

@@ -16,7 +16,7 @@ class Swish(nn.Module):
     def __init__(self, beta=1.0):
         
         super(Swish, self).__init__()
-        self.beta = beta
+        self.beta = float(beta)
     
     def forward(self, input_tensor):
         
@@ -31,7 +31,7 @@ class Renlu(nn.Module):
     def __init__(self, alpha=0.5):
         
         super(Renlu, self).__init__()
-        self.alpha = alpha
+        self.alpha = float(alpha)
     
     def forward(self, input_tensor):
         
