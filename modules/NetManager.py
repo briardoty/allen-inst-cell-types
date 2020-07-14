@@ -203,6 +203,14 @@ class NetManager():
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
+        # make any modifications
+        if self.mixed_layer is not None:
+            layer_name = self.mixed_layer["layer_name"]
+            n_repeat = self.mixed_layer["n_repeat"]
+            act_fns = self.mixed_layer["act_fns"]
+            act_fn_params = self.mixed_layer["act_fn_params"]
+            self.replace_layer(layer_name, n_repeat, act_fns, act_fn_params)
+        
         return self.net
     
     def load_snapshot_metadata(self, net_filepath):
@@ -274,18 +282,18 @@ class NetManager():
         self.responses_output = torch.stack(self.responses_output)
         
         # output location
-        net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
+        net_tag = get_net_tag(self.net_name)
         output_filename = f"output_{net_tag}.pt"
         input_filename = f"input_{net_tag}.pt"
         resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
         
         print(f"Saving network responses to {resp_dir}")
 
-        if not os.path.exists(resp_output_dir):
-            os.makedirs(resp_output_dir)
+        if not os.path.exists(resp_dir):
+            os.makedirs(resp_dir)
         
-        output_filepath = os.path.join(resp_output_dir, output_filename)
-        input_filepath = os.path.join(resp_output_dir, input_filename)
+        output_filepath = os.path.join(resp_dir, output_filename)
+        input_filepath = os.path.join(resp_dir, input_filename)
         
         # save
         torch.save(self.responses_output, output_filepath)
