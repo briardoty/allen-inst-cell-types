@@ -86,8 +86,6 @@ class MixedActivationLayer(nn.Module):
         
     def forward(self, input_tensor):
         
-        print("MixedLayer called!!!")
-        
         output = Variable(input_tensor.new(input_tensor.size()))
         
         for act_fn, mask in zip(self.act_fns, self.masks):

@@ -49,11 +49,7 @@ class SanityCheck(nn.Module):
     
     def forward(self, input_tensor):
         
-        print("SanityCheck called!!!")
-        print(f"INPUT: {input_tensor}")
-        output = input_tensor * 0
-        print(f"OUTPUT: {output}")
-        return output
+        return input_tensor * 0
     
     
     
