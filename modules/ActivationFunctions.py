@@ -64,7 +64,7 @@ class Heaviside(nn.Module):
     
     def forward(self, input_tensor):
         
-        return np.heaviside(input_tensor, self.x2)
+        return np.heaviside(input_tensor.cpu(), self.x2)
     
     
     
