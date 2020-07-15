@@ -46,7 +46,7 @@ def main(case_id):
             continue
 
         # only interested in the given case
-        if not f"case-{case_id}" in root:
+        if not f"{case_id}" in root:
             continue
         
         # consider all nets...
