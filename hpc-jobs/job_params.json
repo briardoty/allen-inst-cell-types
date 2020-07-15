@@ -5,7 +5,7 @@
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
             "n_classes": 10,
-            "epochs": 10
+            "epochs": 20
         },
         "job_settings": {
             "queue": "braintv",
