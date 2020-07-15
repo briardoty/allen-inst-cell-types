@@ -10,7 +10,6 @@ import torch.nn as nn
 from torchvision import datasets, models, transforms
 import os
 import math
-import pandas as pd
 import time
 import copy
 
@@ -103,7 +102,7 @@ class NetManager():
         self.data_dir = os.path.expanduser(data_dir)
         self.n_classes = n_classes
         self.epoch = 0
-        self.mixed_layer = None
+        self.modified_layers = None
         
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
@@ -153,39 +152,31 @@ class NetManager():
             "sample": self.sample,
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
-            "mixed_layer": self.mixed_layer
+            "modified_layers": self.modified_layers
         }
         torch.save(snapshot_state, net_filepath)
     
-    def load_net_snapshot(self, case_id, sample, epoch, state_dict=None):
+    def load_net_state(self, case_id, sample, epoch, state_dict):
         """
         Load a network snapshot based on the given params.
-        
-        Parameters
-        ----------
-        epoch : int
-            Training epoch for the snapshot to load.
-        state_dict : TYPE, optional
-            Optional net state if not loading from disk. The default is None.
+
+        Args:
+            case_id (str): DESCRIPTION.
+            sample (int): DESCRIPTION.
+            epoch (int): Training epoch for the snapshot to load.
+            state_dict (TYPE): Net state if not loading from disk.
+
+        Returns:
+            TYPE: DESCRIPTION.
+
         """
+        
         self.epoch = epoch
+        self.init_net(case_id, sample)
+        self.net.load_state_dict(state_dict)
+        self.net.eval()
         
-        # load state from disk if not provided
-        if (state_dict is None):
-            net_tag = get_net_tag(self.net_name, case_id, sample, self.epoch)
-            filename = f"{net_tag}.pt"
-            net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{case_id}/sample-{sample}/")
-            net_filepath = os.path.join(net_output_dir, filename)
-            
-            return self.load_net_snapshot_from_path(net_filepath)
-            
-        # otherwise load the provided state_dict
-        else:
-            self.init_net(case_id, sample)
-            self.net.load_state_dict(state_dict)
-            self.net.eval()
-        
-            return self.net
+        return self.net
         
     def load_net_snapshot_from_path(self, net_filepath):
         # load snapshot
@@ -195,7 +186,11 @@ class NetManager():
         state_dict = snapshot_state.get("state_dict")
         self.case_id = snapshot_state.get("case")
         self.sample = snapshot_state.get("sample")
-        self.mixed_layer = snapshot_state.get("mixed_layer")
+        
+        self.modified_layers = (snapshot_state.get("modified_layers") 
+                                if snapshot_state.get("modified_layers") is not None 
+                                else snapshot_state.get("mixed_layer"))
+        
         self.epoch = snapshot_state.get("epoch")
         
         # load net state
@@ -204,12 +199,12 @@ class NetManager():
         self.net.eval()
         
         # make any modifications
-        if self.mixed_layer is not None:
-            layer_name = self.mixed_layer.get("layer_name")
-            layer_names = self.mixed_layer.get("layer_names")
-            n_repeat = self.mixed_layer["n_repeat"]
-            act_fns = self.mixed_layer["act_fns"]
-            act_fn_params = self.mixed_layer["act_fn_params"]
+        if self.modified_layers is not None:
+            layer_name = self.modified_layers.get("layer_name")
+            layer_names = self.modified_layers.get("layer_names")
+            n_repeat = self.modified_layers["n_repeat"]
+            act_fns = self.modified_layers["act_fns"]
+            act_fn_params = self.modified_layers["act_fn_params"]
             self.replace_layers(layer_names if layer_names is not None else [layer_name], 
                                n_repeat, act_fns, act_fn_params)
         
@@ -225,80 +220,6 @@ class NetManager():
             "sample": snapshot_state.get("sample"),
             "val_acc": snapshot_state.get("val_acc")
         }
-    
-    def load__weight_df(self, case_ids):
-        """
-        Loads a dataframe containing the mean weight 
-
-        Args:
-            case_ids (list): Experimental cases to include in figure.
-
-        Returns:
-            None.
-
-        """
-        
-        # walk dir looking for net snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
-        for root, dirs, files in os.walk(net_dir):
-            
-            # only interested in locations files (nets) are saved
-            if len(files) <= 0:
-                continue
-            
-            # only interested in the given cases
-            if not any(c in root for c in case_ids):
-                continue
-            
-            # consider just nets that...
-            for net_filename in files:
-                net_filepath = os.path.join(root, net_filename)
-                net_metadata = self.load_snapshot_metadata(net_filepath)
-    
-    def load_accuracy_df(self, case_ids):
-        """
-        Loads dataframe with accuracy over training for different experimental 
-        cases.
-
-        Args:
-            case_ids (list): Experimental cases to include in figure.
-
-        Returns:
-            acc_df (dataframe): Dataframe containing training accuracy.
-
-        """
-        acc_arr = []
-            
-        # walk dir looking for net snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
-        for root, dirs, files in os.walk(net_dir):
-            
-            # only interested in locations files (nets) are saved
-            if len(files) <= 0:
-                continue
-            
-            # only interested in the given cases
-            if not any(c in root for c in case_ids):
-                continue
-            
-            # consider all nets...
-            for net_filename in files:
-                
-                net_filepath = os.path.join(root, net_filename)
-                net_metadata = self.load_snapshot_metadata(net_filepath)
-                
-                sample = net_metadata.get("sample")
-                epoch = net_metadata.get("epoch")
-                val_acc = net_metadata.get("val_acc")
-                if torch.is_tensor(val_acc):
-                    val_acc = val_acc.item()
-                case = net_metadata.get("case")
-                
-                acc_arr.append([case, sample, epoch, val_acc])
-                
-        # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "epoch", "acc"])  
-        return acc_df
     
     def load_imagenette(self):
         (self.image_datasets,
@@ -556,7 +477,7 @@ class NetManager():
         print('Best val Acc: {:4f} on epoch {}'.format(best_acc, best_epoch))
         
         # load best net state from training and save it to disk
-        self.load_net_snapshot(self.case_id, self.sample, best_epoch, best_net_state)
+        self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
         self.save_net_snapshot(best_epoch, best_acc)
 
 
