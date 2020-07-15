@@ -48,8 +48,8 @@ def main():
         # update params for this net config
         run_params["case"] = case
         
-        if config.get("layer_name") is not None:
-            run_params["layer_name"] = config.get("layer_name")
+        if config.get("layer_names") is not None:
+            run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
             
         if config.get("n_repeat_arr") is not None:
             run_params["n_repeat_arr"] = param_arr_helper(config.get("n_repeat_arr"))

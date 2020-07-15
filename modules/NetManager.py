@@ -138,7 +138,7 @@ class NetManager():
         
         net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
-        net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
+        net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
         
         print(f"Saving network snapshot {filename}")
 
@@ -174,7 +174,7 @@ class NetManager():
         if (state_dict is None):
             net_tag = get_net_tag(self.net_name, case_id, sample, self.epoch)
             filename = f"{net_tag}.pt"
-            net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/case-{case_id}/sample-{sample}/")
+            net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{case_id}/sample-{sample}/")
             net_filepath = os.path.join(net_output_dir, filename)
             
             return self.load_net_snapshot_from_path(net_filepath)
@@ -205,11 +205,13 @@ class NetManager():
         
         # make any modifications
         if self.mixed_layer is not None:
-            layer_name = self.mixed_layer["layer_name"]
+            layer_name = self.mixed_layer.get("layer_name")
+            layer_names = self.mixed_layer.get("layer_names")
             n_repeat = self.mixed_layer["n_repeat"]
             act_fns = self.mixed_layer["act_fns"]
             act_fn_params = self.mixed_layer["act_fn_params"]
-            self.replace_layer(layer_name, n_repeat, act_fns, act_fn_params)
+            self.replace_layers(layer_names if layer_names is not None else [layer_name], 
+                               n_repeat, act_fns, act_fn_params)
         
         return self.net
     
@@ -224,13 +226,42 @@ class NetManager():
             "val_acc": snapshot_state.get("val_acc")
         }
     
+    def load__weight_df(self, case_ids):
+        """
+        Loads a dataframe containing the mean weight 
+
+        Args:
+            case_ids (list): Experimental cases to include in figure.
+
+        Returns:
+            None.
+
+        """
+        
+        # walk dir looking for net snapshots
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        for root, dirs, files in os.walk(net_dir):
+            
+            # only interested in locations files (nets) are saved
+            if len(files) <= 0:
+                continue
+            
+            # only interested in the given cases
+            if not any(c in root for c in case_ids):
+                continue
+            
+            # consider just nets that...
+            for net_filename in files:
+                net_filepath = os.path.join(root, net_filename)
+                net_metadata = self.load_snapshot_metadata(net_filepath)
+    
     def load_accuracy_df(self, case_ids):
         """
         Loads dataframe with accuracy over training for different experimental 
         cases.
 
         Args:
-            cases (list): Experimental cases to include in figure.
+            case_ids (list): Experimental cases to include in figure.
 
         Returns:
             acc_df (dataframe): Dataframe containing training accuracy.
@@ -285,7 +316,7 @@ class NetManager():
         net_tag = get_net_tag(self.net_name)
         output_filename = f"output_{net_tag}.pt"
         input_filename = f"input_{net_tag}.pt"
-        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/case-{self.case_id}/sample-{self.sample}/")
+        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/{self.case_id}/sample-{self.sample}/")
         
         print(f"Saving network responses to {resp_dir}")
 
@@ -299,13 +330,13 @@ class NetManager():
         torch.save(self.responses_output, output_filepath)
         torch.save(self.responses_input, input_filepath)
         
-    def replace_layer(self, layer_name, n_repeat, act_fns, act_fn_params, 
-                      verbose=False):
+    def replace_layers(self, layer_names, n_repeat, act_fns, act_fn_params, 
+                       verbose=False):
         """
         Replace the given layer with a MixedActivationLayer.
 
         Args:
-            layer_name (str): Name of layer to replace.
+            layer_names (list): Names of layers to replace.
             n_repeat (int): Activation fn config.
             act_fns (list): Activation function names.
             act_fn_params (list): Params corresponding to activation fns.
@@ -314,35 +345,37 @@ class NetManager():
             None.
 
         """
-        # set mixed layer state
-        self.mixed_layer = {
-            "layer_name": layer_name,
+        # set modified layer state
+        self.modified_layers = {
+            "layer_names": layer_names,
             "n_repeat": n_repeat,
             "act_fns": act_fns,
             "act_fn_params": act_fn_params
         }
         
-        # get layer index
-        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
-        
-        # modify layer
-        if i_layer < len(self.net.features):
-            # target layer is in "features"
-            n_features = self.net.features[i_layer - 1].out_channels
-            self.net.features[i_layer] = MixedActivationLayer(n_features, 
-                                                              n_repeat, 
-                                                              act_fns, 
-                                                              act_fn_params,
-                                                              verbose=verbose)
-        else:
-            # target layer must be in fc layers under "classifier"
-            i_layer = i_layer - len(self.net.features)
-            n_features = self.net.classifier[i_layer - 1].out_features
-            self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
-                                                              n_repeat, 
-                                                              act_fns, 
-                                                              act_fn_params,
-                                                              verbose=verbose)
+        for layer_name in layer_names:
+            
+            # get layer index
+            i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
+            
+            # modify layer
+            if i_layer < len(self.net.features):
+                # target layer is in "features"
+                n_features = self.net.features[i_layer - 1].out_channels
+                self.net.features[i_layer] = MixedActivationLayer(n_features, 
+                                                                  n_repeat, 
+                                                                  act_fns, 
+                                                                  act_fn_params,
+                                                                  verbose=verbose)
+            else:
+                # target layer must be in fc layers under "classifier"
+                i_layer = i_layer - len(self.net.features)
+                n_features = self.net.classifier[i_layer - 1].out_features
+                self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
+                                                                  n_repeat, 
+                                                                  act_fns, 
+                                                                  act_fn_params,
+                                                                  verbose=verbose)
         
         # send net to gpu if available
         self.net = self.net.to(self.device)

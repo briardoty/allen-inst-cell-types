@@ -2,21 +2,45 @@
     "control": {
     },
     "sanityCheck1": {
-        "layer_name": "relu10",
+        "layer_names": ["relu10"],
         "n_repeat_arr": [1],
         "act_fns": ["sanityCheck"],
         "act_fn_params": [-1]
     },
     "mixed-1": {
-        "layer_name": "relu8",
+        "layer_names": ["relu8"],
         "n_repeat_arr": [1],
         "act_fns": ["relu", "renlu", "swish"],
         "act_fn_params": [null, 0.5, 1.0]
     },
     "mixed-2": {
-        "layer_name": "relu10",
+        "layer_names": ["relu10"],
         "n_repeat_arr": [1],
         "act_fns": ["renlu", "renlu"],
         "act_fn_params": [0.5, 1.5]
+    },
+    "mixed3": {
+        "layer_names": ["relu8", "relu9", "relu10"],
+        "n_repeat_arr": [1],
+        "act_fns": ["swish", "renlu", "swish", "renlu"],
+        "act_fn_params": [1.0, 0.5, 1.5, 1.5]
+    },
+    "renlu1": {
+        "layer_names": ["relu8", "relu9", "relu10"],
+        "n_repeat_arr": [1],
+        "act_fns": ["renlu"],
+        "act_fn_params": [1.5]
+    },
+    "swish1": {
+        "layer_names": ["relu8", "relu9", "relu10"],
+        "n_repeat_arr": [1],
+        "act_fns": ["swish"],
+        "act_fn_params": [1.0]
+    },
+    "heaviside1": {
+        "layer_names": ["relu8", "relu9", "relu10"],
+        "n_repeat_arr": [1],
+        "act_fns": ["heaviside"],
+        "act_fn_params": [1.0]
     }
 }

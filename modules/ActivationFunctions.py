@@ -7,6 +7,7 @@ Created on Mon Jul  6 13:44:32 2020
 """
 import torch
 import torch.nn as nn
+import numpy as np
 
 class Swish(nn.Module):
     """
@@ -51,6 +52,19 @@ class SanityCheck(nn.Module):
         
         return input_tensor * 0
     
+class Heaviside(nn.Module):
+    """
+    Pytorch nn module to implement step function for use as activation fn
+    """
+    
+    def __init__(self, x2):
+        
+        super(Heaviside, self).__init__()
+        self.x2 = x2
+    
+    def forward(self, input_tensor):
+        
+        return np.heaviside(input_tensor, self.x2)
     
     
     

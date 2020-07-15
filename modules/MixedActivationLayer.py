@@ -10,9 +10,9 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 try:
-    from .ActivationFunctions import Renlu, Swish, SanityCheck
+    from .ActivationFunctions import Renlu, Swish, SanityCheck, Heaviside
 except:
-    from ActivationFunctions import Renlu, Swish, SanityCheck
+    from ActivationFunctions import Renlu, Swish, SanityCheck, Heaviside
 
 
 # map act fn names to fns themselves
@@ -20,7 +20,8 @@ act_fn_dict = {
     "relu": torch.relu,
     "renlu": Renlu,
     "swish": Swish,
-    "sanityCheck": SanityCheck
+    "sanityCheck": SanityCheck,
+    "heaviside": Heaviside
 }
 
 def generate_masks(n_features, n_fns, n_repeat):
