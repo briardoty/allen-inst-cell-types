@@ -49,7 +49,8 @@ class Visualizer():
             # error bars = 2 standard devs
             yvals = group["acc"]["mean"].values
             yerr = group["acc"]["std"].values * 2
-            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=name)
+            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=name, 
+                        capsize=5, elinewidth=2)
             
         ax.set_title("Classification accuracy during training")
         ax.set_xlabel("Epoch")
