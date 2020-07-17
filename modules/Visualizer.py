@@ -12,7 +12,10 @@ try:
     from .StatsProcessor import StatsProcessor
 except:
     from StatsProcessor import StatsProcessor
-
+try:
+    from .NetManager import nets
+except:
+    from NetManager import nets
 
 class Visualizer():
     
@@ -65,12 +68,12 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/")
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/accuracy/")
         cases = " & ".join(case_ids)
         filename = f"{cases} accuracy.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=100)  
+        plt.savefig(filename, dpi=300)  
         
     def plot_weight_changes(self, case_ids):
         """
@@ -87,14 +90,47 @@ class Visualizer():
         # pull data
         df = self.stats_processor.load_weight_change_df(case_ids)
 
+        std_cols = list(filter(lambda x: x.endswith(".std"), df.columns))
+        df_groups = df.groupby("case")
+        state_keys = list(nets["vgg11"]["state_keys"].keys())
+
         # plot
-        df.plot.bar()
+        x = np.arange(len(state_keys))
+        width = 0.35
+        err_kw = dict(lw=1, capsize=3, capthick=1)
+
+        fig, ax = plt.subplots()
+        for name, group in df_groups:
+
+            yvals = group[state_keys].values[0]
+            yerr = group[std_cols].values[0]
+
+            ax.bar(x, yvals, width, yerr=yerr, label=name, error_kw=err_kw)
+
+            # update bar locations for next group
+            x = [loc + width for loc in x]
+
+        ax.set_title("Weight changes by layer during training")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("Mean weight change per layer")
+        ax.legend()
+
+        ax.set_xticks([r + width for r in range(len(state_keys))])
+        labels = list(nets["vgg11"]["state_keys"].values())
+        ax.set_xticklabels(labels)
 
         # optional saving
         if not self.save_fig:
             print("Not saving.")
             plt.show()
             return
+
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/weight change/")
+        cases = " & ".join(case_ids)
+        filename = f"{cases} weight.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
         
     def sub_dir(self, sub_dir):
         """

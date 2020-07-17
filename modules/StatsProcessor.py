@@ -6,16 +6,9 @@ import re
 import numpy as np
 
 try:
-    from .NetManager import NetManager
+    from .NetManager import NetManager, nets
 except:
-    from NetManager import NetManager
-    
-vgg_state_keys_of_interest = ['features.0.weight', 'features.3.weight', 
-                              'features.6.weight', 'features.8.weight', 
-                              'features.11.weight', 'features.13.weight', 
-                              'features.16.weight', 'features.18.weight', 
-                              'classifier.0.weight', 'classifier.3.weight', 
-                              'classifier.6.weight']
+    from NetManager import NetManager, nets
 
 def get_epoch_from_filename(filename):
     
@@ -69,6 +62,7 @@ class StatsProcessor(NetManager):
 
         """
         weight_change_arr = []
+        state_keys = list(nets["vgg11"]["state_keys"].keys())
         
         # walk dir looking for net snapshots
         net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
@@ -96,11 +90,11 @@ class StatsProcessor(NetManager):
             last_net = self.load_snapshot_metadata(last_net_path, True)
             
             # filter to just the weights we want
-            first_net["state_dict"] = { my_key: first_net["state_dict"][my_key] for my_key in vgg_state_keys_of_interest }
-            last_net["state_dict"] = { my_key: last_net["state_dict"][my_key] for my_key in vgg_state_keys_of_interest }
+            first_net["state_dict"] = { my_key: first_net["state_dict"][my_key] for my_key in state_keys }
+            last_net["state_dict"] = { my_key: last_net["state_dict"][my_key] for my_key in state_keys }
             
             # diff weights
-            diff_net = [last_net["state_dict"][layer] - first_net["state_dict"][layer] for layer in vgg_state_keys_of_interest]
+            diff_net = [last_net["state_dict"][layer] - first_net["state_dict"][layer] for layer in state_keys]
 
             # avg weights
             avg_weights = [torch.mean(layer).item() for layer in diff_net]
@@ -109,17 +103,17 @@ class StatsProcessor(NetManager):
             # add to arr
             case = first_net.get("case") if first_net.get("case") is not None else "control"
             sample = first_net.get("sample")
-            weight_change_arr.append([case, sample] + avg_weights)
+            weight_change_arr.append([case, sample] + avg_weights + std_weights)
 
         # make df
-        cols = ["case", "sample"] + vgg_state_keys_of_interest
+        layer_keys = state_keys + [f"{key}.std" for key in state_keys]
+        cols = ["case", "sample"] + layer_keys
         weight_change_df = pd.DataFrame(weight_change_arr, columns=cols)
 
         # group and compute stats
-        # TODO: is the mean of a set of std devs the same as the std dev of all underlying samples?
         weight_change_df.set_index("case", inplace=True)
         df_groups = weight_change_df.groupby("case")
-        df_stats = df_groups[vgg_state_keys_of_interest].agg("mean")
+        df_stats = df_groups[layer_keys].agg("mean")
         df_stats_groups = df_stats.groupby("case")
 
         return df_stats

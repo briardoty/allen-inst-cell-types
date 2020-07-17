@@ -35,6 +35,19 @@ nets = {
             "relu9": 22,
             "relu10": 25,
             "dropout2": 26
+        },
+        "state_keys": {
+            "features.0.weight": "conv1", 
+            "features.3.weight": "conv2", 
+            "features.6.weight": "conv3", 
+            "features.8.weight": "conv4", 
+            "features.11.weight": "conv5", 
+            "features.13.weight": "conv6", 
+            "features.16.weight": "conv7", 
+            "features.18.weight": "conv8", 
+            "classifier.0.weight": "fc1", 
+            "classifier.3.weight": "fc2", 
+            "classifier.6.weight": "fc3"
         }
     }
 }
