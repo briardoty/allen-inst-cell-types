@@ -210,9 +210,12 @@ class NetManager():
         
         return self.net
     
-    def load_snapshot_metadata(self, net_filepath):
+    def load_snapshot_metadata(self, net_filepath, include_state=False):
         # load snapshot
         snapshot_state = torch.load(net_filepath, map_location=self.device)
+        
+        if include_state:
+            return snapshot_state
         
         return {
             "epoch": snapshot_state.get("epoch"),

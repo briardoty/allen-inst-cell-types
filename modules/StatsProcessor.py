@@ -2,18 +2,50 @@
 import torch
 import os
 import pandas as pd
+import re
+import numpy as np
 
 try:
     from .NetManager import NetManager
 except:
     from NetManager import NetManager
     
-def get_earliest_nets(net_filenames):
-    return
+vgg_state_keys_of_interest = ['features.0.weight', 'features.3.weight', 
+                              'features.6.weight', 'features.8.weight', 
+                              'features.11.weight', 'features.13.weight', 
+                              'features.16.weight', 'features.18.weight', 
+                              'classifier.0.weight', 'classifier.3.weight', 
+                              'classifier.6.weight']
 
-def get_latest_nets(net_filenames):
-    return
+def get_epoch_from_filename(filename):
+    
+    epoch = re.search(r"\d+\.pt$", filename)
+    epoch = int(epoch.group().split(".")[0]) if epoch else None
+    
+    return epoch
+    
+def get_first_epoch(net_filenames):
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+        if epoch == 0:
+            return filename
 
+def get_last_epoch(net_filenames):
+    
+    max_epoch = -1
+    last_net_filename = None
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+        if epoch > max_epoch:
+            max_epoch = epoch
+            last_net_filename = filename
+
+    return last_net_filename
+    
 class StatsProcessor(NetManager):
     """
     Class to handle processing network snapshots into meaningful statistics.
@@ -25,7 +57,7 @@ class StatsProcessor(NetManager):
         super(StatsProcessor, self).__init__(net_name, n_classes, data_dir, 
                                              pretrained)
     
-    def load__weight_df(self, case_ids):
+    def load_weight_change_df(self, case_ids):
         """
         Loads a dataframe containing the mean weight 
 
@@ -33,9 +65,10 @@ class StatsProcessor(NetManager):
             case_ids (list): Experimental cases to include in figure.
 
         Returns:
-            None.
+            weight_change_df (dataframe).
 
         """
+        weight_change_arr = []
         
         # walk dir looking for net snapshots
         net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
@@ -49,10 +82,47 @@ class StatsProcessor(NetManager):
             if not any(c in root for c in case_ids):
                 continue
             
-            # consider just nets that...
-            for net_filename in files:
-                net_filepath = os.path.join(root, net_filename)
-                net_metadata = self.load_snapshot_metadata(net_filepath)
+            # nets are all from one sample, get just the first and last
+            first_net_filename = get_first_epoch(files)
+            last_net_filename = get_last_epoch(files)
+            
+            if first_net_filename is None or last_net_filename is None:
+                continue
+
+            first_net_path = os.path.join(root, first_net_filename)
+            last_net_path = os.path.join(root, last_net_filename)
+            
+            first_net = self.load_snapshot_metadata(first_net_path, True)
+            last_net = self.load_snapshot_metadata(last_net_path, True)
+            
+            # filter to just the weights we want
+            first_net["state_dict"] = { my_key: first_net["state_dict"][my_key] for my_key in vgg_state_keys_of_interest }
+            last_net["state_dict"] = { my_key: last_net["state_dict"][my_key] for my_key in vgg_state_keys_of_interest }
+            
+            # diff weights
+            diff_net = [last_net["state_dict"][layer] - first_net["state_dict"][layer] for layer in vgg_state_keys_of_interest]
+
+            # avg weights
+            avg_weights = [torch.mean(layer).item() for layer in diff_net]
+            std_weights = [torch.std(layer).item() for layer in diff_net]
+
+            # add to arr
+            case = first_net.get("case") if first_net.get("case") is not None else "control"
+            sample = first_net.get("sample")
+            weight_change_arr.append([case, sample] + avg_weights)
+
+        # make df
+        cols = ["case", "sample"] + vgg_state_keys_of_interest
+        weight_change_df = pd.DataFrame(weight_change_arr, columns=cols)
+
+        # group and compute stats
+        # TODO: is the mean of a set of std devs the same as the std dev of all underlying samples?
+        weight_change_df.set_index("case", inplace=True)
+        df_groups = weight_change_df.groupby("case")
+        df_stats = df_groups[vgg_state_keys_of_interest].agg("mean")
+        df_stats_groups = df_stats.groupby("case")
+
+        return df_stats
     
     def load_accuracy_df(self, case_ids):
         """
@@ -98,3 +168,18 @@ class StatsProcessor(NetManager):
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "epoch", "acc"])  
         return acc_df
+
+
+if __name__=="__main__":
+    
+    processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data")
+    
+    processor.load_weight_change_df(["control"])
+    
+    
+    
+    
+    
+    
+    
+    

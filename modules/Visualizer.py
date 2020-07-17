@@ -8,8 +8,10 @@ Created on Tue Jul  7 14:22:11 2020
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from .StatsProcessor import StatsProcessor
-
+try:
+    from .StatsProcessor import StatsProcessor
+except:
+    from StatsProcessor import StatsProcessor
 
 
 class Visualizer():
@@ -82,9 +84,17 @@ class Visualizer():
             None.
 
         """
-        
-        
-        return   
+        # pull data
+        df = self.stats_processor.load_weight_change_df(case_ids)
+
+        # plot
+        df.plot.bar()
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
         
     def sub_dir(self, sub_dir):
         """
@@ -106,4 +116,8 @@ class Visualizer():
         return sub_dir
         
 
-
+if __name__=="__main__":
+    
+    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
+    
+    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
