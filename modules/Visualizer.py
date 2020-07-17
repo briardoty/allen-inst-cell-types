@@ -90,7 +90,7 @@ class Visualizer():
         # pull data
         df = self.stats_processor.load_weight_change_df(case_ids)
 
-        std_cols = list(filter(lambda x: x.endswith(".std"), df.columns))
+        sem_cols = list(filter(lambda x: x.endswith(".sem"), df.columns))
         df_groups = df.groupby("case")
         state_keys = list(nets["vgg11"]["state_keys"].keys())
 
@@ -103,7 +103,7 @@ class Visualizer():
         for name, group in df_groups:
 
             yvals = group[state_keys].values[0]
-            yerr = group[std_cols].values[0]
+            yerr = group[sem_cols].values[0]
 
             ax.bar(x, yvals, width, yerr=yerr, label=name, error_kw=err_kw)
 
@@ -112,7 +112,7 @@ class Visualizer():
 
         ax.set_title("Weight changes by layer during training")
         ax.set_xlabel("Layer")
-        ax.set_ylabel("Mean weight change per layer")
+        ax.set_ylabel("Mean abs weight change per layer")
         ax.legend()
 
         ax.set_xticks([r + width for r in range(len(state_keys))])

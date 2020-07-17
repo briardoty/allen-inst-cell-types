@@ -52,7 +52,8 @@ class StatsProcessor(NetManager):
     
     def load_weight_change_df(self, case_ids):
         """
-        Loads a dataframe containing the mean weight 
+        Loads a dataframe containing the mean, absolute weight changes
+        over training for each layer. 
 
         Args:
             case_ids (list): Experimental cases to include in figure.
@@ -97,16 +98,16 @@ class StatsProcessor(NetManager):
             diff_net = [last_net["state_dict"][layer] - first_net["state_dict"][layer] for layer in state_keys]
 
             # avg weights
-            avg_weights = [torch.mean(layer).item() for layer in diff_net]
-            std_weights = [torch.std(layer).item() for layer in diff_net]
+            avg_weights = [torch.mean(torch.abs(layer)).item() for layer in diff_net]
+            sem_weights = [torch.std(torch.abs(layer)).item() / np.sqrt(layer.numel()) for layer in diff_net]
 
             # add to arr
             case = first_net.get("case") if first_net.get("case") is not None else "control"
             sample = first_net.get("sample")
-            weight_change_arr.append([case, sample] + avg_weights + std_weights)
+            weight_change_arr.append([case, sample] + avg_weights + sem_weights)
 
         # make df
-        layer_keys = state_keys + [f"{key}.std" for key in state_keys]
+        layer_keys = state_keys + [f"{key}.sem" for key in state_keys]
         cols = ["case", "sample"] + layer_keys
         weight_change_df = pd.DataFrame(weight_change_arr, columns=cols)
 
