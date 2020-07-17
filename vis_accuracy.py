@@ -26,6 +26,7 @@ def main(data_dir, net_name, n_classes, case_ids):
     
     # plot
     visualizer.plot_accuracy(case_ids)
+    visualizer.plot_weight_changes(case_ids)
     
     print(f"vis_accuracy.py completed")
     return
