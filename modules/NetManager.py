@@ -380,7 +380,7 @@ class NetManager():
             labels = labels.to(self.device)
 
             # run net forward
-            with torch.set_grad_enabled(False):
+            with torch.set_grad_enabled(False), torch.autograd.set_detect_anomaly(True):
                 outputs = self.net(inputs)
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
@@ -424,7 +424,7 @@ class NetManager():
 
             # run net forward
             # track history
-            with torch.set_grad_enabled(True):
+            with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
                 outputs = self.net(inputs)
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
