@@ -7,13 +7,13 @@
         "act_fns": ["sanityCheck"],
         "act_fn_params": [-1]
     },
-    "mixed-1": {
+    "mixed1": {
         "layer_names": ["relu8"],
         "n_repeat_arr": [1],
         "act_fns": ["relu", "renlu", "swish"],
         "act_fn_params": [null, 0.5, 1.0]
     },
-    "mixed-2": {
+    "mixed2": {
         "layer_names": ["relu10"],
         "n_repeat_arr": [1],
         "act_fns": ["renlu", "renlu"],
