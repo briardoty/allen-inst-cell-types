@@ -31,7 +31,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs):
     # training vars
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(manager.net.parameters(), lr=0.001, momentum=0.9)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.1)
     
     # train
     manager.run_training_loop(criterion, optimizer, exp_lr_scheduler, 
