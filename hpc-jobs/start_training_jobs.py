@@ -37,6 +37,9 @@ def main(case_id):
     run_params = job_params["run_params"]   
     job_settings = job_params["job_settings"]
     
+    # set to avoid submitting jobs for the same net twice
+    net_filepaths = set()
+
     # walk dir looking for nets to train
     net_dir = os.path.join(run_params["data_dir"], f"nets/{run_params['net_name']}")
     for root, dirs, files in os.walk(net_dir):
@@ -56,24 +59,30 @@ def main(case_id):
             if not net_filename.endswith("epoch-0.pt"):
                 continue
             
-            # and submit a training job for them
+            # and add them to the training job set
             net_filepath = os.path.join(root, net_filename)
-            run_params["net_filepath"] = net_filepath
-            
-            # prepare args
-            params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
-            params_string = " ".join(params_list)
-            
-            # kick off HPC job
-            PythonJob(
-                script,
-                python_executable,
-                conda_env = conda_env,
-                python_args = params_string,
-                jobname = job_title + f" {net_filename}",
-                jobdir = job_dir,
-                **job_settings
-            ).run(dryrun=False)
+            net_filepaths.add(net_filepath)
+
+    # loop over set, submitting jobs
+    for net_filepath in net_filepaths:
+
+        # update param
+        run_params["net_filepath"] = net_filepath
+        
+        # prepare args
+        params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
+        params_string = " ".join(params_list)
+        
+        # kick off HPC job
+        PythonJob(
+            script,
+            python_executable,
+            conda_env = conda_env,
+            python_args = params_string,
+            jobname = job_title + f" {net_filename}",
+            jobdir = job_dir,
+            **job_settings
+        ).run(dryrun=False)
 
 
 if __name__=="__main__":
