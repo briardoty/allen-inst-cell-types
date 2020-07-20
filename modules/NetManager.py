@@ -380,7 +380,7 @@ class NetManager():
             labels = labels.to(self.device)
 
             # run net forward
-            with torch.set_grad_enabled(False), torch.autograd.set_detect_anomaly(True):
+            with torch.set_grad_enabled(False):
                 outputs = self.net(inputs)
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
@@ -461,8 +461,8 @@ class NetManager():
         best_epoch = -1
     
         # validate initial state for science
-        epoch_acc = self.evaluate_net(criterion)
-        self.save_net_snapshot(self.epoch, epoch_acc)
+        # epoch_acc = self.evaluate_net(criterion)
+        # self.save_net_snapshot(self.epoch, epoch_acc)
     
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
         for epoch in epochs:

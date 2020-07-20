@@ -18,6 +18,7 @@ except:
 # map act fn names to fns themselves
 act_fn_dict = {
     "relu": torch.relu,
+    "tanh": torch.tanh,
     "renlu": Renlu,
     "swish": Swish,
     "sanityCheck": SanityCheck,

@@ -8,6 +8,7 @@ Created on Mon Jul  6 13:44:32 2020
 import torch
 import torch.nn as nn
 import numpy as np
+from torch.autograd import Variable
 
 class Swish(nn.Module):
     """
@@ -36,7 +37,12 @@ class Renlu(nn.Module):
     
     def forward(self, input_tensor):
         
-        return torch.relu(input_tensor) ** self.alpha
+        output = torch.relu(input_tensor)
+
+        idxs = output.nonzero(as_tuple=True)
+        output[idxs] = output[idxs].pow(self.alpha)
+        
+        return output
     
 class SanityCheck(nn.Module):
     """
@@ -64,7 +70,11 @@ class Heaviside(nn.Module):
     
     def forward(self, input_tensor):
         
-        return np.heaviside(input_tensor.cpu(), self.x2)
+        output = Variable(input_tensor.new(input_tensor.size()))
+        
+        output[:] = np.heaviside(input_tensor.detach().cpu().numpy(), self.x2)
+    
+        return output
     
     
     
