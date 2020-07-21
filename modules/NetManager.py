@@ -169,21 +169,33 @@ class NetManager():
     def save_arr(self, name, np_arr):
         """
         Save a generic numpy array in the current net's output location
+        with identifying metadata
         """
+        # location
         filename = f"{name}.npy"
         sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
         filepath = os.path.join(sub_dir, filename)
-        np.save(filepath, np_arr)
         print(f"Saving {filename}")
+        
+        data = {
+            f"{name}": np_arr,
+            "net_name": self.net_name,
+            "case": self.case_id,
+            "sample": self.sample,
+            "modified_layers": self.modified_layers
+        }
+
+        # save
+        np.save(filepath, data)
 
     def load_arr(self, name):
         """
         Load a generic numpy array from the current net's output location
         """
-        filename = f"{name}.npy"
+        filename = f"{name}"
         sub_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
         filepath = os.path.join(sub_dir, filename)
-        return np.load(filepath)
+        return np.load(filepath, allow_pickle=True)
 
     def sub_dir(self, sub_dir):
         """
@@ -552,11 +564,6 @@ class NetManager():
 
         # save perf stats
         self.save_arr("perf_stats", np.array(perf_stats))
-
-
-
-
-
 
 
 
