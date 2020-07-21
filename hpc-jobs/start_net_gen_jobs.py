@@ -47,7 +47,6 @@ def main():
         
         # update params for this net config
         run_params["case"] = case
-        run_params["pretrained"] = config["pretrained"]
         
         if config.get("layer_names") is not None:
             run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
@@ -63,6 +62,12 @@ def main():
         
         # prepare args
         params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
+        pretrained = config["pretrained"]
+        if pretrained:
+            params_list.append("--pretrained")
+        else:
+            params_list.append("--untrained")
+
         params_string = " ".join(params_list)
         
         # kick off HPC job

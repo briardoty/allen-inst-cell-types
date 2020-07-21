@@ -22,12 +22,18 @@ parser.add_argument("--layer_names", type=str, nargs="+", help="Set value for la
 parser.add_argument("--n_repeat_arr", type=int, nargs="+", help="Set value for n_repeat_arr")
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
-parser.add_argument("--pretrained", type=bool, help="Set value for pretrained")
 
+# pretrained is a PITA since it's a bool
+pretrained_parser = parser.add_mutually_exclusive_group(required=False)
+pretrained_parser.add_argument('--pretrained', dest='pretrained', action='store_true')
+pretrained_parser.add_argument('--untrained', dest='pretrained', action='store_false')
+parser.set_defaults(pretrained=False)
 
 def main(case, layer_names, n_repeat_arr, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained):
     
+    print(f"pretrained: {pretrained}")
+
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=pretrained)
     
