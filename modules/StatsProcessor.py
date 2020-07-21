@@ -157,10 +157,7 @@ class StatsProcessor(NetManager):
                     continue
                 
                 filepath = os.path.join(root, filename)
-                print(filepath)
-                stats_dict = np.load(filepath, allow_pickle=True)
-                print(stats_dict)
-                stats_dict = stats_dict.item()
+                stats_dict = np.load(filepath, allow_pickle=True).item()
                 
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
