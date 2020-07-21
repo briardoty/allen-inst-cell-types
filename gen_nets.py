@@ -15,6 +15,7 @@ parser.add_argument("--data_dir", default="/home/briardoty/Source/allen-inst-cel
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
+parser.add_argument("--pretrained", default=True, type=bool, help="Set value for pretrained")
 
 # config params without defaults
 parser.add_argument("--case", type=str, help="Set value for case")
@@ -25,13 +26,13 @@ parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for 
 
 
 def main(case, layer_names, n_repeat_arr, act_fns, act_fn_params, data_dir, 
-         net_name, n_classes, n_samples):
+         net_name, n_classes, n_samples, pretrained):
     
     # init net manager
-    manager = NetManager(net_name, n_classes, data_dir, pretrained=True)
+    manager = NetManager(net_name, n_classes, data_dir, pretrained=pretrained)
     
     # build and save nets
-    if (case.startswith("control")):
+    if "control" in case:
         # control nets are unmodified
         for i in range(n_samples):
             gen_control_net(manager, case, i)
@@ -42,7 +43,7 @@ def main(case, layer_names, n_repeat_arr, act_fns, act_fn_params, data_dir,
             
             layers = "-".join(layer_names)
             
-            # each layer/n_repeat deserves its own case id
+            # each layer set/n_repeat deserves its own case id
             case_id = f"{case}_{layers}_nr-{n_repeat}"
             
             for i in range(n_samples):

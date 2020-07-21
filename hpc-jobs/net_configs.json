@@ -1,5 +1,8 @@
 {
-    "control": {
+    "control1": {
+    },
+    "control2": {
+        "pretrained": false
     },
     "sanityCheck1": {
         "layer_names": ["relu10"],
