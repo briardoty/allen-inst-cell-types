@@ -110,7 +110,7 @@ def load_imagenette(data_dir, img_xy = 227):
 
 class NetManager():
     
-    def __init__(self, net_name, n_classes, data_dir, pretrained=False):
+    def __init__(self, net_name, n_classes, data_dir, pretrained):
         self.net_name = net_name
         self.pretrained = pretrained
         self.data_dir = os.path.expanduser(data_dir)
@@ -128,7 +128,10 @@ class NetManager():
     def init_net(self, case_id, sample):
         self.case_id = case_id
         self.sample = sample        
-                
+
+        if self.pretrained:
+            print("Initializing pretrained net!")
+
         if self.net_name == "vgg11":
             self.net = models.vgg11(pretrained=self.pretrained)
         
@@ -567,3 +570,8 @@ class NetManager():
 
 
 
+if __name__=="__main__":
+    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
+    mgr.init_net("localtest", 1)
+
+    x = 1
