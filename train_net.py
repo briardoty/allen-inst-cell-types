@@ -16,10 +16,11 @@ parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artip
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--epochs", default=10, type=int, help="Set value for epochs")
+parser.add_argument("--train_frac", default=1., type=float, help="Set value for train_frac")
 parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath")
 
 
-def main(net_filepath, data_dir, net_name, n_classes, epochs):
+def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac):
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir)
@@ -35,7 +36,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs):
     
     # train
     manager.run_training_loop(criterion, optimizer, exp_lr_scheduler, 
-                              n_epochs=epochs, n_snapshots=epochs)
+                              train_frac, n_epochs=epochs)
     
     print("net_train.py completed")
     return

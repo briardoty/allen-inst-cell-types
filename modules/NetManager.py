@@ -174,6 +174,7 @@ class NetManager():
         sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
         filepath = os.path.join(sub_dir, filename)
         np.save(filepath, np_arr)
+        print(f"Saving {filename}")
 
     def load_arr(self, name):
         """
@@ -426,16 +427,22 @@ class NetManager():
         epoch_loss = running_loss / self.dataset_sizes[phase]
         epoch_acc = running_corrects.double() / self.dataset_sizes[phase]
 
-        print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+        print('{} Loss: {:.6f} Acc: {:.6f}'.format(
             phase, epoch_loss, epoch_acc))
         
         return (epoch_acc.item(), epoch_loss)
     
-    def train_net(self, criterion, optimizer, scheduler, batches=None):
+    def train_net(self, criterion, optimizer, scheduler, train_frac):
         """
         Run a single training epoch
 
+        Args:
+            criterion
+            optimizer
+            scheduler
+            train_frac (float): Fraction of training set to use in this epoch.
         """
+
         # set to training mode
         phase = "train"
         self.net.train()
@@ -443,21 +450,26 @@ class NetManager():
         running_loss = 0.0
         running_corrects = 0
 
+        # determine training limit
+        if train_frac > 1:
+            train_frac = 1.
         i = 0
+        train_limit = len(self.train_loader) * train_frac
 
         for inputs, labels in self.train_loader:
             
-            if batches is not None and i > batches:
+            # break if past training limit
+            if i >= train_limit:
                 break
-            
+
+            # support gpu
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
 
             # zero the parameter gradients
             optimizer.zero_grad()
 
-            # run net forward
-            # track history
+            # run net forward, tracking history
             with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
                 outputs = self.net(inputs)
                 _, preds = torch.max(outputs, 1)
@@ -470,23 +482,23 @@ class NetManager():
             # statistics
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
-            
-            i = i+1
-        
+
+            # count
+            i = i + 1
+
         # step through the learning rate scheduler
         scheduler.step()
 
         epoch_loss = running_loss / self.dataset_sizes[phase]
         epoch_acc = running_corrects.double() / self.dataset_sizes[phase]
 
-        print('{} Loss: {:.4f} Acc: {:.4f}'.format(
+        print('{} Loss: {:.6f} Acc: {:.6f}'.format(
             phase, epoch_loss, epoch_acc))
 
         return (epoch_acc.item(), epoch_loss)
-        
     
-    def run_training_loop(self, criterion, optimizer, scheduler, n_epochs=25, 
-                          n_snapshots=None):
+    def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
+                          n_epochs=10):
         """
         Run n_epochs of training and validation
         """
@@ -500,7 +512,7 @@ class NetManager():
         (val_acc, val_loss) = self.evaluate_net(criterion)
         self.save_net_snapshot(self.epoch, val_acc)
 
-        # track accuracy and loss
+        track accuracy and loss
         perf_stats = [[val_acc, val_loss, None, None]]
     
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
@@ -509,14 +521,16 @@ class NetManager():
             print('-' * 10)
     
             # training phase
-            (train_acc, train_loss) = self.train_net(criterion, optimizer, scheduler)
+            (train_acc, train_loss) = self.train_net(criterion, optimizer, scheduler, train_frac)
             
             # validation phase
             (val_acc, val_loss) = self.evaluate_net(criterion)
     
-            # check if we should take a scheduled snapshot
-            if (n_snapshots is not None and epoch % math.ceil(n_epochs/n_snapshots) == 0):
-                self.save_net_snapshot(epoch, val_acc)
+            # save a snapshot of net state
+            self.save_net_snapshot(epoch, val_acc)
+            
+            # track stats
+            perf_stats.append([val_acc, val_loss, train_acc, train_loss])
     
             # copy net if best yet
             if val_acc > best_acc:
@@ -524,15 +538,12 @@ class NetManager():
                 best_epoch = epoch
                 best_net_state = copy.deepcopy(self.net.state_dict())
 
-            # track stats
-            perf_stats.append([val_acc, val_loss, train_acc, train_loss])
-
             print()
     
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
             time_elapsed // 60, time_elapsed % 60))
-        print('Best val Acc: {:4f} on epoch {}'.format(best_acc, best_epoch))
+        print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
         
         # load best net state from training and save it to disk
         self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
