@@ -110,7 +110,7 @@ def load_imagenette(data_dir, img_xy = 227):
 
 class NetManager():
     
-    def __init__(self, net_name, n_classes, data_dir, pretrained):
+    def __init__(self, net_name, n_classes, data_dir, pretrained=False):
         self.net_name = net_name
         self.pretrained = pretrained
         self.data_dir = os.path.expanduser(data_dir)
