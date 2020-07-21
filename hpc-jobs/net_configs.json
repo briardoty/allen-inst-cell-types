@@ -5,7 +5,7 @@
     "control2": {
         "pretrained": false
     },
-    "sanityCheck1": {
+    "sanity1": {
         "layer_names": ["relu10"],
         "n_repeat_arr": [1],
         "act_fns": ["sanityCheck"],
@@ -39,12 +39,6 @@
         "layer_names": ["relu8", "relu9", "relu10"],
         "n_repeat_arr": [1],
         "act_fns": ["swish"],
-        "act_fn_params": [1.0]
-    },
-    "heaviside1": {
-        "layer_names": ["relu8", "relu9", "relu10"],
-        "n_repeat_arr": [1],
-        "act_fns": ["heaviside"],
         "act_fn_params": [1.0]
     }
 }

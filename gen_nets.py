@@ -32,8 +32,6 @@ parser.set_defaults(pretrained=False)
 def main(case, layer_names, n_repeat_arr, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained):
     
-    print(f"pretrained: {pretrained}")
-
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, pretrained=pretrained)
     
