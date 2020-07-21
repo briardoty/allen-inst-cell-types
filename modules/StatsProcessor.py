@@ -33,6 +33,10 @@ def get_last_epoch(net_filenames):
     for filename in net_filenames:
         
         epoch = get_epoch_from_filename(filename)
+
+        if epoch is None:
+            continue
+
         if epoch > max_epoch:
             max_epoch = epoch
             last_net_filename = filename
