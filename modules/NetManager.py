@@ -11,6 +11,7 @@ from torchvision import datasets, models, transforms
 import os
 import math
 import time
+import numpy as np
 import copy
 
 try:
@@ -150,14 +151,8 @@ class NetManager():
         
         net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
-        net_output_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
-        
-        print(f"Saving network snapshot {filename}")
-
-        if not os.path.exists(net_output_dir):
-            os.makedirs(net_output_dir)
-        
-        net_filepath = os.path.join(net_output_dir, filename)
+        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        net_filepath = os.path.join(sub_dir, filename)
         
         snapshot_state = {
             "epoch": epoch,
@@ -167,8 +162,47 @@ class NetManager():
             "state_dict": self.net.state_dict(),
             "modified_layers": self.modified_layers
         }
+
+        print(f"Saving network snapshot {filename}")
         torch.save(snapshot_state, net_filepath)
     
+    def save_arr(self, name, np_arr):
+        """
+        Save a generic numpy array in the current net's output location
+        """
+        filename = f"{name}.npy"
+        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        filepath = os.path.join(sub_dir, filename)
+        np.save(filepath, np_arr)
+
+    def load_arr(self, name):
+        """
+        Load a generic numpy array from the current net's output location
+        """
+        filename = f"{name}.npy"
+        sub_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        filepath = os.path.join(sub_dir, filename)
+        return np.load(filepath)
+
+    def sub_dir(self, sub_dir):
+        """
+        Ensures existence of sub directory of self.data_dir and 
+        returns its absolute path.
+
+        Args:
+            sub_dir (TYPE): DESCRIPTION.
+
+        Returns:
+            sub_dir (TYPE): DESCRIPTION.
+
+        """
+        sub_dir = os.path.join(self.data_dir, sub_dir)
+        
+        if not os.path.exists(sub_dir):
+            os.makedirs(sub_dir)
+            
+        return sub_dir
+
     def load_net_state(self, case_id, sample, epoch, state_dict):
         """
         Load a network snapshot based on the given params.
@@ -395,7 +429,7 @@ class NetManager():
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             phase, epoch_loss, epoch_acc))
         
-        return epoch_acc.item()
+        return (epoch_acc.item(), epoch_loss.item())
     
     def train_net(self, criterion, optimizer, scheduler, batches=None):
         """
@@ -447,6 +481,8 @@ class NetManager():
 
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             phase, epoch_loss, epoch_acc))
+
+        return (epoch_acc.item(), epoch_loss.item())
         
     
     def run_training_loop(self, criterion, optimizer, scheduler, n_epochs=25, 
@@ -461,8 +497,11 @@ class NetManager():
         best_epoch = -1
     
         # validate initial state for science
-        epoch_acc = self.evaluate_net(criterion)
-        self.save_net_snapshot(self.epoch, epoch_acc)
+        (val_acc, val_loss) = self.evaluate_net(criterion)
+        self.save_net_snapshot(self.epoch, val_acc)
+
+        # track accuracy and loss
+        perf_stats = [[val_acc, val_loss, None, None]]
     
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
         for epoch in epochs:
@@ -470,21 +509,24 @@ class NetManager():
             print('-' * 10)
     
             # training phase
-            self.train_net(criterion, optimizer, scheduler)
+            (train_acc, train_loss) = self.train_net(criterion, optimizer, scheduler)
             
             # validation phase
-            epoch_acc = self.evaluate_net(criterion)
+            (val_acc, val_loss) = self.evaluate_net(criterion)
     
             # check if we should take a scheduled snapshot
             if (n_snapshots is not None and epoch % math.ceil(n_epochs/n_snapshots) == 0):
-                self.save_net_snapshot(epoch, epoch_acc)
+                self.save_net_snapshot(epoch, val_acc)
     
             # copy net if best yet
-            if epoch_acc > best_acc:
-                best_acc = epoch_acc
+            if val_acc > best_acc:
+                best_acc = val_acc
                 best_epoch = epoch
                 best_net_state = copy.deepcopy(self.net.state_dict())
-    
+
+            # track stats
+            perf_stats.append([val_acc, val_loss, train_acc, train_loss])
+
             print()
     
         time_elapsed = time.time() - since
@@ -495,6 +537,10 @@ class NetManager():
         # load best net state from training and save it to disk
         self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
         self.save_net_snapshot(best_epoch, best_acc)
+
+        # save perf stats
+        self.save_arr("perf_stats", np.array(perf_stats))
+
 
 
 
