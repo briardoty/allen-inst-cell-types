@@ -47,6 +47,7 @@ def main():
         
         # update params for this net config
         run_params["case"] = case
+        run_params["pretrained"] = config["pretrained"]
         
         if config.get("layer_names") is not None:
             run_params["layer_names"] = param_arr_helper(config.get("layer_names"))

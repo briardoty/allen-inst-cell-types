@@ -1,5 +1,6 @@
 {
     "control1": {
+        "pretrained": true
     },
     "control2": {
         "pretrained": false
