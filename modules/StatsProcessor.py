@@ -137,11 +137,11 @@ class StatsProcessor(NetManager):
         """
         acc_arr = []
             
-        # walk dir looking for net snapshots
+        # walk dir looking for saved net stats
         net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
         for root, dirs, files in os.walk(net_dir):
             
-            # only interested in locations files (nets) are saved
+            # only interested in locations files are saved
             if len(files) <= 0:
                 continue
             
@@ -149,34 +149,34 @@ class StatsProcessor(NetManager):
             if not any(c in root for c in case_ids):
                 continue
             
-            # consider all nets...
-            for net_filename in files:
+            # consider all files...
+            for filename in files:
 
-                if not net_filename.endswith(".pt"):
+                # ...as long as they are perf_stats
+                if not "perf_stats" in filename:
                     continue
                 
-                net_filepath = os.path.join(root, net_filename)
-                net_metadata = self.load_snapshot_metadata(net_filepath)
+                filepath = os.path.join(root, filename)
+                stats_dict = np.load(filepath, allow_pickle=True).item()
                 
-                sample = net_metadata.get("sample")
-                epoch = net_metadata.get("epoch")
-                val_acc = net_metadata.get("val_acc")
-                if torch.is_tensor(val_acc):
-                    val_acc = val_acc.item()
-                case = net_metadata.get("case")
-                
-                acc_arr.append([case, sample, epoch, val_acc])
+                case = stats_dict.get("case")
+                sample = stats_dict.get("sample")
+
+                perf_stats = stats_dict.get("perf_stats")
+                for epoch in range(len(perf_stats)):
+                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
+                    acc_arr.append([case, sample, epoch, val_acc])
                 
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "epoch", "acc"])  
         return acc_df
 
-
 if __name__=="__main__":
     
     processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data")
     
-    processor.load_weight_change_df(["control"])
+    processor.load_accuracy_df2(["control2"])
+    # processor.load_weight_change_df(["control1"])
     
     
     

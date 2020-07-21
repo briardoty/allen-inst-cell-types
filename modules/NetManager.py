@@ -191,15 +191,6 @@ class NetManager():
         # save
         np.save(filepath, data)
 
-    def load_arr(self, name):
-        """
-        Load a generic numpy array from the current net's output location
-        """
-        filename = f"{name}"
-        sub_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
-        filepath = os.path.join(sub_dir, filename)
-        return np.load(filepath, allow_pickle=True)
-
     def sub_dir(self, sub_dir):
         """
         Ensures existence of sub directory of self.data_dir and 
