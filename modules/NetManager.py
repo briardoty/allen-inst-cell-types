@@ -512,7 +512,7 @@ class NetManager():
         (val_acc, val_loss) = self.evaluate_net(criterion)
         self.save_net_snapshot(self.epoch, val_acc)
 
-        track accuracy and loss
+        # track accuracy and loss
         perf_stats = [[val_acc, val_loss, None, None]]
     
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
