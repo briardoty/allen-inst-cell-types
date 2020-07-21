@@ -23,7 +23,7 @@ parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath
 def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac):
     
     # init net manager
-    manager = NetManager(net_name, n_classes, data_dir)
+    manager = NetManager(net_name, n_classes, data_dir, False)
     manager.load_imagenette()
     
     # load the proper net
