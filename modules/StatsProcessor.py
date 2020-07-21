@@ -147,6 +147,9 @@ class StatsProcessor(NetManager):
             
             # consider all nets...
             for net_filename in files:
+
+                if not net_filename.endswith(".pt"):
+                    continue
                 
                 net_filepath = os.path.join(root, net_filename)
                 net_metadata = self.load_snapshot_metadata(net_filepath)
