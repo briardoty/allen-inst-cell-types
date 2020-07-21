@@ -429,7 +429,7 @@ class NetManager():
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             phase, epoch_loss, epoch_acc))
         
-        return (epoch_acc.item(), epoch_loss.item())
+        return (epoch_acc.item(), epoch_loss)
     
     def train_net(self, criterion, optimizer, scheduler, batches=None):
         """
@@ -482,7 +482,7 @@ class NetManager():
         print('{} Loss: {:.4f} Acc: {:.4f}'.format(
             phase, epoch_loss, epoch_acc))
 
-        return (epoch_acc.item(), epoch_loss.item())
+        return (epoch_acc.item(), epoch_loss)
         
     
     def run_training_loop(self, criterion, optimizer, scheduler, n_epochs=25, 
