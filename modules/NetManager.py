@@ -489,8 +489,9 @@ class NetManager():
         # step through the learning rate scheduler
         scheduler.step()
 
-        epoch_loss = running_loss / self.dataset_sizes[phase]
-        epoch_acc = running_corrects.double() / self.dataset_sizes[phase]
+        epoch_size = self.dataset_sizes[phase] * train_frac
+        epoch_loss = running_loss / epoch_size
+        epoch_acc = running_corrects.double() / epoch_size
 
         print('{} Loss: {:.6f} Acc: {:.6f}'.format(
             phase, epoch_loss, epoch_acc))
