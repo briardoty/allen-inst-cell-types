@@ -157,6 +157,7 @@ class StatsProcessor(NetManager):
                     continue
                 
                 filepath = os.path.join(root, filename)
+                print(filepath)
                 stats_dict = np.load(filepath, allow_pickle=True).item()
                 
                 case = stats_dict.get("case")
@@ -175,7 +176,7 @@ if __name__=="__main__":
     
     processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data")
     
-    processor.load_accuracy_df2(["control2"])
+    processor.load_accuracy_df(["control2"])
     # processor.load_weight_change_df(["control1"])
     
     
