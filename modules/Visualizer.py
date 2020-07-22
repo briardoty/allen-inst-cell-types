@@ -100,7 +100,7 @@ class Visualizer():
         width = 0.35
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
-        fig, ax = plt.subplots(figsize=(7,5))
+        fig, ax = plt.subplots(figsize=(12,8))
         for name, group in df_groups:
 
             yvals = group[state_keys].values[0]
