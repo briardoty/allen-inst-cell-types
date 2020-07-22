@@ -22,8 +22,16 @@
     "swish1": {
         "layer_names": ["relu8", "relu9", "relu10"],
         "n_repeat": 1,
-        "act_fns": ["swish"],
-        "act_fn_params": [1.0]
+        "act_fns": ["swish", "swish", "swish"],
+        "act_fn_params": [0.9, 1.0, 1.1],
+        "pretrained": false
+    },
+    "swish2": {
+        "layer_names": ["relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "swish", "swish"],
+        "act_fn_params": [0.5, 1.0, 1.5],
+        "pretrained": false
     },
     "sanity1": {
         "layer_names": ["relu10"],
