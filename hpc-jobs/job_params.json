@@ -5,8 +5,8 @@
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
             "n_classes": 10,
-            "epochs": 20,
-            "train_frac": 0.25
+            "epochs": 25,
+            "train_frac": 1.0
         },
         "job_settings": {
             "queue": "braintv",
@@ -21,7 +21,7 @@
     },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
-        "cases": ["control2"],
+        "cases": ["renlu1", "renlu2"],
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
