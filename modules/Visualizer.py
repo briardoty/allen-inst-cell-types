@@ -61,6 +61,7 @@ class Visualizer():
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Validation accuracy")
         ax.legend()
+        ax.set_xticks([i * 2 for i in range(int((len(yvals) + 1)/2))])
         
         # optional saving
         if not self.save_fig:
@@ -156,4 +157,5 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
+    # visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
+    visualizer.plot_accuracy(["control2"])
