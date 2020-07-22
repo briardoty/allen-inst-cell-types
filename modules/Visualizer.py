@@ -47,7 +47,7 @@ class Visualizer():
         acc_df_stats_groups = acc_df_stats.groupby("case")
         
         # plot
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(7,5))
         
         for name, group in acc_df_stats_groups:
             
@@ -100,7 +100,7 @@ class Visualizer():
         width = 0.35
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(7,5))
         for name, group in df_groups:
 
             yvals = group[state_keys].values[0]
