@@ -9,13 +9,15 @@
         "layer_names": ["relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.9, 1, 1.1]
+        "act_fn_params": [0.9, 1, 1.1],
+        "pretrained": false
     },
     "renlu2": {
         "layer_names": ["relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.5, 1, 1.5]
+        "act_fn_params": [0.5, 1, 1.5],
+        "pretrained": false
     },
     "swish1": {
         "layer_names": ["relu8", "relu9", "relu10"],
