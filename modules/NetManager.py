@@ -570,6 +570,11 @@ class NetManager():
 
 if __name__=="__main__":
     mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
-    mgr.init_net("localtest", 1)
-
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/case-mixed-2_relu10_nr-1/sample-5/vgg11_case-mixed-2_relu10_nr-1_sample-5_epoch-10.pt")
+    
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(manager.net.parameters(), lr=0.001)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
+    
+    mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
     x = 1
