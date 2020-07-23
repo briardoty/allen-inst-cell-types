@@ -5,39 +5,25 @@
     "control2": {
         "pretrained": false
     },
-    "renlu1": {
-        "layer_names": ["relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.9, 1, 1.1],
-        "pretrained": false
-    },
-    "renlu2": {
-        "layer_names": ["relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.5, 1, 1.5],
-        "pretrained": false
-    },
-    "renlu2a": {
-        "layer_names": ["relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.5, 0.5, 0.5],
-        "pretrained": false
-    },
-    "renlu2b": {
-        "layer_names": ["relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [1.5, 1.5, 1.5],
-        "pretrained": false
-    },
-    "renlu3a": {
+    "renlu1a": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
-        "act_fns": ["renlu", "renlu", "renlu"],
-        "act_fn_params": [0.5, 1, 1.5],
+        "act_fns": ["renlu"],
+        "act_fn_params": [0.5],
+        "pretrained": false
+    },
+    "renlu1b": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["renlu"],
+        "act_fn_params": [1.5],
+        "pretrained": false
+    },
+    "renlu1c": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["renlu", "renlu"],
+        "act_fn_params": [0.5, 1.5],
         "pretrained": false
     },
     "swish1a": {
