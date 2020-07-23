@@ -33,7 +33,12 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(manager.net.parameters(), lr=0.001)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
-    
+     
+    # manually step lr scheduler up to current epoch to preserve training continuity
+    if manager.epoch > 0:
+        for i in range(manager.epoch):
+            exp_lr_scheduler.step()
+
     # train
     manager.run_training_loop(criterion, optimizer, exp_lr_scheduler, 
                               train_frac, n_epochs=epochs)

@@ -23,8 +23,10 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 # args
 parser = argparse.ArgumentParser()
 parser.add_argument("--case_id", type=str, help="Set value for case_id", required=True)
+parser.add_argument("--resume", dest="resume", action="store_true")
+parser.set_defaults(resume=False)
 
-def main(case_id):
+def main(case_id, resume):
     
     job_title = "train_net"
     
@@ -52,16 +54,17 @@ def main(case_id):
         if not f"{case_id}" in root:
             continue
         
-        # consider all nets...
-        for net_filename in files:
-            
-            # ...that are saved at epoch 0
-            if not net_filename.endswith("epoch-0.pt"):
-                continue
-            
-            # and add them to the training job set
-            net_filepath = os.path.join(root, net_filename)
-            net_filepaths.add(net_filepath)
+        # start from first or last epoch
+        if resume:
+            net_filename = get_last_epoch(files)
+            print(f"Submitting job to resume training of {net_filename}.")
+        else:
+            net_filename = get_first_epoch(files)
+            print(f"Job will begin from initial snapshot {net_filename}.")
+
+        # and add it to the training job set
+        net_filepath = os.path.join(root, net_filename)
+        net_filepaths.add(net_filepath)
 
     # loop over set, submitting jobs
     for net_filepath in net_filepaths:
@@ -84,6 +87,38 @@ def main(case_id):
             **job_settings
         ).run(dryrun=False)
 
+def get_epoch_from_filename(filename):
+    
+    epoch = re.search(r"\d+\.pt$", filename)
+    epoch = int(epoch.group().split(".")[0]) if epoch else None
+    
+    return epoch
+    
+def get_first_epoch(net_filenames):
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+        if epoch == 0:
+            return filename
+
+def get_last_epoch(net_filenames):
+    
+    max_epoch = -1
+    last_net_filename = None
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+
+        if epoch is None:
+            continue
+
+        if epoch > max_epoch:
+            max_epoch = epoch
+            last_net_filename = filename
+
+    return last_net_filename
 
 if __name__=="__main__":
     args = parser.parse_args()
