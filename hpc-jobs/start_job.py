@@ -15,8 +15,8 @@ sys.path.append("/home/briar.doty/pbstools")
 from pbstools import PythonJob
 
 # paths
-python_executable = "/home/briar.doty/anaconda3/envs/dlct/bin/python"
-conda_env = "/home/briar.doty/anaconda3/envs/dlct"
+python_executable = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/anaconda3/envs/dlct2/bin/python"
+conda_env = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/anaconda3/envs/dlct2"
 job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
