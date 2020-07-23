@@ -8,6 +8,7 @@ Created on Thu Jul  2 15:21:08 2020
 import argparse
 import json
 import sys
+import re
 import os
 from itertools import chain
 
