@@ -61,7 +61,8 @@ class Visualizer():
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Validation accuracy")
         ax.legend()
-        ax.set_xticks([i * 2 for i in range(int((len(yvals) + 1)/2))])
+        step = 5
+        ax.set_xticks([i * step for i in range(int((len(yvals) + 1)/step))])
         
         # optional saving
         if not self.save_fig:
@@ -97,10 +98,10 @@ class Visualizer():
 
         # plot
         x = np.arange(len(state_keys))
-        width = 0.35
+        width = 1.0 / len(case_ids)
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
-        fig, ax = plt.subplots(figsize=(12,8))
+        fig, ax = plt.subplots(figsize=(14,8))
         for name, group in df_groups:
 
             yvals = group[state_keys].values[0]
