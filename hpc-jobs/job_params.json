@@ -12,7 +12,7 @@
             "queue": "braintv",
             "mem": "32g",
             "walltime": "5:00:00",
-            "ppn": 2,
+            "ppn": 4,
             "nodes": 1,
             "gpus": 1,
             "email": "briar.doty@alleninstitute.org",
