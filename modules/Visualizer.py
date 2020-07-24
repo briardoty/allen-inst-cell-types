@@ -34,6 +34,7 @@ class Visualizer():
         
     def plot_activation_fns(self, act_fns):
         """
+        Plots the given activation functions on the same figure
         """
 
         x = np.linspace(-5, 5, 50)
@@ -41,7 +42,9 @@ class Visualizer():
         fig, ax = plt.subplots(figsize=(7,5))
 
         for fn in act_fns:
-            ax.plot(x, fn(x))
+            ax.plot(x, fn(x), label=str(fn))
+
+        ax.legend()
 
         # optional saving
         if not self.save_fig:
@@ -50,7 +53,8 @@ class Visualizer():
             return
         
         sub_dir = self.sub_dir(f"figures/act_fns/")
-        filename = f"{cases} accuracy.png"
+        fn_names = " & ".join([str(fn) for fn in act_fns])
+        filename = f"{fn_names}.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -190,4 +194,4 @@ if __name__=="__main__":
     
     # visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
     # visualizer.plot_accuracy(["control2"])
-    visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
+    visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
