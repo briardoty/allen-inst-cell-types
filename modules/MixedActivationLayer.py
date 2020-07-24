@@ -19,6 +19,7 @@ except:
 act_fn_dict = {
     "relu": torch.relu,
     "tanh": torch.tanh,
+    "sigmoid": torch.sigmoid,
     "renlu": Renlu,
     "swish": Swish,
     "sanityCheck": SanityCheck,
@@ -79,6 +80,7 @@ class MixedActivationLayer(nn.Module):
         
         super(MixedActivationLayer, self).__init__()
         
+        self.n_features = n_features
         self.act_fns = get_activation_fns(act_fn_names, act_fn_params)
         print("Initialized MixedActivationLayer with the following activation"
               + f"functions: {self.act_fns}")
@@ -86,6 +88,9 @@ class MixedActivationLayer(nn.Module):
         
         self.verbose = verbose
         
+    def __repr__(self):
+        return f"MixedActivationLayer(n_features={self.n_features}, act_fns={self.act_fns})"
+
     def forward(self, input_tensor):
         
         output = Variable(input_tensor.new(input_tensor.size()))

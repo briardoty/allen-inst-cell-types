@@ -13,6 +13,8 @@ import math
 import time
 import numpy as np
 import copy
+import torch.optim as optim
+from torch.optim import lr_scheduler
 
 try:
     from .MixedActivationLayer import MixedActivationLayer
@@ -269,6 +271,9 @@ class NetManager():
             self.replace_layers(layer_names if layer_names is not None else [layer_name], 
                                n_repeat, act_fns, act_fn_params)
         
+        # print net summary
+        print(self.net)
+
         return self.net
     
     def load_snapshot_metadata(self, net_filepath, include_state=False):
@@ -572,3 +577,16 @@ class NetManager():
 
 
 
+if __name__=="__main__":
+    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
+    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/renlu1b/sample-5/vgg11_case-renlu1b_sample-5_epoch-0.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/swish_5/sample-1/vgg11_case-swish_5_sample-1_epoch-0.pt")
+    mgr.load_imagenette()
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(mgr.net.parameters(), lr=0.001)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
+    
+    # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
+    mgr.train_net(criterion, optimizer, exp_lr_scheduler, 1.0)
+    x = 1

@@ -19,6 +19,9 @@ class Swish(nn.Module):
         
         super(Swish, self).__init__()
         self.beta = float(beta)
+
+    def __repr__(self):
+        return f"Swish(beta={self.beta})"
     
     def forward(self, input_tensor):
         
