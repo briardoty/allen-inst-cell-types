@@ -23,7 +23,7 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
-parser.add_argument("--case_ids", type=str, nargs="+" help="Set value for case_ids", required=True)
+parser.add_argument("--case_ids", type=str, nargs="+", help="Set value for case_ids", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.set_defaults(resume=False)
 
