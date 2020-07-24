@@ -23,11 +23,11 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
-parser.add_argument("--case_id", type=str, help="Set value for case_id", required=True)
+parser.add_argument("--case_ids", type=str, nargs="+" help="Set value for case_ids", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.set_defaults(resume=False)
 
-def main(case_id, resume):
+def main(case_ids, resume):
     
     job_title = "train_net"
     
@@ -45,27 +45,28 @@ def main(case_id, resume):
 
     # walk dir looking for nets to train
     net_dir = os.path.join(run_params["data_dir"], f"nets/{run_params['net_name']}")
-    for root, dirs, files in os.walk(net_dir):
-        
-        # only interested in locations files (nets) are saved
-        if len(files) <= 0:
-            continue
+    for case_id in case_ids:
+        for root, dirs, files in os.walk(net_dir):
+            
+            # only interested in locations files (nets) are saved
+            if len(files) <= 0:
+                continue
 
-        # only interested in the given case
-        if not f"{case_id}" in root:
-            continue
-        
-        # start from first or last epoch
-        if resume:
-            net_filename = get_last_epoch(files)
-            print(f"Submitting job to resume training of {net_filename}.")
-        else:
-            net_filename = get_first_epoch(files)
-            print(f"Job will begin from initial snapshot {net_filename}.")
+            # only interested in the given case
+            if not f"{case_id}" in root:
+                continue
+            
+            # start from first or last epoch
+            if resume:
+                net_filename = get_last_epoch(files)
+                print(f"Submitting job to resume training of {net_filename}.")
+            else:
+                net_filename = get_first_epoch(files)
+                print(f"Job will begin from initial snapshot {net_filename}.")
 
-        # and add it to the training job set
-        net_filepath = os.path.join(root, net_filename)
-        net_filepaths.add(net_filepath)
+            # and add it to the training job set
+            net_filepath = os.path.join(root, net_filename)
+            net_filepaths.add(net_filepath)
 
     # loop over set, submitting jobs
     for net_filepath in net_filepaths:
