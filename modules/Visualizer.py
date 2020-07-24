@@ -12,10 +12,16 @@ try:
     from .StatsProcessor import StatsProcessor
 except:
     from StatsProcessor import StatsProcessor
+
 try:
     from .NetManager import nets
 except:
     from NetManager import nets
+
+try:
+    from .ActivationFunctions import *
+except:
+    from ActivationFunctions import *
 
 class Visualizer():
     
@@ -26,6 +32,29 @@ class Visualizer():
         
         self.stats_processor = StatsProcessor(net_name, n_classes, data_dir)
         
+    def plot_activation_fns(self, act_fns):
+        """
+        """
+
+        x = np.linspace(-5, 5, 50)
+        x = torch.tensor(x)
+        fig, ax = plt.subplots(figsize=(7,5))
+
+        for fn in act_fns:
+            ax.plot(x, fn(x))
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+        
+        sub_dir = self.sub_dir(f"figures/act_fns/")
+        filename = f"{cases} accuracy.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
+
     def plot_accuracy(self, case_ids):
         """
         Plots accuracy over training for different experimental cases.
@@ -159,5 +188,6 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
+    # visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
     # visualizer.plot_accuracy(["control2"])
+    visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
