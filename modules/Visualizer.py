@@ -117,7 +117,8 @@ class Visualizer():
         ax.set_ylabel("Mean abs weight change per layer")
         ax.legend()
 
-        ax.set_xticks([0.25 + i * 1.25 for i in range(len(state_keys))])
+        loc = (len(case_ids) - 1) / (2. * len(case_ids))
+        ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
         labels = list(nets["vgg11"]["state_keys"].values())
         ax.set_xticklabels(labels)
 
