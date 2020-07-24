@@ -10,9 +10,9 @@
         },
         "job_settings": {
             "queue": "braintv",
-            "mem": "16g",
+            "mem": "32g",
             "walltime": "5:00:00",
-            "ppn": 16,
+            "ppn": 2,
             "nodes": 1,
             "gpus": 1,
             "email": "briar.doty@alleninstitute.org",
