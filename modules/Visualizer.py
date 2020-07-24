@@ -97,7 +97,7 @@ class Visualizer():
         state_keys = list(nets["vgg11"]["state_keys"].keys())
 
         # plot
-        x = np.arange(len(state_keys))
+        x = np.array([i * 1.25 for i in range(len(state_keys))])
         width = 1.0 / len(case_ids)
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
@@ -110,14 +110,14 @@ class Visualizer():
             ax.bar(x, yvals, width, yerr=yerr, label=name, error_kw=err_kw)
 
             # update bar locations for next group
-            x = [loc + 2 * width for loc in x]
+            x = [loc + width for loc in x]
 
         ax.set_title("Weight changes by layer during training")
         ax.set_xlabel("Layer")
         ax.set_ylabel("Mean abs weight change per layer")
         ax.legend()
 
-        ax.set_xticks([r + width for r in range(len(state_keys))])
+        ax.set_xticks([0.25 + i * 1.25 for i in range(len(state_keys))])
         labels = list(nets["vgg11"]["state_keys"].values())
         ax.set_xticklabels(labels)
 
@@ -158,5 +158,5 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    # visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
-    visualizer.plot_accuracy(["control2"])
+    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
+    # visualizer.plot_accuracy(["control2"])
