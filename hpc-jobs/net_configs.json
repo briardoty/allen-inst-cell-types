@@ -33,6 +33,13 @@
         "act_fn_params": [1.5, 1.0],
         "pretrained": false
     },
+    "swish_test": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish"],
+        "act_fn_params": [5],
+        "pretrained": false
+    },
     "swish_0.1": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,

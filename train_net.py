@@ -17,10 +17,14 @@ parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--epochs", default=10, type=int, help="Set value for epochs")
 parser.add_argument("--train_frac", default=1., type=float, help="Set value for train_frac")
+parser.add_argument("--lr", default=0.001, type=float)
+parser.add_argument("--lr_step_size", default=6, type=int)
+parser.add_argument("--lr_gamma", default=0.6, type=float)
 parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath")
 
 
-def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac):
+def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
+         lr, lr_step_size, lr_gamma):
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir)
@@ -31,8 +35,9 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac):
     
     # training vars
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(manager.net.parameters(), lr=0.001)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
+    optimizer = optim.SGD(manager.net.parameters(), lr=lr)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=lr_step_size, 
+        gamma=lr_gamma)
      
     # manually step lr scheduler up to current epoch to preserve training continuity
     if manager.epoch > 0:
