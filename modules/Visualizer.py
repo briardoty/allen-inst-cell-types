@@ -110,7 +110,7 @@ class Visualizer():
             ax.bar(x, yvals, width, yerr=yerr, label=name, error_kw=err_kw)
 
             # update bar locations for next group
-            x = [loc + width for loc in x]
+            x = [loc + 2 * width for loc in x]
 
         ax.set_title("Weight changes by layer during training")
         ax.set_xlabel("Layer")
