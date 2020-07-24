@@ -38,6 +38,9 @@ class Renlu(nn.Module):
         super(Renlu, self).__init__()
         self.alpha = float(alpha)
     
+    def __repr__(self):
+        return f"Renlu(alpha={self.alpha})"
+    
     def forward(self, input_tensor):
         
         output = torch.relu(input_tensor)
