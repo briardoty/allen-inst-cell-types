@@ -33,63 +33,63 @@
         "act_fn_params": [1.5, 1.0],
         "pretrained": false
     },
-    "swish1a": {
-        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["swish"],
-        "act_fn_params": [1],
-        "pretrained": false
-    },
-    "swish1b": {
-        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["swish"],
-        "act_fn_params": [0.5],
-        "pretrained": false
-    },
-    "swish1d": {
-        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["swish"],
-        "act_fn_params": [2],
-        "pretrained": false
-    },
-    "swish1f": {
+    "swish_0.1": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [0.1],
         "pretrained": false
     },
-    "swish1g": {
+    "swish_0.5": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish"],
+        "act_fn_params": [0.5],
+        "pretrained": false
+    },
+    "swish_0.7": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [0.7],
         "pretrained": false
     },
-    "swish1h": {
+    "swish_1": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish"],
+        "act_fn_params": [1],
+        "pretrained": false
+    },
+    "swish_1.5": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [1.5],
         "pretrained": false
     },
-    "swish1i": {
+    "swish_2": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish"],
+        "act_fn_params": [2],
+        "pretrained": false
+    },
+    "swish_3": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [3],
         "pretrained": false
     },
-    "swish1j": {
+    "swish_5": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [5],
         "pretrained": false
     },
-    "swish1k": {
+    "swish_10": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish"],
