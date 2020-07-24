@@ -348,19 +348,13 @@ class NetManager():
                 # target layer is in "features"
                 n_features = self.net.features[i_layer - 1].out_channels
                 self.net.features[i_layer] = MixedActivationLayer(n_features, 
-                                                                  n_repeat, 
-                                                                  act_fns, 
-                                                                  act_fn_params,
-                                                                  verbose=verbose)
+                    n_repeat, act_fns, act_fn_params, verbose=verbose)
             else:
                 # target layer must be in fc layers under "classifier"
                 i_layer = i_layer - len(self.net.features)
                 n_features = self.net.classifier[i_layer - 1].out_features
                 self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
-                                                                  n_repeat, 
-                                                                  act_fns, 
-                                                                  act_fn_params,
-                                                                  verbose=verbose)
+                    n_repeat, act_fns, act_fn_params, verbose=verbose)
         
         # send net to gpu if available
         self.net = self.net.to(self.device)
@@ -485,6 +479,16 @@ class NetManager():
             # run net forward, tracking history
             with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
                 outputs = self.net(inputs)
+
+                if (torch.isnan(outputs).any().item()):
+                    torch.set_printoptions(profile="full")
+                    print("Input:")
+                    print(inputs)
+                    print()
+                    print("Output:")
+                    print(outputs)
+                    torch.set_printoptions(profile="default")
+
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
 
@@ -568,13 +572,3 @@ class NetManager():
 
 
 
-if __name__=="__main__":
-    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/case-mixed-2_relu10_nr-1/sample-5/vgg11_case-mixed-2_relu10_nr-1_sample-5_epoch-10.pt")
-    
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(manager.net.parameters(), lr=0.001)
-    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
-    
-    mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
-    x = 1
