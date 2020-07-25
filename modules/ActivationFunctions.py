@@ -82,11 +82,35 @@ class Sigfreud(nn.Module):
         self.beta = float(beta)
 
     def __repr__(self):
+        
         return f"Sigfreud(beta={self.beta})"
     
     def forward(self, input_tensor):
         
-        return torch.sigmoid(self.beta * input_tensor)
+        return self.beta ** torch.sigmoid(input_tensor) - 1
+
+class Tanhe(nn.Module):
+    """
+    Pytorch nn module implementation of "Tanhe" activation function
+    where Tanhe(x, beta) = (e^*x*beta-e^-x)/(e^x*beta+e^-x)
+    """
+    
+    def __init__(self, beta=1.0):
+        
+        super(Tanhe, self).__init__()
+        self.beta = float(beta)
+
+    def __repr__(self):
+        
+        return f"Tanhe(beta={self.beta})"
+    
+    def forward(self, input_tensor):
+        
+        # return torch.tanh(input_tensor)
+        top = torch.exp(torch.mul(self.beta, input_tensor)) - torch.exp(torch.neg(input_tensor))
+        bot = torch.exp(torch.mul(self.beta, input_tensor)) + torch.exp(torch.neg(input_tensor))
+        
+        return torch.div(top, bot)
 
 class SanityCheck(nn.Module):
     """
