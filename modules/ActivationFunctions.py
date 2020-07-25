@@ -21,11 +21,30 @@ class Swish(nn.Module):
         self.beta = float(beta)
 
     def __repr__(self):
+        
         return f"Swish(beta={self.beta})"
     
     def forward(self, input_tensor):
         
         return input_tensor * torch.sigmoid(self.beta * input_tensor)
+
+class HSwish(nn.Module):
+    """
+    Pytorch nn module implementation of hswish activation function
+    """
+    
+    def __init__(self, beta=1.0):
+        
+        super(HSwish, self).__init__()
+        self.beta = float(beta)
+
+    def __repr__(self):
+        
+        return f"HSwish(beta={self.beta})"
+    
+    def forward(self, input_tensor):
+        
+        return input_tensor * torch.relu(input_tensor + self.beta/2.) / self.beta
 
 class Renlu(nn.Module):
     """
@@ -39,6 +58,7 @@ class Renlu(nn.Module):
         self.alpha = float(alpha)
     
     def __repr__(self):
+        
         return f"Renlu(alpha={self.alpha})"
     
     def forward(self, input_tensor):
@@ -49,7 +69,25 @@ class Renlu(nn.Module):
         output[idxs] = output[idxs].pow(self.alpha)
         
         return output
+
+class Sigfreud(nn.Module):
+    """
+    Pytorch nn module implementation of "Sigfreud" activation function
+    where sigfreud(x, beta) = sigmoid(beta * x)
+    """
     
+    def __init__(self, beta=1.0):
+        
+        super(Sigfreud, self).__init__()
+        self.beta = float(beta)
+
+    def __repr__(self):
+        return f"Sigfreud(beta={self.beta})"
+    
+    def forward(self, input_tensor):
+        
+        return torch.sigmoid(self.beta * input_tensor)
+
 class SanityCheck(nn.Module):
     """
     Pytorch nn module to implement sanity check activation function
