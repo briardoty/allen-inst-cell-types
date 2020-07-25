@@ -21,7 +21,7 @@
     },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
-        "cases": ["swish_0.1", "swish_0.5", "swish_0.7", "swish_1", "swish_1.5", "swish_2", "swish_3", "swish_5", "swish_10", "swish_mixed_.1-1-10", "swish_mixed_.5-1-2"],
+        "cases": ["sigfreud_0.5", "sigfreud_1.0", "sigfreud_2.0", "sigfreud_mixed_0.5-1", "sigfreud_mixed_1-2"],
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",

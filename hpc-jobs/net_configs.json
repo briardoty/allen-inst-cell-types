@@ -117,6 +117,41 @@
         "act_fn_params": [0.5, 1, 2],
         "pretrained": false
     },
+    "sigfreud_0.5": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["sigfreud"],
+        "act_fn_params": [0.5],
+        "pretrained": false
+    },
+    "sigfreud_1.0": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["sigfreud"],
+        "act_fn_params": [1.0],
+        "pretrained": false
+    },
+    "sigfreud_2.0": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["sigfreud"],
+        "act_fn_params": [2.0],
+        "pretrained": false
+    },
+    "sigfreud_mixed_0.5-1": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["sigfreud", "sigfreud"],
+        "act_fn_params": [0.5, 1.0],
+        "pretrained": false
+    },
+    "sigfreud_mixed_1-2": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["sigfreud", "sigfreud"],
+        "act_fn_params": [1.0, 2.0],
+        "pretrained": false
+    },
     "mixed1a": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
