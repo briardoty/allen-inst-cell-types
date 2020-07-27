@@ -42,7 +42,8 @@ class Visualizer():
         fig, ax = plt.subplots(figsize=(7,5))
 
         for fn in act_fns:
-            ax.plot(x, fn(x), label=str(fn))
+            y = fn(x)
+            ax.plot(x, y, label=str(fn))
 
         ax.legend()
 
@@ -57,7 +58,7 @@ class Visualizer():
         filename = f"{fn_names}.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)  
+        plt.savefig(filename, dpi=300)
 
     def plot_accuracy(self, case_ids):
         """
@@ -73,7 +74,7 @@ class Visualizer():
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(case_ids)
 
-        # group and compute stats        
+        # group and compute stats
         acc_df.set_index(["case", "epoch"], inplace=True)
         acc_df_groups = acc_df.groupby(["case", "epoch"])
         acc_df_stats = acc_df_groups.agg({ "acc": [np.mean, np.std] })
@@ -135,12 +136,12 @@ class Visualizer():
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
         fig, ax = plt.subplots(figsize=(14,8))
-        for name, group in df_groups:
-
+        for case in case_ids:
+            group = df_groups.get_group(case)
             yvals = group[state_keys].values[0]
             yerr = group[sem_cols].values[0]
 
-            ax.bar(x, yvals, width, yerr=yerr, label=name, error_kw=err_kw)
+            ax.bar(x, yvals, width, yerr=yerr, label=case, error_kw=err_kw)
 
             # update bar locations for next group
             x = [loc + width for loc in x]
@@ -192,6 +193,9 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    # visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
+    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
     # visualizer.plot_accuracy(["control2"])
-    visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
+    # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
+    # visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
+    # visualizer.plot_activation_fns([Tanhe(0.5), Tanhe(1.0), Tanhe(1.5), torch.tanh])
+    # visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
