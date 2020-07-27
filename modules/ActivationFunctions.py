@@ -68,6 +68,30 @@ class Renlu(nn.Module):
         idxs = output.nonzero(as_tuple=True)
         output[idxs] = output[idxs].pow(self.alpha)
         
+        if (torch.isnan(output).any().item()):
+            torch.set_printoptions(profile="full")
+            print("Renlu input:")
+            print(input_tensor)
+            print()
+
+            rect = torch.relu(input_tensor)
+            print("Rect:")
+            print(rect)
+            print()
+
+            print("Renlu output 1:")
+            print(output)
+            print()
+
+            output2 = torch.relu(input_tensor)
+            idxs = output2.nonzero(as_tuple=True)
+            output2[idxs] = output2[idxs].pow(self.alpha)
+            print("Renlu output 2:")
+            print(output2)
+            print()
+
+            torch.set_printoptions(profile="default")
+
         return output
 
 class Sigfreud(nn.Module):
