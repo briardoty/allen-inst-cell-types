@@ -68,7 +68,10 @@ class Renlu(nn.Module):
         idxs = output.nonzero(as_tuple=True)
         output[idxs] = output[idxs].pow(self.alpha)
         
-        if (torch.isnan(output).any().item()):
+        if (torch.isnan(output).any().item() or
+            torch.isnan(input_tensor).any().item() or 
+            not torch.isfinite(output).all().item() or
+            not torch.isfinite(input_tensor).all().item()):
             torch.set_printoptions(profile="full")
             print("Renlu input:")
             print(input_tensor)
