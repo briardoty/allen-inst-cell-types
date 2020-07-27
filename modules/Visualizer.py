@@ -83,12 +83,13 @@ class Visualizer():
         # plot
         fig, ax = plt.subplots(figsize=(7,5))
         
-        for name, group in acc_df_stats_groups:
-            
+        for case in case_ids:
+            group = acc_df_stats_groups.get_group(case)
+
             # error bars = 2 standard devs
             yvals = group["acc"]["mean"].values
             yerr = group["acc"]["std"].values * 2
-            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=name, 
+            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=case, 
                         capsize=3, elinewidth=1)
             
         ax.set_title("Classification accuracy during training")
