@@ -94,6 +94,7 @@ class Renlu(nn.Module):
             print()
 
             torch.set_printoptions(profile="default")
+            exit()
 
         return output
 
