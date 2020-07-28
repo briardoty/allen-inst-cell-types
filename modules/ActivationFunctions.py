@@ -83,10 +83,15 @@ class Renluf(torch.autograd.Function):
         saved_input, = ctx.saved_tensors
         grad_input = grad_alpha = None # won't actually need grad_alpha since alpha is static
 
+        print(f"saved input: {saved_input}")
+        print(f"grad output: {grad_output}")
+
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.clone()
-            grad_input[saved_input < 0] = 0
-            grad_input[saved_input > 0] = grad_input[saved_input > 0].pow(ctx.alpha)
+            grad_input[saved_input <= 0] = 0
+            idxs = saved_input.nonzero(as_tuple=True)
+            grad_input[idxs] = ctx.alpha * saved_input[idxs].pow(ctx.alpha - 1)
+            # grad_input[saved_input > 0] = grad_input[saved_input > 0].pow(ctx.alpha)
         
         if (torch.isnan(grad_input).any().item() or
             not torch.isfinite(grad_input).all().item()):
@@ -104,6 +109,7 @@ class Renluf(torch.autograd.Function):
             print()
             torch.set_printoptions(profile="default")
 
+        print(f"grad input: {grad_input}")
         return grad_input, grad_alpha
 
         # check that input requires grad
@@ -218,4 +224,12 @@ class Heaviside(nn.Module):
         return output
     
     
-    
+if __name__=="__main__":
+    x = torch.tensor([-1., 0., 2., 0.123, -.223], requires_grad=True)
+    y = Renluf.apply(x, 2)
+    z = y * y * -3
+    # z = y * -1
+    k = Renluf.apply(z, 2)
+    out = k.mean()
+    out.backward()
+    bpt = True
