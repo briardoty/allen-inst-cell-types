@@ -61,6 +61,7 @@ class Renluf(torch.autograd.Function):
     def forward(ctx, input, alpha):
 
         ctx.save_for_backward(input) # save input for backward pass
+        ctx.alpha = alpha
 
         # rectify
         output = torch.relu(input)
@@ -84,7 +85,8 @@ class Renluf(torch.autograd.Function):
 
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.clone()
-            grad_input[input < 0] = 0
+            grad_input[input <= 0] = 0
+            grad_input[input > 0] = grad_input[input > 0].pow(ctx.alpha)
         
         return grad_input, grad_alpha
 
