@@ -82,8 +82,8 @@ class Visualizer():
         acc_df_stats_groups = acc_df_stats.groupby("case")
         
         # plot
-        fig, ax = plt.subplots(figsize=(7,5))
-        clrs = sns.color_palette("husl", len(case_ids))
+        fig, ax = plt.subplots(figsize=(14,8))
+        clrs = sns.color_palette("hls", len(case_ids))
         
         for i in range(len(case_ids)):
 
