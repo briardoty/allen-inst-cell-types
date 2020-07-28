@@ -90,8 +90,8 @@ class Renluf(torch.autograd.Function):
             grad_input = grad_output.clone()
             grad_input[saved_input <= 0] = 0
             idxs = saved_input.nonzero(as_tuple=True)
-            grad_input[idxs] = ctx.alpha * saved_input[idxs].pow(ctx.alpha - 1)
-            # grad_input[saved_input > 0] = grad_input[saved_input > 0].pow(ctx.alpha)
+            # grad_input[idxs] = ctx.alpha * saved_input[idxs].pow(ctx.alpha - 1)
+            grad_input[saved_input > 0] = ctx.alpha * saved_input[saved_input > 0].pow(ctx.alpha)
         
         if (torch.isnan(grad_input).any().item() or
             not torch.isfinite(grad_input).all().item()):
@@ -225,11 +225,11 @@ class Heaviside(nn.Module):
     
     
 if __name__=="__main__":
-    x = torch.tensor([-1., 0., 2., 0.123, -.223], requires_grad=True)
+    x = torch.tensor([2.], requires_grad=True)
     y = Renluf.apply(x, 2)
-    z = y * y * -3
+    # z = y * y * -3
     # z = y * -1
-    k = Renluf.apply(z, 2)
-    out = k.mean()
+    # k = Renluf.apply(z, 2)
+    out = y.mean()
     out.backward()
     bpt = True
