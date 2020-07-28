@@ -88,7 +88,8 @@ class Renluf(torch.autograd.Function):
             grad_input[saved_input < 0] = 0
             grad_input[saved_input > 0] = grad_input[saved_input > 0].pow(ctx.alpha)
         
-        if torch.isnan(grad_input).any().item():
+        if (torch.isnan(grad_input).any().item() or
+            not torch.isfinite(grad_input).all().item()):
             torch.set_printoptions(profile="full")
             print("Saved input:")
             print(saved_input)
