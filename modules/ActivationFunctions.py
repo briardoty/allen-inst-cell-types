@@ -80,14 +80,29 @@ class Renluf(torch.autograd.Function):
         with respect to the input.
         """
 
-        input, = ctx.saved_tensors
+        saved_input, = ctx.saved_tensors
         grad_input = grad_alpha = None # won't actually need grad_alpha since alpha is static
 
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.clone()
-            grad_input[input < 0] = 0
-            grad_input[input > 0] = grad_input[input > 0].pow(ctx.alpha)
+            grad_input[saved_input < 0] = 0
+            grad_input[saved_input > 0] = grad_input[saved_input > 0].pow(ctx.alpha)
         
+        if torch.isnan(grad_input).any().item():
+            torch.set_printoptions(profile="full")
+            print("Saved input:")
+            print(saved_input)
+            print()
+
+            print("Grad output:")
+            print(grad_output)
+            print()
+
+            print("Grad input:")
+            print(grad_input)
+            print()
+            torch.set_printoptions(profile="default")
+
         return grad_input, grad_alpha
 
         # check that input requires grad
