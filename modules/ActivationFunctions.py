@@ -83,9 +83,6 @@ class Renluf(torch.autograd.Function):
         saved_input, = ctx.saved_tensors
         grad_input = grad_alpha = None # won't actually need grad_alpha since alpha is static
 
-        print(f"saved input: {saved_input}")
-        print(f"grad output: {grad_output}")
-
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.clone()
             grad_input[saved_input <= 0] = 0
@@ -109,7 +106,6 @@ class Renluf(torch.autograd.Function):
             print()
             torch.set_printoptions(profile="default")
 
-        print(f"grad input: {grad_input}")
         return grad_input, grad_alpha
 
         # check that input requires grad
