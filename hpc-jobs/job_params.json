@@ -29,7 +29,7 @@
         "job_settings": {
             "queue": "braintv",
             "mem": "16g",
-            "walltime": "10:00:00",
+            "walltime": "30:00",
             "ppn": 4,
             "nodes": 1,
             "gpus": 1,
@@ -66,7 +66,7 @@
         "job_settings": {
             "queue": "braintv",
             "mem": "8g",
-            "walltime": "1:00:00",
+            "walltime": "30:00",
             "ppn": 2,
             "nodes": 1,
             "email": "briar.doty@alleninstitute.org",
