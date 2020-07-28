@@ -46,6 +46,66 @@ class HSwish(nn.Module):
         
         return input_tensor * torch.relu(input_tensor + self.beta/2.) / self.beta
 
+class Renluf(torch.autograd.Function):
+    """
+    Pytorch torch.autograd.Function implementation of "renlu" act fn
+    with backward() implemented
+    """
+
+    # def __init(self, alpha=1.):
+
+    #     super(Renluf, self).__init__()
+    #     self.alpha = float(alpha)
+
+    @staticmethod
+    def forward(ctx, input, alpha):
+
+        ctx.save_for_backward(input) # save input for backward pass
+
+        # rectify
+        output = torch.relu(input)
+
+        # apply exponent
+        idxs = output.nonzero(as_tuple=True)
+        output[idxs] = output[idxs].pow(alpha)
+
+        return output
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """
+        In the backward pass we receive a Tensor containing the gradient of the loss
+        with respect to the output, and we need to compute the gradient of the loss
+        with respect to the input.
+        """
+
+        if not ctx.needs_input_grad[0]: # don't need grad in validation phase
+            return None
+
+        input, = ctx.saved_tensors
+        grad_input = grad_output.clone()
+        grad_input[input < 0] = 0
+
+        return grad_input
+
+        # check that input requires grad
+        # if not requires grad we will return None to speed up computation
+        # if ctx.needs_input_grad[0]:
+        #     grad_input = grad_output.clone()
+
+        #     # get lists of odd and even indices
+        #     input_shape = input.shape[0]
+        #     even_indices = [i for i in range(0, input_shape, 2)]
+        #     odd_indices = [i for i in range(1, input_shape, 2)]
+
+        #     # set grad_input for even_indices
+        #     grad_input[even_indices] = (input[even_indices] >= 0).float() * grad_input[even_indices]
+
+        #     # set grad_input for odd_indices
+        #     grad_input[odd_indices] = (input[odd_indices] < 0).float() * grad_input[odd_indices]
+
+        # return grad_input
+
 class Renlu(nn.Module):
     """
     Pytorch nn module implementation of "renlu" activation function
@@ -63,40 +123,7 @@ class Renlu(nn.Module):
     
     def forward(self, input_tensor):
         
-        output = torch.relu(input_tensor)
-
-        idxs = output.nonzero(as_tuple=True)
-        output[idxs] = output[idxs].pow(self.alpha)
-        
-        if (torch.isnan(output).any().item() or
-            torch.isnan(input_tensor).any().item() or 
-            not torch.isfinite(output).all().item() or
-            not torch.isfinite(input_tensor).all().item()):
-            torch.set_printoptions(profile="full")
-            print("Renlu input:")
-            print(input_tensor)
-            print()
-
-            rect = torch.relu(input_tensor)
-            print("Rect:")
-            print(rect)
-            print()
-
-            print("Renlu output 1:")
-            print(output)
-            print()
-
-            output2 = torch.relu(input_tensor)
-            idxs = output2.nonzero(as_tuple=True)
-            output2[idxs] = output2[idxs].pow(self.alpha)
-            print("Renlu output 2:")
-            print(output2)
-            print()
-
-            torch.set_printoptions(profile="default")
-            exit()
-
-        return output
+        return Renluf.apply(input_tensor, self.alpha)
 
 class Sigfreud(nn.Module):
     """
