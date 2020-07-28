@@ -152,7 +152,7 @@ class Visualizer():
             yerr = group[sem_cols].values[0]
 
             ax.bar(x, yvals, width, yerr=yerr, label=case, error_kw=err_kw, 
-                c=clrs[i])
+                color=clrs[i])
 
             # update bar locations for next group
             x = [loc + width for loc in x]
