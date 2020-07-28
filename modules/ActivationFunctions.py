@@ -85,7 +85,7 @@ class Renluf(torch.autograd.Function):
 
         if ctx.needs_input_grad[0]:
             grad_input = grad_output.clone()
-            grad_input[input <= 0] = 0
+            grad_input[input < 0] = 0
             grad_input[input > 0] = grad_input[input > 0].pow(ctx.alpha)
         
         return grad_input, grad_alpha
