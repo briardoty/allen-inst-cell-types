@@ -8,6 +8,7 @@ Created on Tue Jul  7 14:22:11 2020
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 try:
     from .StatsProcessor import StatsProcessor
 except:
@@ -82,15 +83,19 @@ class Visualizer():
         
         # plot
         fig, ax = plt.subplots(figsize=(7,5))
+        clrs = sns.color_palette("husl", len(case_ids))
         
-        for case in case_ids:
+        for i in range(len(case_ids)):
+
+            case = case_ids[i]
             group = acc_df_stats_groups.get_group(case)
 
             # error bars = 2 standard devs
             yvals = group["acc"]["mean"].values
             yerr = group["acc"]["std"].values * 2
-            ax.errorbar(range(len(yvals)), yvals, yerr=yerr, label=case, 
-                        capsize=3, elinewidth=1)
+            ax.plot(range(len(yvals)), yvals, label=case, c=clrs[i])
+            ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
+                alpha=0.2, facecolor=clrs[i])
             
         ax.set_title("Classification accuracy during training")
         ax.set_xlabel("Epoch")
@@ -194,8 +199,8 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    visualizer.plot_weight_changes(["control", "mixed-2_relu10_nr-1"])
-    # visualizer.plot_accuracy(["control2"])
+    # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
+    visualizer.plot_accuracy(["control2"])
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
     # visualizer.plot_activation_fns([Tanhe(0.5), Tanhe(1.0), Tanhe(1.5), torch.tanh])
