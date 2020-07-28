@@ -142,12 +142,17 @@ class Visualizer():
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
         fig, ax = plt.subplots(figsize=(14,8))
-        for case in case_ids:
+        clrs = sns.color_palette("hls", len(case_ids))
+
+        for i in range(len(case_ids)):
+
+            case = case_ids[i]
             group = df_groups.get_group(case)
             yvals = group[state_keys].values[0]
             yerr = group[sem_cols].values[0]
 
-            ax.bar(x, yvals, width, yerr=yerr, label=case, error_kw=err_kw)
+            ax.bar(x, yvals, width, yerr=yerr, label=case, error_kw=err_kw, 
+                c=clrs[i])
 
             # update bar locations for next group
             x = [loc + width for loc in x]
@@ -199,8 +204,8 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
     
-    # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
-    visualizer.plot_accuracy(["control2"])
+    visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
+    # visualizer.plot_accuracy(["control2"])
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
     # visualizer.plot_activation_fns([Tanhe(0.5), Tanhe(1.0), Tanhe(1.5), torch.tanh])
