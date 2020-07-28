@@ -79,14 +79,14 @@ class Renluf(torch.autograd.Function):
         with respect to the input.
         """
 
-        if not ctx.needs_input_grad[0]: # don't need grad in validation phase
-            return None
-
         input, = ctx.saved_tensors
-        grad_input = grad_output.clone()
-        grad_input[input < 0] = 0
+        grad_input = grad_alpha = None # won't actually need grad_alpha since alpha is static
 
-        return grad_input
+        if ctx.needs_input_grad[0]:
+            grad_input = grad_output.clone()
+            grad_input[input < 0] = 0
+        
+        return grad_input, grad_alpha
 
         # check that input requires grad
         # if not requires grad we will return None to speed up computation
