@@ -8,6 +8,9 @@
     "unmodified": {
         "pretrained": false
     },
+
+
+
     "renlu1a": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -36,6 +39,9 @@
         "act_fn_params": [1.5, 1.0],
         "pretrained": false
     },
+
+
+
     "swish_0.1": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -106,6 +112,9 @@
         "act_fn_params": [10],
         "pretrained": false
     },
+
+
+
     "swish_mixed_.1-1-10": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -120,6 +129,23 @@
         "act_fn_params": [0.5, 1, 2],
         "pretrained": false
     },
+    "swish_5-10": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "swish"],
+        "act_fn_params": [5, 10],
+        "pretrained": false
+    },
+    "swish_1-3": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "swish"],
+        "act_fn_params": [1, 3],
+        "pretrained": false
+    },
+
+
+
     "tanhe_0.5": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -148,6 +174,9 @@
         "act_fn_params": [2.0],
         "pretrained": false
     },
+
+
+
     "tanhe_mixed_0.5-1": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -162,6 +191,9 @@
         "act_fn_params": [1.0, 2.0],
         "pretrained": false
     },
+
+
+
     "swish10-tanhe1": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -190,6 +222,9 @@
         "act_fn_params": [0.1, 0.5],
         "pretrained": false
     },
+
+
+
     "sanity1": {
         "layer_names": ["relu10"],
         "n_repeat": 1,
