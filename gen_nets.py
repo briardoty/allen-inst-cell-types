@@ -42,7 +42,8 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         manager.init_net(case, i)
         
         # control nets are unmodified
-        if not "control" in case:
+        if (layer_names is not None and
+            len(layer_names) > 0):
             manager.replace_layers(layer_names, n_repeat, act_fns, act_fn_params)
         
         # save

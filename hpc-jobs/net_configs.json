@@ -5,6 +5,9 @@
     "control2": {
         "pretrained": false
     },
+    "unmodified": {
+        "pretrained": false
+    },
     "renlu1a": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -31,13 +34,6 @@
         "n_repeat": 1,
         "act_fns": ["renlu", "renlu"],
         "act_fn_params": [1.5, 1.0],
-        "pretrained": false
-    },
-    "swish_test": {
-        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["swish"],
-        "act_fn_params": [5],
         "pretrained": false
     },
     "swish_0.1": {
@@ -103,6 +99,13 @@
         "act_fn_params": [10],
         "pretrained": false
     },
+    "swish_10b": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish"],
+        "act_fn_params": [10],
+        "pretrained": false
+    },
     "swish_mixed_.1-1-10": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -131,6 +134,13 @@
         "act_fn_params": [1.0],
         "pretrained": false
     },
+    "tanhe_1.0b": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["tanhe"],
+        "act_fn_params": [1.0],
+        "pretrained": false
+    },
     "tanhe_2.0": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -153,6 +163,13 @@
         "pretrained": false
     },
     "swish10-tanhe1": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "tanhe"],
+        "act_fn_params": [10, 1.0],
+        "pretrained": false
+    },
+    "swish10-tanhe1b": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
         "act_fns": ["swish", "tanhe"],

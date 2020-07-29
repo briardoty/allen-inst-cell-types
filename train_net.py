@@ -45,7 +45,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
             exp_lr_scheduler.step()
 
     # train
-    manager.run_training_loop(criterion, optimizer, exp_lr_scheduler, 
+    manager.run_training_loop(criterion, optimizer, exp_lr_scheduler,
                               train_frac, n_epochs=epochs)
     
     print("net_train.py completed")
