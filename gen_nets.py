@@ -19,7 +19,7 @@ parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_s
 # config params
 parser.add_argument("--case", type=str, help="Set value for case")
 parser.add_argument("--layer_names", type=str, nargs="+", help="Set value for layer_names")
-parser.add_argument("--n_repeat", type=int, default=None)
+parser.add_argument("--n_repeat", type=int)
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
 
