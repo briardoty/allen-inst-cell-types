@@ -15,6 +15,7 @@ import numpy as np
 import copy
 import torch.optim as optim
 from torch.optim import lr_scheduler
+import random
 
 try:
     from .MixedActivationLayer import MixedActivationLayer
@@ -119,7 +120,12 @@ def load_imagenette(data_dir, img_xy = 227):
 
 class NetManager():
     
-    def __init__(self, net_name, n_classes, data_dir, pretrained=False):
+    def __init__(self, net_name, n_classes, data_dir, pretrained=False,
+        seed=None):
+
+        # SEED!
+        self.seed_everything(seed)
+
         self.net_name = net_name
         self.pretrained = pretrained
         self.data_dir = os.path.expanduser(data_dir)
@@ -134,6 +140,14 @@ class NetManager():
             self.device = torch.device("cpu")
             print("GPU speedup NOT enabled.")
         
+    def seed_everything(self, seed):
+        
+        if seed is None:
+            seed = time.time()
+
+        random.seed()
+        torch.manual_seed(seed)
+
     def init_net(self, case_id, sample):
         self.case_id = case_id
         self.sample = sample        
@@ -483,17 +497,9 @@ class NetManager():
 
             # run net forward, tracking history
             with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
+                
                 outputs = self.net(inputs)
-
-                if (torch.isnan(outputs).any().item()):
-                    torch.set_printoptions(profile="full")
-                    print("Input:")
-                    print(inputs)
-                    print()
-                    print("Output:")
-                    print(outputs)
-                    torch.set_printoptions(profile="default")
-
+                
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
 
@@ -579,8 +585,9 @@ class NetManager():
 
 if __name__=="__main__":
     mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
+    mgr.init_net("seedtest", 1)
     # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/renlu1b/sample-5/vgg11_case-renlu1b_sample-5_epoch-0.pt")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/swish_5/sample-1/vgg11_case-swish_5_sample-1_epoch-0.pt")
+    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/swish_5/sample-1/vgg11_case-swish_5_sample-1_epoch-0.pt")
     mgr.load_imagenette()
 
     criterion = nn.CrossEntropyLoss()
