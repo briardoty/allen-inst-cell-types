@@ -88,7 +88,7 @@ class Renluf(torch.autograd.Function):
             grad_input[saved_input <= 0] = 0
             idxs = saved_input.nonzero(as_tuple=True)
             # grad_input[idxs] = ctx.alpha * saved_input[idxs].pow(ctx.alpha - 1)
-            grad_input[saved_input > 0] = ctx.alpha * saved_input[saved_input > 0].pow(ctx.alpha)
+            grad_input[saved_input > 0] = ctx.alpha * saved_input[saved_input > 0].pow(ctx.alpha - 1)
         
         if (torch.isnan(grad_input).any().item() or
             not torch.isfinite(grad_input).all().item()):
