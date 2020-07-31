@@ -24,6 +24,13 @@ try:
 except:
     from ActivationFunctions import *
 
+def get_key(dct, val):
+
+    for k, v in dct.items():
+        if val == v:
+            return k
+        return None
+
 class Visualizer():
     
     def __init__(self, data_dir, net_name, n_classes=10, save_fig=False):
@@ -60,6 +67,69 @@ class Visualizer():
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
+
+    def plot_final_accuracy(self, control_cases, mixed_cases):
+        """
+        Plot accuracy at the end of training for given control cases
+        and mixed case, including predicted mixed case accuracy based
+        on linear combination of control cases
+
+        TODO: Compute predicted accuracy using param vals from mixed case
+        """
+
+        # pull data
+        acc_df, act_fn_param_dict = self.stats_processor.load_final_acc_df(
+            control_cases + mixed_cases)
+        acc_df_groups = acc_df.groupby("case")
+
+        # plot...
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
+        fig.subplots_adjust(wspace=0)
+        clrs = sns.color_palette("hls", len(control_cases) + 2)
+        
+        for i in range(len(control_cases)):
+
+            case = control_cases[i]
+            group = acc_df_groups.get_group(case)
+            p = float(act_fn_param_dict[case][0])
+
+            # error bars = 2 standard devs
+            yvals = group["final_val_acc"]["mean"].values
+            yerr = group["final_val_acc"]["std"].values * 2
+            axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
+                capsize=3, elinewidth=1, c=clrs[i], fmt="o")
+            
+        # plot mixed case
+        for i in range(len(mixed_cases)):
+
+            mixed_case = mixed_cases[i]
+
+            # actual
+            group = acc_df_groups.get_group(mixed_case)
+            y_act = group["final_val_acc"]["mean"].values[0]
+            y_err = group["final_val_acc"]["std"].values * 2
+            axes[1].errorbar(i, y_act, yerr=y_err, label=mixed_case,
+                capsize=3, elinewidth=1, c=clrs[-1], fmt="o")
+            
+            # predicted
+            ps = [p for p in act_fn_param_dict[mixed_case]]
+            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in ps]
+            y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
+            axes[1].plot(i, y_pred, "o", label=f"Predicted {mixed_case}",
+                c=clrs[-2])
+
+        fig.suptitle("Final accuracy")
+        axes[0].set_xlabel("Activation function parameter value")
+        axes[1].set_xlabel("Mixed case")
+        axes[0].set_ylabel("Final validation accuracy")
+        axes[1].xaxis.set_ticks([])
+        fig.legend()
+         
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
 
     def plot_accuracy(self, case_ids):
         """
@@ -202,10 +272,14 @@ class Visualizer():
 
 if __name__=="__main__":
     
-    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data", "vgg11", 10, False)
+    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", "vgg11", 10, False)
     
-    visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
-    # visualizer.plot_accuracy(["control2"])
+    visualizer.plot_final_accuracy(["swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
+
+    # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
+    
+    # visualizer.plot_accuracy(["control2", "swish_10", "tanhe_1.0", "swish10-tanhe1"])
+    
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
     # visualizer.plot_activation_fns([Tanhe(0.5), Tanhe(1.0), Tanhe(1.5), torch.tanh])

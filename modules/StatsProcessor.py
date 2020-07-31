@@ -78,7 +78,8 @@ class StatsProcessor(NetManager):
                 continue
             
             # only interested in the given cases
-            if not any(c in root for c in case_ids):
+            slugs = root.split("/")
+            if not any(c in slugs for c in case_ids):
                 continue
             
             # nets are all from one sample, get just the first and last
@@ -119,10 +120,67 @@ class StatsProcessor(NetManager):
         weight_change_df.set_index("case", inplace=True)
         df_groups = weight_change_df.groupby("case")
         df_stats = df_groups[layer_keys].agg("mean")
-        df_stats_groups = df_stats.groupby("case")
 
         return df_stats
     
+    def load_final_acc_df(self, cases):
+        """
+        Loads dataframe with final validation accuracy for different 
+        experimental cases.
+
+        Args:
+            cases (list): Experimental cases to include in figure.
+
+        Returns:
+            acc_df (dataframe): Dataframe containing final accuracy.
+        """
+
+        acc_arr = []
+        act_fn_param_dict = dict()
+
+        # walk dir looking for saved net stats
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        for root, dirs, files in os.walk(net_dir):
+            
+            # only interested in locations files are saved
+            if len(files) <= 0:
+                continue
+            
+            # only interested in the given cases
+            slugs = root.split("/")
+            if not any(c in slugs for c in cases):
+                continue
+            
+            # consider all files...
+            for filename in files:
+
+                # ...as long as they are perf_stats
+                if not "perf_stats" in filename:
+                    continue
+                
+                filepath = os.path.join(root, filename)
+                stats_dict = np.load(filepath, allow_pickle=True).item()
+                
+                case = stats_dict.get("case")
+                sample = stats_dict.get("sample")
+                modified_layers = stats_dict.get("modified_layers")
+                act_fn_params = modified_layers.get("act_fn_params")
+                act_fn_param_dict[case] = act_fn_params
+
+                perf_stats = stats_dict.get("perf_stats")
+                (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
+                acc_arr.append([case, sample, val_acc])
+                
+        # make dataframe
+        acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "final_val_acc"])
+        
+        # aggregate
+        acc_df.set_index("case", inplace=True)
+        df_groups = acc_df.groupby("case")
+        df_stats = df_groups.agg({ "final_val_acc": [np.mean, np.std] })
+
+        return df_stats, act_fn_param_dict
+
     def load_accuracy_df(self, case_ids):
         """
         Loads dataframe with accuracy over training for different experimental 
@@ -132,8 +190,7 @@ class StatsProcessor(NetManager):
             case_ids (list): Experimental cases to include in figure.
 
         Returns:
-            acc_df (dataframe): Dataframe containing training accuracy.
-
+            acc_df (dataframe): Dataframe containing validation accuracy.
         """
         acc_arr = []
             
@@ -146,7 +203,8 @@ class StatsProcessor(NetManager):
                 continue
             
             # only interested in the given cases
-            if not any(c in root for c in case_ids):
+            slugs = root.split("/")
+            if not any(c in slugs for c in case_ids):
                 continue
             
             # consider all files...
