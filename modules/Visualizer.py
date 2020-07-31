@@ -73,8 +73,6 @@ class Visualizer():
         Plot accuracy at the end of training for given control cases
         and mixed case, including predicted mixed case accuracy based
         on linear combination of control cases
-
-        TODO: Compute predicted accuracy using param vals from mixed case
         """
 
         # pull data
@@ -83,9 +81,12 @@ class Visualizer():
         acc_df_groups = acc_df.groupby("case")
 
         # plot...
+        handles = []
+        labels = []
+
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
         fig.subplots_adjust(wspace=0)
-        clrs = sns.color_palette("hls", len(control_cases) + 2)
+        clrs = sns.color_palette("hls", len(control_cases) + 2 * len(mixed_cases))
         
         for i in range(len(control_cases)):
 
@@ -96,8 +97,11 @@ class Visualizer():
             # error bars = 2 standard devs
             yvals = group["final_val_acc"]["mean"].values
             yerr = group["final_val_acc"]["std"].values * 2
-            axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
-                capsize=3, elinewidth=1, c=clrs[i], fmt="o")
+            h = axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
+                capsize=3, elinewidth=1, c=clrs[i], fmt=".")
+            
+            handles.append(h)
+            labels.append(case)
             
         # plot mixed case
         for i in range(len(mixed_cases)):
@@ -108,22 +112,36 @@ class Visualizer():
             group = acc_df_groups.get_group(mixed_case)
             y_act = group["final_val_acc"]["mean"].values[0]
             y_err = group["final_val_acc"]["std"].values * 2
-            axes[1].errorbar(i, y_act, yerr=y_err, label=mixed_case,
-                capsize=3, elinewidth=1, c=clrs[-1], fmt="o")
+            l = f"{mixed_case} actual"
+            h = axes[1].errorbar(i, y_act, yerr=y_err, label=l,
+                capsize=3, elinewidth=1, c=clrs[len(control_cases) + i], fmt=".")
             
+            labels.append(l)
+            handles.append(h)
+
             # predicted
             ps = [p for p in act_fn_param_dict[mixed_case]]
             component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in ps]
             y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
-            axes[1].plot(i, y_pred, "o", label=f"Predicted {mixed_case}",
-                c=clrs[-2])
+            l = f"{mixed_case} prediction"
+            h = axes[1].plot(i, y_pred, "x", label=l,
+                c=clrs[len(control_cases) + i + 1])
+
+            labels.append(l)
+            handles.append(h)
 
         fig.suptitle("Final accuracy")
         axes[0].set_xlabel("Activation function parameter value")
-        axes[1].set_xlabel("Mixed case")
+        axes[1].set_xlabel("Mixed cases")
         axes[0].set_ylabel("Final validation accuracy")
         axes[1].xaxis.set_ticks([])
-        fig.legend()
+
+        # shrink second axis by 20%
+        box = axes[1].get_position()
+        axes[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        # append legend to second axis
+        axes[1].legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
          
         # optional saving
         if not self.save_fig:
@@ -274,13 +292,13 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", "vgg11", 10, False)
     
-    visualizer.plot_final_accuracy(["swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
+    visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
     # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
     
     # visualizer.plot_accuracy(["control2", "swish_10", "tanhe_1.0", "swish10-tanhe1"])
     
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
-    # visualizer.plot_activation_fns([Swish(0.1), Swish(1), Swish(10)])
-    # visualizer.plot_activation_fns([Tanhe(0.5), Tanhe(1.0), Tanhe(1.5), torch.tanh])
+    # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
+    # visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(0.5), Tanhe(1)])
     # visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
