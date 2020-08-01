@@ -21,7 +21,7 @@
     },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
-        "cases": ["swish10-relu", "tanhe1-relu", "swish10-tanhe1-relu"],
+        "cases": ["tanhe_0.01", "tanhe_0.1", "tanhe_5", "tanhe_10", "swish_4", "swish_7.5", "tanhe_0.5-1", "tanhe_1-2", "swish_7.5-10", "swish_4-7.5"],
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "net_name": "vgg11",
