@@ -10,6 +10,11 @@ try:
 except:
     from NetManager import NetManager, nets
 
+try:
+    from .MixedActivationLayer import generate_masks
+except:
+    from MixedActivationLayer import generate_masks
+
 def get_epoch_from_filename(filename):
     
     epoch = re.search(r"\d+\.pt$", filename)
@@ -54,6 +59,65 @@ class StatsProcessor(NetManager):
         super(StatsProcessor, self).__init__(net_name, n_classes, data_dir, 
                                              pretrained)
     
+    def load_weight_df(self, case):
+        """
+        Loads a dataframe containing the mean absolute weights for each
+        cell type across layers
+        """
+        weights_arr = []
+        state_keys = list(nets["vgg11"]["state_keys"].keys())
+
+        # walk dir for final snapshots
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{case}")
+        for root, dirs, files in os.walk(net_dir):
+        
+            # only interested in locations files (nets) are saved
+            if len(files) <= 0:
+                continue
+            
+            # get final snapshot
+            last_net_filename = get_last_epoch(files)
+            if last_net_filename is None:
+                continue
+            
+            last_net_path = os.path.join(root, last_net_filename)
+            last_net = self.load_snapshot_metadata(last_net_path, True)
+            
+            # filter to just the weights we want
+            last_net["state_dict"] = { my_key: last_net["state_dict"][my_key] for my_key in state_keys }
+            
+            # separate by cell type
+            sample = last_net.get("sample")
+            modified_layers = last_net["modified_layers"]
+            n_fns = len(modified_layers["act_fns"])
+            n_repeat = modified_layers["n_repeat"]
+
+            for layer_name, layer in last_net["state_dict"].items():
+                
+                n_features = len(layer) # TODO: this will not work for mixing within spatial dim of feature map
+                masks = generate_masks(n_features, n_fns, n_repeat)
+
+                for mask, act_fn in zip(masks, modified_layers["act_fns"]):
+
+                    # weight stats
+                    cells = layer[mask]
+                    avg_weight = torch.mean(torch.abs(cells)).item()
+                    sem_weight = torch.std(torch.abs(cells)).item() / np.sqrt(cells.numel())
+
+                    # add to data array
+                    weights_arr.append([sample, layer_name, act_fn, avg_weight, sem_weight])
+
+        # make df
+        cols = ["sample", "layer", "act_fn", "avg_weight", "sem_weight"]
+        df = pd.DataFrame(weights_arr, columns=cols)
+
+        # group and compute stats
+        df.set_index(["layer", "act_fn"], inplace=True)
+        df_groups = df.groupby(["layer", "act_fn"])
+        df_stats = df_groups.agg({ "avg_weight": np.mean, "sem_weight": np.mean })
+
+        return df_stats
+
     def load_weight_change_df(self, case_ids):
         """
         Loads a dataframe containing the mean, absolute weight changes

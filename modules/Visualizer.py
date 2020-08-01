@@ -149,6 +149,13 @@ class Visualizer():
             plt.show()
             return
 
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/final accuracy/")
+        cases = " & ".join(mixed_cases)
+        filename = f"{cases} final acc.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
+
     def plot_accuracy(self, case_ids):
         """
         Plots accuracy over training for different experimental cases.
@@ -205,6 +212,14 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
         
+    def plot_type_specific_weights(self, case):
+        """
+        Plots mean absolute weights for each cell type across layers 
+        """
+        # pull data
+        df = self.stats_processor.load_weight_df(case)
+
+
     def plot_weight_changes(self, case_ids):
         """
         Plots average change in weights over training for the given
@@ -292,7 +307,9 @@ if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", "vgg11", 10, False)
     
-    visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
+    visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
+
+    # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
     # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
     
