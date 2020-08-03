@@ -16,19 +16,18 @@ parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 
 # required params
-parser.add_argument("--case_ids", nargs="+", type=str, help="Set value for case_ids")
+parser.add_argument("--case", type=str, help="Set value for case_ids")
 
 
-def main(data_dir, net_name, n_classes, case_ids):
+def main(data_dir, net_name, n_classes, case):
     
     # init visualizer
     visualizer = Visualizer(data_dir, net_name, n_classes, True)
     
     # plot
-    visualizer.plot_accuracy(case_ids)
-    visualizer.plot_weight_changes(case_ids)
+    visualizer.plot_type_specific_weights(case)
     
-    print(f"vis_cases.py completed")
+    print(f"vis_case.py completed")
     return
 
 if __name__=="__main__":

@@ -216,8 +216,54 @@ class Visualizer():
         """
         Plots mean absolute weights for each cell type across layers 
         """
+
         # pull data
         df = self.stats_processor.load_weight_df(case)
+
+        # plot
+        state_keys = list(nets[self.stats_processor.net_name]["state_keys"].keys())
+        x = np.array([i * 1.25 for i in range(len(state_keys))])
+        n_act_fns = len(df.index.levels[1])
+        width = 1.0 / n_act_fns
+        err_kw = dict(lw=1, capsize=3, capthick=1)
+
+        fig, ax = plt.subplots(figsize=(14,8))
+        clrs = sns.color_palette("hls", n_act_fns)
+
+        for i in range(n_act_fns):
+
+            act_fn = df.index.levels[1][i]
+
+            yvals = df["avg_weight"][:, act_fn][state_keys]
+            yerr = df["sem_weight"][:, act_fn][state_keys]
+
+            ax.bar(x, yvals, width, yerr=yerr, label=act_fn, error_kw=err_kw, 
+                color=clrs[i])
+
+            # update bar locations for next group
+            x = [loc + width for loc in x]
+
+        ax.set_title("Weight distribution across layers after training")
+        ax.set_xlabel("Layer")
+        ax.set_ylabel("Mean abs weight per layer")
+        ax.legend()
+
+        loc = (n_act_fns - 1) / (2. * n_act_fns)
+        ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
+        labels = list(nets[self.stats_processor.net_name]["state_keys"].values())
+        ax.set_xticklabels(labels)
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/weight distr/")
+        filename = f"{case} weight distr.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
 
 
     def plot_weight_changes(self, case_ids):
@@ -237,7 +283,7 @@ class Visualizer():
 
         sem_cols = list(filter(lambda x: x.endswith(".sem"), df.columns))
         df_groups = df.groupby("case")
-        state_keys = list(nets["vgg11"]["state_keys"].keys())
+        state_keys = list(nets[self.stats_processor.net_name]["state_keys"].keys())
 
         # plot
         x = np.array([i * 1.25 for i in range(len(state_keys))])
@@ -267,7 +313,7 @@ class Visualizer():
 
         loc = (len(case_ids) - 1) / (2. * len(case_ids))
         ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
-        labels = list(nets["vgg11"]["state_keys"].values())
+        labels = list(nets[self.stats_processor.net_name]["state_keys"].values())
         ax.set_xticklabels(labels)
 
         # optional saving
@@ -281,7 +327,7 @@ class Visualizer():
         filename = f"{cases} weight.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)  
+        plt.savefig(filename, dpi=300)
         
     def sub_dir(self, sub_dir):
         """
