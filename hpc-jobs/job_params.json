@@ -55,6 +55,23 @@
             "email_options": "a"
         }
     },
+    "vis_case": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/vis_case.py",
+        "run_params": {
+            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
+            "net_name": "vgg11",
+            "n_classes": 10
+        },
+        "job_settings": {
+            "queue": "braintv",
+            "mem": "8g",
+            "walltime": "30:00",
+            "ppn": 2,
+            "nodes": 1,
+            "email": "briar.doty@alleninstitute.org",
+            "email_options": "a"
+        }
+    },
     "nan_check": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/nan_check.py",
         "run_params": {
