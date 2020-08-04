@@ -56,7 +56,7 @@ def main(cases, train_scheme, resume):
         slugs = root.split("/")
 
         # only interested in the given training scheme
-        if train_scheme in slugs:
+        if not train_scheme in slugs:
             continue
 
         # only interested in the given case
