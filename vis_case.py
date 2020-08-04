@@ -16,7 +16,7 @@ parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 
 # required params
-parser.add_argument("--case", type=str, help="Set value for case_ids")
+parser.add_argument("--case", type=str, help="Set value for case")
 
 
 def main(data_dir, net_name, n_classes, case):
