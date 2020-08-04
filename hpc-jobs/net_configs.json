@@ -274,6 +274,20 @@
         "act_fn_params": [10, null],
         "pretrained": false
     },
+    "swish1-relu": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "relu"],
+        "act_fn_params": [1, null],
+        "pretrained": false
+    },
+    "swish0.1-relu": {
+        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
+        "n_repeat": 1,
+        "act_fns": ["swish", "relu"],
+        "act_fn_params": [0.1, null],
+        "pretrained": false
+    },
 
 
 
