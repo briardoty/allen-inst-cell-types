@@ -54,10 +54,10 @@ class StatsProcessor(NetManager):
     Subclass of NetManager to inherit snapshot loading functionality.
     """
     
-    def __init__(self, net_name, n_classes, data_dir, pretrained=False):
+    def __init__(self, net_name, n_classes, data_dir, train_scheme, pretrained=False):
         
         super(StatsProcessor, self).__init__(net_name, n_classes, data_dir, 
-                                             pretrained)
+                                             train_scheme, pretrained)
     
     def load_weight_df(self, case):
         """
@@ -68,7 +68,7 @@ class StatsProcessor(NetManager):
         state_keys = list(nets["vgg11"]["state_keys"].keys())
 
         # walk dir for final snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{case}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}/{case}")
         for root, dirs, files in os.walk(net_dir):
         
             # only interested in locations files (nets) are saved
@@ -134,7 +134,7 @@ class StatsProcessor(NetManager):
         state_keys = list(nets["vgg11"]["state_keys"].keys())
         
         # walk dir looking for net snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files (nets) are saved
@@ -203,7 +203,7 @@ class StatsProcessor(NetManager):
         act_fn_param_dict = dict()
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -259,7 +259,7 @@ class StatsProcessor(NetManager):
         acc_arr = []
             
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files are saved

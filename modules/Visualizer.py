@@ -33,9 +33,10 @@ def get_key(dct, val):
 
 class Visualizer():
     
-    def __init__(self, data_dir, net_name, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, net_name, train_scheme, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
+        self.train_scheme, train_scheme
         self.save_fig = save_fig
         
         self.stats_processor = StatsProcessor(net_name, n_classes, data_dir)
@@ -149,7 +150,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/final accuracy/")
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/final accuracy/")
         cases = " & ".join(mixed_cases)
         filename = f"{cases} final acc.png"
         filename = os.path.join(sub_dir, filename)
@@ -205,7 +206,7 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/accuracy/")
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/accuracy/")
         cases = " & ".join(case_ids)
         filename = f"{cases} accuracy.png"
         filename = os.path.join(sub_dir, filename)
@@ -259,7 +260,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/weight distr/")
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight distr/")
         filename = f"{case} weight distr.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
@@ -322,7 +323,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/weight change/")
+        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight change/")
         cases = " & ".join(case_ids)
         filename = f"{cases} weight.png"
         filename = os.path.join(sub_dir, filename)
