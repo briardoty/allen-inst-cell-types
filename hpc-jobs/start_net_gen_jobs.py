@@ -21,8 +21,11 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
+parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
+parser.add_argument("--train_scheme", default="sgd", type=str)
 
-def main():
+
+def main(cases, train_scheme):
     
     job_title = "gen_nets"
     
@@ -36,7 +39,7 @@ def main():
     job_params = job_params[job_title]
     script = job_params["script"]
     run_params = job_params["run_params"]
-    cases = job_params["cases"]
+    run_params["train_scheme"] = train_scheme
     job_settings = job_params["job_settings"]
     
     # kick off job for each net configuration

@@ -6,7 +6,8 @@
             "net_name": "vgg11",
             "n_classes": 10,
             "epochs": 50,
-            "train_frac": 1.0
+            "train_frac": 1.0,
+            "batch_size": 4
         },
         "job_settings": {
             "queue": "braintv",

@@ -23,11 +23,12 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
-parser.add_argument("--case_ids", type=str, nargs="+", help="Set value for case_ids", required=True)
+parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
+parser.add_argument("--train_scheme", type=str, help="Set train_scheme", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.set_defaults(resume=False)
 
-def main(case_ids, resume):
+def main(cases, train_scheme, resume):
     
     job_title = "train_net"
     
@@ -37,7 +38,8 @@ def main(case_ids, resume):
     
     job_params = job_params[job_title]
     script = job_params["script"]
-    run_params = job_params["run_params"]   
+    run_params = job_params["run_params"]
+    run_params["train_scheme"] = train_scheme
     job_settings = job_params["job_settings"]
     
     # set to avoid submitting jobs for the same net twice
@@ -45,28 +47,33 @@ def main(case_ids, resume):
 
     # walk dir looking for nets to train
     net_dir = os.path.join(run_params["data_dir"], f"nets/{run_params['net_name']}")
-    for case_id in case_ids:
-        for root, dirs, files in os.walk(net_dir):
-            
-            # only interested in locations files (nets) are saved
-            if len(files) <= 0:
-                continue
+    for root, dirs, files in os.walk(net_dir):
+        
+        # only interested in locations files (nets) are saved
+        if len(files) <= 0:
+            continue
+        
+        slugs = root.split("/")
 
-            # only interested in the given case
-            if not f"{case_id}" in root:
-                continue
-            
-            # start from first or last epoch
-            if resume:
-                net_filename = get_last_epoch(files)
-                print(f"Submitting job to resume training of {net_filename}.")
-            else:
-                net_filename = get_first_epoch(files)
-                print(f"Job will begin from initial snapshot {net_filename}.")
+        # only interested in the given training scheme
+        if train_scheme in slugs:
+            continue
 
-            # and add it to the training job set
-            net_filepath = os.path.join(root, net_filename)
-            net_filepaths.add(net_filepath)
+        # only interested in the given case
+        if not any(c in slugs for c in cases):
+            continue
+        
+        # start from first or last epoch
+        if resume:
+            net_filename = get_last_epoch(files)
+            print(f"Submitting job to resume training of {net_filename}.")
+        else:
+            net_filename = get_first_epoch(files)
+            print(f"Job will begin from initial snapshot {net_filename}.")
+
+        # and add it to the training job set
+        net_filepath = os.path.join(root, net_filename)
+        net_filepaths.add(net_filepath)
 
     # loop over set, submitting jobs
     for net_filepath in net_filepaths:

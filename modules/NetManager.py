@@ -82,7 +82,7 @@ def get_net_tag(net_name, case_id, sample, epoch):
 normalize = transforms.Normalize([0.485, 0.456, 0.406], 
                                  [0.229, 0.224, 0.225])
 
-def load_imagenette(data_dir, img_xy = 227):
+def load_imagenette(data_dir, batch_size=4, img_xy=227):
     data_transforms = {
         "train": transforms.Compose([
             transforms.CenterCrop(img_xy),
@@ -103,10 +103,10 @@ def load_imagenette(data_dir, img_xy = 227):
                       for x in ["train", "val"] }
     
     train_loader = torch.utils.data.DataLoader(
-        image_datasets["train"], batch_size=4, shuffle=True, num_workers=4)
+        image_datasets["train"], batch_size=batch_size, shuffle=True, num_workers=4)
     
     val_loader = torch.utils.data.DataLoader(
-        image_datasets["val"], batch_size=4, shuffle=False, num_workers=4)
+        image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=4)
     
     dataset_sizes = { 
         x: len(image_datasets[x]) for x in ["train", "val"] 
@@ -120,13 +120,14 @@ def load_imagenette(data_dir, img_xy = 227):
 
 class NetManager():
     
-    def __init__(self, net_name, n_classes, data_dir, pretrained=False,
-        seed=None):
+    def __init__(self, net_name, n_classes, data_dir, train_scheme, 
+        pretrained=False, seed=None):
 
         # SEED!
         self.seed_everything(seed)
 
         self.net_name = net_name
+        self.train_scheme = train_scheme
         self.pretrained = pretrained
         self.data_dir = os.path.expanduser(data_dir)
         self.n_classes = n_classes
@@ -177,7 +178,7 @@ class NetManager():
         
         net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
-        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
         net_filepath = os.path.join(sub_dir, filename)
         
         snapshot_state = {
@@ -199,7 +200,7 @@ class NetManager():
         """
         # location
         filename = f"{name}.npy"
-        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
         filepath = os.path.join(sub_dir, filename)
         print(f"Saving {filename}")
         
@@ -304,12 +305,12 @@ class NetManager():
             "val_acc": snapshot_state.get("val_acc")
         }
     
-    def load_imagenette(self):
+    def load_imagenette(self, batch_size):
         (self.image_datasets,
          self.train_loader, 
          self.val_loader, 
          self.dataset_sizes, 
-         self.n_classes) = load_imagenette(self.data_dir)
+         self.n_classes) = load_imagenette(self.data_dir, batch_size)
         
     def save_net_responses(self):
         # store responses as tensor
@@ -320,7 +321,7 @@ class NetManager():
         net_tag = get_net_tag(self.net_name)
         output_filename = f"output_{net_tag}.pt"
         input_filename = f"input_{net_tag}.pt"
-        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/{self.case_id}/sample-{self.sample}/")
+        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
         
         print(f"Saving network responses to {resp_dir}")
 
