@@ -184,19 +184,19 @@ class Visualizer():
         
         # plot
         fig, ax = plt.subplots(figsize=(14,8))
-        clrs = sns.color_palette("hls", len(case_ids))
+        clrs = sns.color_palette("hls", len(acc_df_stats_groups.groups))
         
-        for i in range(len(case_ids)):
+        for group, clr in zip(acc_df_stats_groups.groups, clrs):
 
-            case = case_ids[i]
-            group = acc_df_stats_groups.get_group(case)
+            scheme, case = group
+            group_data = acc_df_stats_groups.get_group((scheme, case))
 
             # error bars = 2 standard devs
-            yvals = group["acc"]["mean"].values
-            yerr = group["acc"]["std"].values * 2
-            ax.plot(range(len(yvals)), yvals, label=case, c=clrs[i])
+            yvals = group_data["acc"]["mean"].values
+            yerr = group_data["acc"]["std"].values * 2
+            ax.plot(range(len(yvals)), yvals, label=f"{scheme} {case}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
-                alpha=0.2, facecolor=clrs[i])
+                    alpha=0.2, facecolor=clr)
             
         ax.set_title("Classification accuracy during training")
         ax.set_xlabel("Epoch")
