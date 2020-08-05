@@ -57,7 +57,7 @@ class StatsProcessor(NetManager):
     def __init__(self, net_name, n_classes, data_dir, train_scheme, pretrained=False):
         
         super(StatsProcessor, self).__init__(net_name, n_classes, data_dir, 
-                                             train_scheme, pretrained)
+            train_scheme, pretrained)
     
     def load_weight_df(self, case):
         """
@@ -245,13 +245,14 @@ class StatsProcessor(NetManager):
 
         return df_stats, act_fn_param_dict
 
-    def load_accuracy_df(self, case_ids):
+    def load_accuracy_df(self, case_ids, train_schemes):
         """
         Loads dataframe with accuracy over training for different experimental 
         cases.
 
         Args:
             case_ids (list): Experimental cases to include in figure.
+            train_schemes (list): Valid training schemes to include in figure.
 
         Returns:
             acc_df (dataframe): Dataframe containing validation accuracy.
@@ -259,15 +260,20 @@ class StatsProcessor(NetManager):
         acc_arr = []
             
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files are saved
             if len(files) <= 0:
                 continue
             
-            # only interested in the given cases
             slugs = root.split("/")
+
+            # only interested in the given training schemes
+            if not any(t in slugs for t in train_schemes):
+                continue
+
+            # only interested in the given cases
             if not any(c in slugs for c in case_ids):
                 continue
             
@@ -281,21 +287,22 @@ class StatsProcessor(NetManager):
                 filepath = os.path.join(root, filename)
                 stats_dict = np.load(filepath, allow_pickle=True).item()
                 
+                train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
 
                 perf_stats = stats_dict.get("perf_stats")
                 for epoch in range(len(perf_stats)):
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
-                    acc_arr.append([case, sample, epoch, val_acc])
+                    acc_arr.append([train_scheme, case, sample, epoch, val_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["case", "sample", "epoch", "acc"])  
+        acc_df = pd.DataFrame(acc_arr, columns=["train_scheme", "case", "sample", "epoch", "acc"])  
         return acc_df
 
 if __name__=="__main__":
     
-    processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data")
+    processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data", "sgd")
     
     processor.load_accuracy_df(["control2"])
     # processor.load_weight_change_df(["control1"])

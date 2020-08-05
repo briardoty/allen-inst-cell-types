@@ -24,6 +24,11 @@ try:
 except:
     from ActivationFunctions import *
 
+try:
+    from .util import ensure_sub_dir
+except:
+    from util import ensure_sub_dir
+
 def get_key(dct, val):
 
     for k, v in dct.items():
@@ -36,10 +41,10 @@ class Visualizer():
     def __init__(self, data_dir, net_name, train_scheme, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
-        self.train_scheme, train_scheme
+        self.train_scheme = train_scheme
         self.save_fig = save_fig
         
-        self.stats_processor = StatsProcessor(net_name, n_classes, data_dir)
+        self.stats_processor = StatsProcessor(net_name, n_classes, data_dir, train_scheme)
         
     def plot_activation_fns(self, act_fns):
         """
@@ -62,7 +67,7 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = self.sub_dir(f"figures/act_fns/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/act_fns/")
         fn_names = " & ".join([str(fn) for fn in act_fns])
         filename = f"{fn_names}.png"
         filename = os.path.join(sub_dir, filename)
@@ -150,14 +155,14 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/final accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/final accuracy/")
         cases = " & ".join(mixed_cases)
         filename = f"{cases} final acc.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_accuracy(self, case_ids):
+    def plot_accuracy(self, case_ids, train_schemes):
         """
         Plots accuracy over training for different experimental cases.
 
@@ -169,13 +174,13 @@ class Visualizer():
 
         """
         # pull data
-        acc_df = self.stats_processor.load_accuracy_df(case_ids)
+        acc_df = self.stats_processor.load_accuracy_df(case_ids, train_schemes)
 
         # group and compute stats
-        acc_df.set_index(["case", "epoch"], inplace=True)
-        acc_df_groups = acc_df.groupby(["case", "epoch"])
+        acc_df.set_index(["train_scheme", "case", "epoch"], inplace=True)
+        acc_df_groups = acc_df.groupby(["train_scheme", "case", "epoch"])
         acc_df_stats = acc_df_groups.agg({ "acc": [np.mean, np.std] })
-        acc_df_stats_groups = acc_df_stats.groupby("case")
+        acc_df_stats_groups = acc_df_stats.groupby(["train_scheme", "case"])
         
         # plot
         fig, ax = plt.subplots(figsize=(14,8))
@@ -206,7 +211,7 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/accuracy/")
         cases = " & ".join(case_ids)
         filename = f"{cases} accuracy.png"
         filename = os.path.join(sub_dir, filename)
@@ -260,7 +265,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight distr/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight distr/")
         filename = f"{case} weight distr.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
@@ -323,44 +328,25 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = self.sub_dir(f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight change/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight change/")
         cases = " & ".join(case_ids)
         filename = f"{cases} weight.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
         
-    def sub_dir(self, sub_dir):
-        """
-        Ensures existence of sub directory of self.data_dir and 
-        returns its absolute path.
-
-        Args:
-            sub_dir (TYPE): DESCRIPTION.
-
-        Returns:
-            sub_dir (TYPE): DESCRIPTION.
-
-        """
-        sub_dir = os.path.join(self.data_dir, sub_dir)
-        
-        if not os.path.exists(sub_dir):
-            os.makedirs(sub_dir)
-            
-        return sub_dir
-        
 
 if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", "vgg11", 10, False)
     
-    visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
+    # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 
     # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
     # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
     
-    # visualizer.plot_accuracy(["control2", "swish_10", "tanhe_1.0", "swish10-tanhe1"])
+    visualizer.plot_accuracy(["unmodified"], ["sgd", "adam"])
     
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])

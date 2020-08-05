@@ -21,7 +21,11 @@ try:
     from .MixedActivationLayer import MixedActivationLayer
 except:
     from MixedActivationLayer import MixedActivationLayer
-    
+
+try:
+    from .util import *
+except:
+    from util import *
 
 # structural data
 nets = {
@@ -63,61 +67,6 @@ nets = {
     }
 }
 
-# function for getting an identifier for a given net state
-def get_net_tag(net_name, case_id, sample, epoch):
-    net_tag = f"{net_name}"
-    
-    if (case_id is not None):
-        net_tag += f"_case-{case_id}"
-        
-    if (sample is not None):
-        net_tag += f"_sample-{sample}"
-    
-    if (epoch is not None):
-        net_tag += f"_epoch-{epoch}"
-        
-    return net_tag
-
-# standard normalization applied to all stimuli
-normalize = transforms.Normalize([0.485, 0.456, 0.406], 
-                                 [0.229, 0.224, 0.225])
-
-def load_imagenette(data_dir, batch_size=4, img_xy=227):
-    data_transforms = {
-        "train": transforms.Compose([
-            transforms.CenterCrop(img_xy),
-            transforms.RandomHorizontalFlip(), 
-            transforms.ToTensor(),
-            normalize
-        ]),
-        "val": transforms.Compose([
-            transforms.CenterCrop(img_xy),
-            transforms.ToTensor(),
-            normalize
-        ]),
-    }
-    
-    imagenette_dir = os.path.join(data_dir, "imagenette2/")
-    image_datasets = { x: datasets.ImageFolder(os.path.join(imagenette_dir, x),
-                                               data_transforms[x])
-                      for x in ["train", "val"] }
-    
-    train_loader = torch.utils.data.DataLoader(
-        image_datasets["train"], batch_size=batch_size, shuffle=True, num_workers=4)
-    
-    val_loader = torch.utils.data.DataLoader(
-        image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=4)
-    
-    dataset_sizes = { 
-        x: len(image_datasets[x]) for x in ["train", "val"] 
-    }
-    
-    class_names = image_datasets["train"].classes
-    n_classes = len(class_names)
-    
-    return (image_datasets, train_loader, val_loader, dataset_sizes, n_classes)
-
-
 class NetManager():
     
     def __init__(self, net_name, n_classes, data_dir, train_scheme, 
@@ -127,13 +76,13 @@ class NetManager():
         self.seed_everything(seed)
 
         self.net_name = net_name
+        self.n_classes = n_classes
+        self.data_dir = os.path.expanduser(data_dir)
         self.train_scheme = train_scheme
         self.pretrained = pretrained
-        self.data_dir = os.path.expanduser(data_dir)
-        self.n_classes = n_classes
         self.epoch = 0
         self.modified_layers = None
-        
+
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
             self.device = torch.device("cuda:0")
@@ -151,7 +100,9 @@ class NetManager():
 
     def init_net(self, case_id, sample):
         self.case_id = case_id
-        self.sample = sample        
+        self.sample = sample
+        self.net_dir = get_net_dir(self.data_dir, self.net_name, 
+            self.train_scheme, self.case_id, self.sample)
 
         if self.pretrained:
             print("Initializing pretrained net!")
@@ -178,11 +129,12 @@ class NetManager():
         
         net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
-        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
-        net_filepath = os.path.join(sub_dir, filename)
+        net_filepath = os.path.join(self.net_dir, filename)
         
         snapshot_state = {
+            "net_name": self.net_name,
             "epoch": epoch,
+            "train_scheme": self.train_scheme,
             "case": self.case_id,
             "sample": self.sample,
             "val_acc": val_acc,
@@ -200,13 +152,13 @@ class NetManager():
         """
         # location
         filename = f"{name}.npy"
-        sub_dir = self.sub_dir(f"nets/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
-        filepath = os.path.join(sub_dir, filename)
+        filepath = os.path.join(self.net_dir, filename)
         print(f"Saving {filename}")
         
         data = {
             f"{name}": np_arr,
             "net_name": self.net_name,
+            "train_scheme": self.train_scheme,
             "case": self.case_id,
             "sample": self.sample,
             "modified_layers": self.modified_layers
@@ -214,25 +166,6 @@ class NetManager():
 
         # save
         np.save(filepath, data)
-
-    def sub_dir(self, sub_dir):
-        """
-        Ensures existence of sub directory of self.data_dir and 
-        returns its absolute path.
-
-        Args:
-            sub_dir (TYPE): DESCRIPTION.
-
-        Returns:
-            sub_dir (TYPE): DESCRIPTION.
-
-        """
-        sub_dir = os.path.join(self.data_dir, sub_dir)
-        
-        if not os.path.exists(sub_dir):
-            os.makedirs(sub_dir)
-            
-        return sub_dir
 
     def load_net_state(self, case_id, sample, epoch, state_dict):
         """
@@ -585,7 +518,7 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", False)
+    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", "sgd", False)
     mgr.init_net("seedtest", 1)
     # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/renlu1b/sample-5/vgg11_case-renlu1b_sample-5_epoch-0.pt")
     # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/swish_5/sample-1/vgg11_case-swish_5_sample-1_epoch-0.pt")
