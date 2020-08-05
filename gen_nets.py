@@ -12,7 +12,7 @@ from modules.NetManager import NetManager
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", default="/home/briardoty/Source/allen-inst-cell-types/data/", 
                     type=str, help="Set value for data_dir")
-parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
+parser.add_argument("--net_name", type=str, help="Set value for net_name", required=True)
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
 parser.add_argument("--train_scheme", type=str, help="Set value for train_scheme", required=True)
@@ -45,7 +45,7 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         # control nets are unmodified
         if (layer_names is not None and
             len(layer_names) > 0):
-            manager.replace_layers(layer_names, n_repeat, act_fns, act_fn_params)
+            manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
         
         # save
         manager.save_net_snapshot()

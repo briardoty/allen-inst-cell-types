@@ -24,11 +24,12 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 # args
 parser = argparse.ArgumentParser()
 parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
+parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--train_scheme", type=str, help="Set train_scheme", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.set_defaults(resume=False)
 
-def main(cases, train_scheme, resume):
+def main(net_name, cases, train_scheme, resume):
     
     job_title = "train_net"
     
@@ -39,6 +40,7 @@ def main(cases, train_scheme, resume):
     job_params = job_params[job_title]
     script = job_params["script"]
     run_params = job_params["run_params"]
+    run_params["net_name"] = net_name
     run_params["train_scheme"] = train_scheme
     job_settings = job_params["job_settings"]
     
@@ -46,7 +48,7 @@ def main(cases, train_scheme, resume):
     net_filepaths = set()
 
     # walk dir looking for nets to train
-    net_dir = os.path.join(run_params["data_dir"], f"nets/{run_params['net_name']}")
+    net_dir = os.path.join(run_params["data_dir"], f"nets/{net_name}")
     for root, dirs, files in os.walk(net_dir):
         
         # only interested in locations files (nets) are saved

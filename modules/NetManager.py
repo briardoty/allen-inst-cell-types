@@ -247,13 +247,10 @@ class NetManager():
         
         # make any modifications
         if self.modified_layers is not None:
-            layer_name = self.modified_layers.get("layer_name")
-            layer_names = self.modified_layers.get("layer_names")
             n_repeat = self.modified_layers["n_repeat"]
             act_fns = self.modified_layers["act_fns"]
             act_fn_params = self.modified_layers["act_fn_params"]
-            self.replace_layers(layer_names if layer_names is not None else [layer_name], 
-                               n_repeat, act_fns, act_fn_params)
+            self.replace_act_layers(n_repeat, act_fns, act_fn_params)
         
         # print net summary
         print(self.net)
@@ -309,56 +306,16 @@ class NetManager():
         Replace all nn.ReLU layers with MixedActivationLayers
         """
 
-        # call on recursive helper function
-        self.net = replace_act_layers(self.net, n_repeat, act_fns, 
-            act_fn_params)    
-
-    def replace_layers(self, layer_names, n_repeat, act_fns, act_fn_params, 
-                       verbose=False):
-        """
-        Replace the given layers with a MixedActivationLayer.
-
-        Note: depends on layers and their indices being mapped out in 
-            "nets" var at top of file.
-
-        Args:
-            layer_names (list): Names of layers to replace.
-            n_repeat (int): Activation fn config.
-            act_fns (list): Activation function names.
-            act_fn_params (list): Params corresponding to activation fns.
-
-        Returns:
-            None.
-
-        """
         # set modified layer state
         self.modified_layers = {
-            "layer_names": layer_names,
             "n_repeat": n_repeat,
             "act_fns": act_fns,
             "act_fn_params": act_fn_params
-        }            
+        }   
 
-        for layer_name in layer_names:
-            
-            # get layer index
-            i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
-            
-            # modify layer
-            if i_layer < len(self.net.features):
-                # target layer is in "features"
-                n_features = self.net.features[i_layer - 1].out_channels
-                self.net.features[i_layer] = MixedActivationLayer(n_features, 
-                    n_repeat, act_fns, act_fn_params, verbose=verbose)
-            else:
-                # target layer must be in fc layers under "classifier"
-                i_layer = i_layer - len(self.net.features)
-                n_features = self.net.classifier[i_layer - 1].out_features
-                self.net.classifier[i_layer] = MixedActivationLayer(n_features, 
-                    n_repeat, act_fns, act_fn_params, verbose=verbose)
-        
-        # send net to gpu if available
-        self.net = self.net.to(self.device)
+        # call on recursive helper function
+        self.net = replace_act_layers(self.net, n_repeat, act_fns, 
+            act_fn_params)
     
     def set_input_hook(self, layer_name):
         # store responses here...

@@ -16,22 +16,25 @@ class StickNet(nn.Module):
     def __init__(self, n_classes=10):
         
         super(StickNet, self).__init__()
+
+        n_intermediates = 32
+
         self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=3, padding=1),
+            nn.Conv2d(3, n_intermediates, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             # nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(7*7*64, 256),
+            nn.Linear(7*7*n_intermediates, n_intermediates*2),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(256, n_classes)
+            nn.Linear(n_intermediates*2, n_classes)
         )
         self._initialize_weights()
 
     def forward(self, input_tensor):
-        
+
         x = self.features(input_tensor)
         x = self.avgpool(x)
         x = x.flatten(1)
