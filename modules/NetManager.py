@@ -23,6 +23,11 @@ except:
     from MixedActivationLayer import MixedActivationLayer
 
 try:
+    from .StickNet import StickNet
+except:
+    from StickNet import StickNet
+
+try:
     from .util import *
 except:
     from util import *
@@ -66,6 +71,34 @@ nets = {
         }
     }
 }
+
+def replace_act_layers(model, n_repeat, act_fns, act_fn_params):
+    """
+    Recursive helper function to replace all relu layers with
+    instances of MixedActivationLayer with the given params
+    """
+
+    # keep track of previous layer to count input features
+    prev = None
+
+    for name, module in model._modules.items():
+
+        # recursive case
+        if len(list(module.children())) > 0:
+            model._modules[name] = replace_act_layers(module, 
+                n_repeat, act_fns, act_fn_params)
+        
+        # base case
+        if type(module) == nn.ReLU:
+            n_features = prev.out_channels if type(prev) == nn.Conv2d else prev.out_features
+            model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+                act_fns, act_fn_params)
+
+        # update previous layer
+        prev = module
+
+    return model
+
 
 class NetManager():
     
@@ -116,6 +149,9 @@ class NetManager():
         elif self.net_name == "alexnet":
             self.net = models.alexnet(pretrained=self.pretrained)
         
+        elif self.net_name == "sticknet":
+            self.net = StickNet()
+
         else:
             # default to vgg16
             self.net = models.vgg16(pretrained=self.pretrained)
@@ -268,10 +304,22 @@ class NetManager():
         torch.save(self.responses_output, output_filepath)
         torch.save(self.responses_input, input_filepath)
         
+    def replace_act_layers(self, n_repeat, act_fns, act_fn_params):
+        """
+        Replace all nn.ReLU layers with MixedActivationLayers
+        """
+
+        # call on recursive helper function
+        self.net = replace_act_layers(self.net, n_repeat, act_fns, 
+            act_fn_params)    
+
     def replace_layers(self, layer_names, n_repeat, act_fns, act_fn_params, 
                        verbose=False):
         """
-        Replace the given layer with a MixedActivationLayer.
+        Replace the given layers with a MixedActivationLayer.
+
+        Note: depends on layers and their indices being mapped out in 
+            "nets" var at top of file.
 
         Args:
             layer_names (list): Names of layers to replace.
@@ -289,8 +337,8 @@ class NetManager():
             "n_repeat": n_repeat,
             "act_fns": act_fns,
             "act_fn_params": act_fn_params
-        }
-        
+        }            
+
         for layer_name in layer_names:
             
             # get layer index
@@ -518,11 +566,12 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data/", "sgd", False)
-    mgr.init_net("seedtest", 1)
-    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/renlu1b/sample-5/vgg11_case-renlu1b_sample-5_epoch-0.pt")
-    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data/nets/vgg11/swish_5/sample-1/vgg11_case-swish_5_sample-1_epoch-0.pt")
-    mgr.load_imagenette()
+    mgr = NetManager("sticknet", 10, 
+        "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
+    mgr.init_net("test", 1)
+    mgr.load_imagenette(4)
+
+    mgr.replace_act_layers(1, ["swish"], [10])
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(mgr.net.parameters(), lr=0.001)
