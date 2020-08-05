@@ -22,7 +22,7 @@ class StickNet(nn.Module):
         self.features = nn.Sequential(
             nn.Conv2d(3, n_intermediates, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            # nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
