@@ -27,10 +27,13 @@ class StickNet(nn.Module):
         )
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(7*7*64, 128),
+            nn.Linear(7*7*64, 512),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(128, n_classes)
+            nn.Linear(512, 512),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(512, n_classes)
         )
         self._initialize_weights()
 
