@@ -22,7 +22,7 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 # args
 parser = argparse.ArgumentParser()
 parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
-parser.add_argument("--train_scheme", default="sgd", type=str)
+parser.add_argument("--train_scheme", type=str, required=True, help="Set train_scheme")
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 
 
