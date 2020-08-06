@@ -39,11 +39,17 @@ def main(job_title, cases, case, net_name, train_schemes):
     run_params = job_params["run_params"]   
     job_settings = job_params["job_settings"]
     
-    if len(case_ids) > 0:
-        run_params["case_ids"] = param_arr_helper(case_ids)
+    if len(cases) > 0:
+        run_params["cases"] = param_arr_helper(cases)
+
+    if len(train_schemes) > 0:
+        run_params["train_schemes"] = param_arr_helper(train_schemes)
 
     if case is not None:
         run_params["case"] = case
+
+    if net_name is not None:
+        run_params["net_name"] = net_name
     
     # prepare args
     params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
