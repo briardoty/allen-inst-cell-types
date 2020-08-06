@@ -22,10 +22,13 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 # args
 parser = argparse.ArgumentParser()
 parser.add_argument("--job_title", type=str, help="Set value for job_title")
-parser.add_argument("--case_ids", default=[], nargs="+", type=str)
 parser.add_argument("--case", default=None, type=str)
+parser.add_argument("--train_schemes", default=[], nargs="+", type=str)
+parser.add_argument("--net_name", default=None, type=str)
+parser.add_argument("--cases", default=[], nargs="+", type=str)
 
-def main(job_title, case_ids, case):
+
+def main(job_title, cases, case, net_name, train_schemes):
     
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
