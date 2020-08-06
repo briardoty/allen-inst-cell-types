@@ -38,13 +38,12 @@ def get_key(dct, val):
 
 class Visualizer():
     
-    def __init__(self, data_dir, net_name, train_scheme, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, net_name, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
-        self.train_scheme = train_scheme
         self.save_fig = save_fig
         
-        self.stats_processor = StatsProcessor(net_name, n_classes, data_dir, train_scheme)
+        self.stats_processor = StatsProcessor(net_name, n_classes, data_dir)
         
     def plot_activation_fns(self, act_fns):
         """
@@ -155,14 +154,14 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/final accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/final accuracy/")
         cases = " & ".join(mixed_cases)
         filename = f"{cases} final acc.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_accuracy(self, case_ids, train_schemes):
+    def plot_accuracy(self, cases, train_schemes):
         """
         Plots accuracy over training for different experimental cases.
 
@@ -174,7 +173,7 @@ class Visualizer():
 
         """
         # pull data
-        acc_df = self.stats_processor.load_accuracy_df(case_ids, train_schemes)
+        acc_df = self.stats_processor.load_accuracy_df(cases, train_schemes)
 
         # group and compute stats
         acc_df.set_index(["train_scheme", "case", "epoch"], inplace=True)
@@ -211,9 +210,9 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/accuracy/")
-        cases = " & ".join(case_ids)
-        filename = f"{cases} accuracy.png"
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/accuracy/")
+        case_names = " & ".join(cases)
+        filename = f"{case_names} accuracy.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -265,14 +264,14 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight distr/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/weight distr/")
         filename = f"{case} weight distr.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
 
-    def plot_weight_changes(self, case_ids):
+    def plot_weight_changes(self, cases, train_schemes):
         """
         Plots average change in weights over training for the given
         experimental cases.
@@ -285,23 +284,25 @@ class Visualizer():
 
         """
         # pull data
-        df = self.stats_processor.load_weight_change_df(case_ids)
+        df = self.stats_processor.load_weight_change_df(cases, train_schemes)
 
         sem_cols = list(filter(lambda x: x.endswith(".sem"), df.columns))
-        df_groups = df.groupby("case")
+        df_groups = df.groupby(["train_scheme", "case"])
+
+        # TODO: vvv this vvv
         state_keys = list(nets[self.stats_processor.net_name]["state_keys"].keys())
 
         # plot
         x = np.array([i * 1.25 for i in range(len(state_keys))])
-        width = 1.0 / len(case_ids)
+        width = 1.0 / len(cases)
         err_kw = dict(lw=1, capsize=3, capthick=1)
 
         fig, ax = plt.subplots(figsize=(14,8))
-        clrs = sns.color_palette("hls", len(case_ids))
+        clrs = sns.color_palette("hls", len(cases))
 
-        for i in range(len(case_ids)):
+        for i in range(len(cases)):
 
-            case = case_ids[i]
+            case = cases[i]
             group = df_groups.get_group(case)
             yvals = group[state_keys].values[0]
             yerr = group[sem_cols].values[0]
@@ -317,7 +318,7 @@ class Visualizer():
         ax.set_ylabel("Mean abs weight change per layer")
         ax.legend()
 
-        loc = (len(case_ids) - 1) / (2. * len(case_ids))
+        loc = (len(cases) - 1) / (2. * len(cases))
         ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
         labels = list(nets[self.stats_processor.net_name]["state_keys"].values())
         ax.set_xticklabels(labels)
@@ -328,8 +329,8 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/{self.train_scheme}/weight change/")
-        cases = " & ".join(case_ids)
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/weight change/")
+        cases = " & ".join(cases)
         filename = f"{cases} weight.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")

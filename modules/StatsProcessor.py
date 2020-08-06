@@ -54,12 +54,12 @@ class StatsProcessor(NetManager):
     Subclass of NetManager to inherit snapshot loading functionality.
     """
     
-    def __init__(self, net_name, n_classes, data_dir, train_scheme, pretrained=False):
+    def __init__(self, net_name, n_classes, data_dir, pretrained=False):
         
         super(StatsProcessor, self).__init__(net_name, n_classes, data_dir, 
-            train_scheme, pretrained)
+            None, pretrained)
     
-    def load_weight_df(self, case):
+    def load_weight_df(self, case, train_schemes):
         """
         Loads a dataframe containing the mean absolute weights for each
         cell type across layers
@@ -68,11 +68,21 @@ class StatsProcessor(NetManager):
         state_keys = list(nets["vgg11"]["state_keys"].keys())
 
         # walk dir for final snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}/{case}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
         for root, dirs, files in os.walk(net_dir):
         
             # only interested in locations files (nets) are saved
             if len(files) <= 0:
+                continue
+
+            slugs = root.split("/")
+
+            # only interested in the given training schemes
+            if not any(t in slugs for t in train_schemes):
+                continue
+
+            # only interested in the given case
+            if not case in slugs:
                 continue
             
             # get final snapshot
@@ -118,7 +128,7 @@ class StatsProcessor(NetManager):
 
         return df_stats
 
-    def load_weight_change_df(self, case_ids):
+    def load_weight_change_df(self, case_ids, train_schemes):
         """
         Loads a dataframe containing the mean, absolute weight changes
         over training for each layer. 
@@ -134,15 +144,20 @@ class StatsProcessor(NetManager):
         state_keys = list(nets["vgg11"]["state_keys"].keys())
         
         # walk dir looking for net snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files (nets) are saved
             if len(files) <= 0:
                 continue
-            
-            # only interested in the given cases
+
             slugs = root.split("/")
+
+            # only interested in the given training schemes
+            if not any(t in slugs for t in train_schemes):
+                continue
+
+            # only interested in the given cases
             if not any(c in slugs for c in case_ids):
                 continue
             
@@ -173,21 +188,22 @@ class StatsProcessor(NetManager):
             # add to arr
             case = first_net.get("case") if first_net.get("case") is not None else "control"
             sample = first_net.get("sample")
-            weight_change_arr.append([case, sample] + avg_weights + sem_weights)
+            scheme = first_net.get("train_scheme") if first_net.get("train_scheme") is not None else "sgd"
+            weight_change_arr.append([scheme, case, sample] + avg_weights + sem_weights)
 
         # make df
         layer_keys = state_keys + [f"{key}.sem" for key in state_keys]
-        cols = ["case", "sample"] + layer_keys
+        cols = ["train_scheme", "case", "sample"] + layer_keys
         weight_change_df = pd.DataFrame(weight_change_arr, columns=cols)
 
         # group and compute stats
-        weight_change_df.set_index("case", inplace=True)
-        df_groups = weight_change_df.groupby("case")
+        weight_change_df.set_index(["train_scheme", "case"], inplace=True)
+        df_groups = weight_change_df.groupby(["train_scheme", "case"])
         df_stats = df_groups[layer_keys].agg("mean")
 
         return df_stats
     
-    def load_final_acc_df(self, cases):
+    def load_final_acc_df(self, cases, train_schemes):
         """
         Loads dataframe with final validation accuracy for different 
         experimental cases.
@@ -203,15 +219,20 @@ class StatsProcessor(NetManager):
         act_fn_param_dict = dict()
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}/{self.train_scheme}")
+        net_dir = os.path.join(self.data_dir, f"nets/{self.net_name}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files are saved
             if len(files) <= 0:
                 continue
             
-            # only interested in the given cases
             slugs = root.split("/")
+
+            # only interested in the given training schemes
+            if not any(t in slugs for t in train_schemes):
+                continue
+
+            # only interested in the given cases
             if not any(c in slugs for c in cases):
                 continue
             
