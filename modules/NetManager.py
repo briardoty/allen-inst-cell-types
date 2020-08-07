@@ -149,8 +149,8 @@ class NetManager():
         elif self.net_name == "alexnet":
             self.net = models.alexnet(pretrained=self.pretrained)
         
-        elif self.net_name == "sticknet":
-            self.net = StickNet()
+        elif self.net_name == "sticknet8":
+            self.net = StickNet(8)
 
         else:
             # default to vgg16
@@ -525,13 +525,11 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("sticknet", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.init_net("test", 1)
-    mgr.load_imagenette(4)
-
-    mgr.replace_act_layers(1, ["swish"], [10])
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet/adam/tanhe_10/sample-0/sticknet_case-tanhe_10_sample-0_epoch-0.pt")
+    mgr.load_imagenette(1)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(mgr.net.parameters(), lr=0.001)
+    optimizer = optim.Adam(mgr.net.parameters(), lr=0.0001)
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     
     # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)

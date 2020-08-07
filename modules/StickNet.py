@@ -13,27 +13,31 @@ import random
 
 class StickNet(nn.Module):
 
-    def __init__(self, n_classes=10):
+    def __init__(self, nfl_units, n_classes=10):
+        """
+        Args:
+            nfl_units (int): number of first layer units
+        """
         
         super(StickNet, self).__init__()
 
         self.features = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=3, padding=1),
+            nn.Conv2d(3, nfl_units, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.Conv2d(nfl_units, 2*nfl_units, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
-            nn.Linear(7*7*64, 512),
+            nn.Linear(7*7*2*nfl_units, 16*nfl_units),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(512, 512),
+            nn.Linear(16*nfl_units, 16*nfl_units),
             nn.ReLU(True),
             nn.Dropout(),
-            nn.Linear(512, n_classes)
+            nn.Linear(16*nfl_units, n_classes)
         )
         self._initialize_weights()
 
