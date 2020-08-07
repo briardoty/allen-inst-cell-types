@@ -16,6 +16,7 @@ import copy
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import random
+import sys
 
 try:
     from .MixedActivationLayer import MixedActivationLayer
@@ -143,18 +144,15 @@ class NetManager():
         if self.net_name == "vgg11":
             self.net = models.vgg11(pretrained=self.pretrained)
         
-        elif self.net_name == "vgg16":
-            self.net = models.vgg16(pretrained=self.pretrained)
-        
-        elif self.net_name == "alexnet":
-            self.net = models.alexnet(pretrained=self.pretrained)
-        
         elif self.net_name == "sticknet8":
             self.net = StickNet(8)
 
+        elif self.net_name == "sticknet":
+            self.net = StickNet(16)
+
         else:
-            # default to vgg16
-            self.net = models.vgg16(pretrained=self.pretrained)
+            print(f"Unrecognized network name {self.net_name}, exiting job.")
+            sys.exit(-1)
             
         # update net's output layer to match n_classes
         n_features = self.net.classifier[-1].in_features
@@ -438,7 +436,7 @@ class NetManager():
             with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
                 
                 outputs = self.net(inputs)
-                
+
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
 
@@ -523,7 +521,7 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("sticknet", 10, 
+    mgr = NetManager("asdf", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
     mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet/adam/tanhe_10/sample-0/sticknet_case-tanhe_10_sample-0_epoch-0.pt")
     mgr.load_imagenette(1)
