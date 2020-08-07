@@ -182,8 +182,12 @@ class Tanhe(nn.Module):
     def forward(self, input_tensor):
         
         # return torch.tanh(input_tensor)
-        top = torch.exp(torch.mul(self.beta, input_tensor)) - torch.exp(torch.neg(input_tensor))
-        bot = torch.exp(torch.mul(self.beta, input_tensor)) + torch.exp(torch.neg(input_tensor))
+        # new: anything inside torch.exp() needs to be clamped to 88.0 to avoid inf
+        p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=88)
+        p2 = torch.clamp(torch.neg(input_tensor), max=88)
+        
+        top = torch.exp(p1) - torch.exp(p2)
+        bot = torch.exp(p1) + torch.exp(p2)
         
         return torch.div(top, bot)
 
