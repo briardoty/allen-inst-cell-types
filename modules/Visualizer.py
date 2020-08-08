@@ -38,12 +38,12 @@ def get_key(dct, val):
 
 class Visualizer():
     
-    def __init__(self, data_dir, net_name, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
         
-        self.stats_processor = StatsProcessor(net_name, n_classes, data_dir)
+        self.stats_processor = StatsProcessor(data_dir, n_classes)
         
     def plot_activation_fns(self, act_fns):
         """
@@ -73,7 +73,30 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def plot_final_accuracy(self, control_cases, mixed_cases):
+    def scatter_final_acc(self, net_names, schemes, control_cases, mixed_cases):
+        """
+        Plot a scatter plot of predicted vs actual final accuracy for the 
+        given mixed cases.
+
+        Args:
+            net_names
+            schemes
+            control_cases
+            mixed_cases
+        """
+
+        # pull data
+        all_cases = control_cases + mixed_cases
+        df = self.stats_processor.load_final_acc_df(net_names, all_cases, schemes)
+        
+        # TODO: do we really need to separate control_cases and mixed_cases, or can the code infer which is which?
+        # plot
+        
+        
+
+        return
+
+    def plot_final_accuracy(self, net_name, control_cases, mixed_cases):
         """
         Plot accuracy at the end of training for given control cases
         and mixed case, including predicted mixed case accuracy based
@@ -82,7 +105,7 @@ class Visualizer():
 
         # pull data
         acc_df, act_fn_param_dict = self.stats_processor.load_final_acc_df(
-            control_cases + mixed_cases)
+            net_name, control_cases + mixed_cases)
         acc_df_groups = acc_df.groupby("case")
 
         # plot...
@@ -154,14 +177,14 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/final accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/final accuracy/")
         cases = " & ".join(mixed_cases)
         filename = f"{cases} final acc.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_accuracy(self, cases, train_schemes):
+    def plot_accuracy(self, net_name, cases, train_schemes):
         """
         Plots accuracy over training for different experimental cases.
 
@@ -173,7 +196,8 @@ class Visualizer():
 
         """
         # pull data
-        acc_df = self.stats_processor.load_accuracy_df(cases, train_schemes)
+        acc_df = self.stats_processor.load_accuracy_df(net_name, cases, 
+            train_schemes)
 
         # group and compute stats
         acc_df.set_index(["train_scheme", "case", "epoch"], inplace=True)
@@ -210,23 +234,23 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/accuracy/")
         case_names = " & ".join(cases)
         filename = f"{case_names} accuracy.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
         
-    def plot_type_specific_weights(self, case):
+    def plot_type_specific_weights(self, net_name, case):
         """
         Plots mean absolute weights for each cell type across layers 
         """
 
         # pull data
-        df = self.stats_processor.load_weight_df(case)
+        df = self.stats_processor.load_weight_df(net_name, case)
 
         # plot
-        state_keys = list(nets[self.stats_processor.net_name]["state_keys"].keys())
+        state_keys = list(nets[net_name]["state_keys"].keys())
         x = np.array([i * 1.25 for i in range(len(state_keys))])
         n_act_fns = len(df.index.levels[1])
         width = 1.0 / n_act_fns
@@ -255,7 +279,7 @@ class Visualizer():
 
         loc = (n_act_fns - 1) / (2. * n_act_fns)
         ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
-        labels = list(nets[self.stats_processor.net_name]["state_keys"].values())
+        labels = list(nets[net_name]["state_keys"].values())
         ax.set_xticklabels(labels)
 
         # optional saving
@@ -264,14 +288,14 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/weight distr/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/weight distr/")
         filename = f"{case} weight distr.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
 
-    def plot_weight_changes(self, cases, train_schemes):
+    def plot_weight_changes(self, net_name, cases, train_schemes):
         """
         Plots average change in weights over training for the given
         experimental cases.
@@ -284,13 +308,11 @@ class Visualizer():
 
         """
         # pull data
-        df = self.stats_processor.load_weight_change_df(cases, train_schemes)
+        df = self.stats_processor.load_weight_change_df(net_name, cases, train_schemes)
 
+        state_keys = df.columns.to_list()
         sem_cols = list(filter(lambda x: x.endswith(".sem"), df.columns))
         df_groups = df.groupby(["train_scheme", "case"])
-
-        # TODO: vvv this vvv
-        state_keys = list(nets[self.stats_processor.net_name]["state_keys"].keys())
 
         # plot
         x = np.array([i * 1.25 for i in range(len(state_keys))])
@@ -320,7 +342,7 @@ class Visualizer():
 
         loc = (len(cases) - 1) / (2. * len(cases))
         ax.set_xticks([loc + i * 1.25 for i in range(len(state_keys))])
-        labels = list(nets[self.stats_processor.net_name]["state_keys"].values())
+        labels = [k[:-7] for k in df.columns if k.endswith(".weight")]
         ax.set_xticklabels(labels)
 
         # optional saving
@@ -329,7 +351,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{self.stats_processor.net_name}/weight change/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/weight change/")
         cases = " & ".join(cases)
         filename = f"{cases} weight.png"
         filename = os.path.join(sub_dir, filename)
@@ -339,16 +361,20 @@ class Visualizer():
 
 if __name__=="__main__":
     
-    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", "vgg11", 10, False)
+    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 10, False)
     
     # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 
     # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
-    # visualizer.plot_weight_changes(["control2", "mixed-2_relu10_nr-1"])
+    # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    visualizer.plot_accuracy(["unmodified"], ["sgd", "adam"])
+    # visualizer.plot_accuracy("sticknet8", ["unmodified", "swish_10", "tanhe_1.0", "swish10-tanhe1"], ["adam"])
     
+    visualizer.scatter_final_acc(["vgg11", "sticknet"], ["adam", "sgd"], 
+        ["swish_10", "tanhe_1.0"], # component cases
+        ["swish10-tanhe1"]) # mixed cases
+
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
     # visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(0.5), Tanhe(1)])
