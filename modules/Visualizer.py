@@ -73,7 +73,7 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def scatter_final_acc(self, net_names, schemes, control_cases, mixed_cases):
+    def scatter_final_acc(self, net_names, schemes, cases):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -81,20 +81,44 @@ class Visualizer():
         Args:
             net_names
             schemes
-            control_cases
-            mixed_cases
+            cases
         """
 
         # pull data
-        all_cases = control_cases + mixed_cases
-        df = self.stats_processor.load_final_acc_df(net_names, all_cases, schemes)
-        
-        # TODO: do we really need to separate control_cases and mixed_cases, or can the code infer which is which?
-        # plot
-        
-        
+        df, act_fn_param_dict = self.stats_processor.load_final_acc_df(net_names, cases, schemes)
+        df_groups = df.groupby(["net_name", "train_scheme", "case"])
 
-        return
+        # plot
+        mixed_cases = [a for a in act_fn_param_dict.keys() if len(act_fn_param_dict[a]) > 1]
+        fig, axes = plt.subplots(figsize=(14,8))
+        clrs = sns.color_palette("hls", len(net_names)*len(schemes)*len(mixed_cases))
+        
+        # plot mixed cases
+        i = 0
+        for g in df_groups.groups:
+
+            net, scheme, case = g
+            if not case in mixed_cases:
+                continue
+
+            g_data = df_groups.get_group((net, scheme, case))
+            clr = clrs[i]
+
+            # actual
+            group = acc_df_groups.get_group(mixed_case)
+            y_act = group["final_val_acc"]["mean"].values[0]
+            y_err = group["final_val_acc"]["std"].values * 2
+            l = f"{mixed_case} actual"
+            
+            # compute predicted
+            ps = [p for p in act_fn_param_dict[mixed_case]]
+            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in ps]
+            y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
+            l = f"{mixed_case} prediction"
+            h = axes[1].errorbar(y_pred, y_act, yerr=y_err, label=l,
+                capsize=3, elinewidth=1, c=clr, fmt=".")
+
+            i += 1
 
     def plot_final_accuracy(self, net_name, control_cases, mixed_cases):
         """
@@ -369,11 +393,10 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("sticknet8", ["unmodified", "swish_10", "tanhe_1.0", "swish10-tanhe1"], ["adam"])
+    # visualizer.plot_accuracy("sticknet8", ["unmodified"], ["sgd"])
     
     visualizer.scatter_final_acc(["vgg11", "sticknet"], ["adam", "sgd"], 
-        ["swish_10", "tanhe_1.0"], # component cases
-        ["swish10-tanhe1"]) # mixed cases
+        ["swish_10", "tanhe_1.0", "swish10-tanhe1"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
