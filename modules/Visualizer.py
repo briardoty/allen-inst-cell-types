@@ -123,8 +123,7 @@ class Visualizer():
 
         # plot reference line
         x = np.linspace(0, 1, 50)
-        line, = axes.plot(x, x, c=clrs[-1])
-        line.set_dashes([2,2,10,2])
+        line, = axes.plot(x, x, c=clrs[-1], dashes=[6,2])
 
         # set figure text
         axes.set_title("Linear predicted vs actual mixed case final accuracy")
