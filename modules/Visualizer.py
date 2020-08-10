@@ -90,8 +90,8 @@ class Visualizer():
 
         # plot
         mixed_cases = [a for a in act_fn_param_dict.keys() if len(act_fn_param_dict[a]) > 1]
-        fig, axes = plt.subplots(figsize=(14,8))
-        clrs = sns.color_palette("hls", len(net_names)*len(schemes)*len(mixed_cases))
+        fig, axes = plt.subplots(figsize=(14,14))
+        clrs = sns.color_palette("hls", len(net_names)*len(schemes)*len(mixed_cases) + 1)
         
         # plot mixed cases
         i = 0
@@ -105,20 +105,49 @@ class Visualizer():
             clr = clrs[i]
 
             # actual
-            group = acc_df_groups.get_group(mixed_case)
-            y_act = group["final_val_acc"]["mean"].values[0]
-            y_err = group["final_val_acc"]["std"].values * 2
-            l = f"{mixed_case} actual"
+            y_act = g_data["final_val_acc"]["mean"].values[0]
+            y_err = g_data["final_val_acc"]["std"].values[0] * 2
+
+            # prediction
+            act_fn_params = [p for p in act_fn_param_dict[case]]
+            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in act_fn_params]
+            x_pred = df["final_val_acc"]["mean"][net][scheme][component_cases].mean()
             
-            # compute predicted
-            ps = [p for p in act_fn_param_dict[mixed_case]]
-            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in ps]
-            y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
-            l = f"{mixed_case} prediction"
-            h = axes[1].errorbar(y_pred, y_act, yerr=y_err, label=l,
+            # TODO: factor in x error?
+
+            # plot
+            axes.errorbar(x_pred, y_act, yerr=y_err, label=f"{net} {scheme} {case}",
                 capsize=3, elinewidth=1, c=clr, fmt=".")
 
             i += 1
+
+        # plot reference line
+        x = np.linspace(0, 1, 50)
+        line, = axes.plot(x, x, c=clrs[-1])
+        line.set_dashes([2,2,10,2])
+
+        # set figure text
+        axes.set_title("Linear predicted vs actual mixed case final accuracy")
+        axes.set_xlabel("Predicted")
+        axes.set_ylabel("Actual")
+        axes.legend()
+        axes.set_xlim([0, 1])
+        axes.set_ylim([0, 1])
+         
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/")
+        net_names = ", ".join(net_names)
+        schemes = ", ".join(schemes)
+        cases = ", ".join(cases)
+        filename = f"{net_names}_{schemes}_{cases}_scatter.png"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
 
     def plot_final_accuracy(self, net_name, control_cases, mixed_cases):
         """
