@@ -23,12 +23,12 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 parser = argparse.ArgumentParser()
 parser.add_argument("--job_title", type=str, help="Set value for job_title")
 parser.add_argument("--case", default=None, type=str)
-parser.add_argument("--train_schemes", default=[], nargs="+", type=str)
+parser.add_argument("--schemes", default=[], nargs="+", type=str)
 parser.add_argument("--net_name", default=None, type=str)
 parser.add_argument("--cases", default=[], nargs="+", type=str)
 
 
-def main(job_title, cases, case, net_name, train_schemes):
+def main(job_title, cases, case, net_name, schemes):
     
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
@@ -42,8 +42,8 @@ def main(job_title, cases, case, net_name, train_schemes):
     if len(cases) > 0:
         run_params["cases"] = param_arr_helper(cases)
 
-    if len(train_schemes) > 0:
-        run_params["train_schemes"] = param_arr_helper(train_schemes)
+    if len(schemes) > 0:
+        run_params["schemes"] = param_arr_helper(schemes)
 
     if case is not None:
         run_params["case"] = case
