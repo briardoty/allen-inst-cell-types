@@ -15,19 +15,19 @@ parser.add_argument("--data_dir", default="/home/briardoty/Source/allen-inst-cel
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 
 # required params
-parser.add_argument("--train_schemes", nargs="+", type=str, help="Set train_scheme")
 parser.add_argument("--net_name", type=str, help="Set value for net_name")
-parser.add_argument("--cases", nargs="+", type=str, help="Set value for cases")
+parser.add_argument("--schemes", nargs="+", type=str, help="Set schemes")
+parser.add_argument("--cases", nargs="+", type=str, help="Set cases")
 
 
-def main(data_dir, train_schemes, net_name, n_classes, cases):
+def main(data_dir, net_name, schemes, cases, n_classes):
     
     # init visualizer
-    visualizer = Visualizer(data_dir, net_name, n_classes, True)
+    vis = Visualizer(data_dir, n_classes, True)
     
     # plot
-    visualizer.plot_accuracy(cases, train_schemes)
-    visualizer.plot_weight_changes(cases, train_schemes)
+    vis.plot_accuracy(net_name, cases, schemes)
+    vis.plot_weight_changes(net_name, cases, schemes)
     
     print(f"vis_cases.py completed")
     return
