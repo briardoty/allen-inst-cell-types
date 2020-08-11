@@ -52,11 +52,6 @@ class Renluf(torch.autograd.Function):
     with backward() implemented
     """
 
-    # def __init(self, alpha=1.):
-
-    #     super(Renluf, self).__init__()
-    #     self.alpha = float(alpha)
-
     @staticmethod
     def forward(ctx, input, alpha):
 
@@ -182,9 +177,9 @@ class Tanhe(nn.Module):
     def forward(self, input_tensor):
         
         # return torch.tanh(input_tensor)
-        # new: anything inside torch.exp() needs to be clamped to 88.0 to avoid inf
-        p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=88)
-        p2 = torch.clamp(torch.neg(input_tensor), max=88)
+        # new: anything inside torch.exp() needs to be clamped to 80.0 to avoid inf
+        p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=80)
+        p2 = torch.clamp(torch.neg(input_tensor), max=80)
         
         top = torch.exp(p1) - torch.exp(p2)
         bot = torch.exp(p1) + torch.exp(p2)
