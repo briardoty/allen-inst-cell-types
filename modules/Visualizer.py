@@ -111,7 +111,13 @@ class Visualizer():
             # prediction
             act_fn_params = [p for p in act_fn_param_dict[case]]
             component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in act_fn_params]
-            x_pred = df["final_val_acc"]["mean"][net][scheme][component_cases].mean()
+            component_accs = df["final_val_acc"]["mean"][net][scheme].get(component_cases)
+
+            if component_accs is None:
+                print(f"Component case accuracies do not exist for: {net} {scheme} {' '.join(component_cases)}")
+                continue
+
+            x_pred = component_accs.mean()
             
             # TODO: factor in x error?
 
@@ -424,7 +430,8 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("sticknet8", ["unmodified"], ["sgd"])
     
     visualizer.scatter_final_acc(["vgg11", "sticknet"], ["adam", "sgd"], 
-        ["swish_10", "tanhe_1.0", "swish10-tanhe1"])
+        ["swish_10", "tanhe_1.0", "swish10-tanhe1", 
+         "swish_1", "tanhe_2.0", "swish1-tanhe2"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
