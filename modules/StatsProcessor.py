@@ -4,6 +4,7 @@ import os
 import pandas as pd
 import re
 import numpy as np
+import json
 
 try:
     from .NetManager import NetManager, nets
@@ -14,6 +15,11 @@ try:
     from .MixedActivationLayer import generate_masks
 except:
     from MixedActivationLayer import generate_masks
+
+try:
+    from .util import ensure_sub_dir
+except:
+    from util import ensure_sub_dir
 
 def get_epoch_from_filename(filename):
     
@@ -208,17 +214,39 @@ class StatsProcessor():
 
         return df_stats
     
-    def load_final_acc_df(self, net_names, cases, train_schemes):
+    def load_final_acc_df(self, net_names, schemes, refresh_df=True):
         """
         Loads dataframe with final validation accuracy for different 
         experimental cases.
 
         Args:
-            cases (list): Experimental cases to include in figure.
+            net_names
+            schemes
+            refresh
 
         Returns:
-            acc_df (dataframe): Dataframe containing final accuracy.
+            df_stats (dataframe): Dataframe containing final accuracy.
+            act_fn_param_dict (dict): Dict() of act fn names to their params
         """
+
+        # optional refresh
+        if refresh_df:
+            self.refresh_final_acc_df(net_names, schemes)
+
+        # load
+        sub_dir = os.path.join(self.data_dir, "dataframes/")
+        acc_df = pd.read_csv(os.path.join(sub_dir, "final_acc_df.csv"))
+        with open(os.path.join(sub_dir, "act_fn_param_dict.json"), "r") as json_file:
+            act_fn_param_dict = json.load(json_file)
+
+        # aggregate
+        acc_df.set_index(["net_name", "train_scheme", "case"], inplace=True)
+        df_groups = acc_df.groupby(["net_name", "train_scheme", "case"])
+        df_stats = df_groups.agg({ "final_val_acc": [np.mean, np.std] })
+
+        return df_stats, act_fn_param_dict
+
+    def refresh_final_acc_df(self, net_names, schemes):
 
         acc_arr = []
         act_fn_param_dict = dict()
@@ -238,11 +266,7 @@ class StatsProcessor():
                 continue
 
             # only interested in the given training schemes
-            if not any(t in slugs for t in train_schemes):
-                continue
-
-            # only interested in the given cases
-            if not any(c in slugs for c in cases):
+            if not any(t in slugs for t in schemes):
                 continue
             
             # consider all files...
@@ -260,8 +284,9 @@ class StatsProcessor():
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
                 modified_layers = stats_dict.get("modified_layers")
-                act_fn_params = modified_layers.get("act_fn_params")
-                act_fn_param_dict[case] = act_fn_params
+                if modified_layers is not None:
+                    act_fn_params = modified_layers.get("act_fn_params")
+                    act_fn_param_dict[case] = act_fn_params
 
                 perf_stats = stats_dict.get("perf_stats")
                 (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
@@ -269,13 +294,23 @@ class StatsProcessor():
                 
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=["net_name", "train_scheme", "case", "sample", "final_val_acc"])
-        
-        # aggregate
-        acc_df.set_index(["net_name", "train_scheme", "case"], inplace=True)
-        df_groups = acc_df.groupby(["net_name", "train_scheme", "case"])
-        df_stats = df_groups.agg({ "final_val_acc": [np.mean, np.std] })
 
-        return df_stats, act_fn_param_dict
+        self.save_df("final_acc_df.csv", acc_df)
+        self.save_json("act_fn_param_dict.json", act_fn_param_dict)
+
+    def save_df(self, name, df):
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
+        filename = os.path.join(sub_dir, name)
+        df.to_csv(filename, header=True, columns=df.columns)
+
+    def save_json(self, name, blob):
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
+        filename = os.path.join(sub_dir, name)
+        json_obj = json.dumps(blob)
+        with open(filename, "w") as json_file:
+            json_file.write(json_obj)
 
     def load_accuracy_df(self, net_name, case_ids, train_schemes):
         """

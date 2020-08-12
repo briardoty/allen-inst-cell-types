@@ -6,6 +6,7 @@ Created on Tue Jul  7 14:22:11 2020
 @author: briardoty
 """
 import os
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -28,6 +29,10 @@ try:
     from .util import ensure_sub_dir
 except:
     from util import ensure_sub_dir
+
+import matplotlib
+matplotlib.rc('xtick', labelsize=14) 
+matplotlib.rc('ytick', labelsize=14) 
 
 def get_key(dct, val):
 
@@ -73,7 +78,7 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def scatter_final_acc(self, net_names, schemes, cases):
+    def scatter_final_acc(self, net_names, schemes, act_fns, refresh):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -81,16 +86,17 @@ class Visualizer():
         Args:
             net_names
             schemes
-            cases
+            act_fns
+            refresh
         """
 
         # pull data
-        df, act_fn_param_dict = self.stats_processor.load_final_acc_df(net_names, cases, schemes)
+        df, act_fn_param_dict = self.stats_processor.load_final_acc_df(net_names, schemes, refresh)
         df_groups = df.groupby(["net_name", "train_scheme", "case"])
+        mixed_cases = [a for a in act_fn_param_dict.keys() if len(act_fn_param_dict[a]) > 1]
 
         # plot
-        mixed_cases = [a for a in act_fn_param_dict.keys() if len(act_fn_param_dict[a]) > 1]
-        fig, axes = plt.subplots(figsize=(14,14))
+        fig, ax = plt.subplots(figsize=(14,14))
         clrs = sns.color_palette("hls", len(net_names)*len(schemes)*len(mixed_cases) + 1)
         
         # plot mixed cases
@@ -98,7 +104,7 @@ class Visualizer():
         for g in df_groups.groups:
 
             net, scheme, case = g
-            if not case in mixed_cases:
+            if (not case in mixed_cases) or (not any(f in case for f in act_fns)):
                 continue
 
             g_data = df_groups.get_group((net, scheme, case))
@@ -112,32 +118,39 @@ class Visualizer():
             act_fn_params = [p for p in act_fn_param_dict[case]]
             component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in act_fn_params]
             component_accs = df["final_val_acc"]["mean"][net][scheme].get(component_cases)
+            component_stds = df["final_val_acc"]["std"][net][scheme].get(component_cases)
 
             if component_accs is None:
                 print(f"Component case accuracies do not exist for: {net} {scheme} {' '.join(component_cases)}")
                 continue
 
-            x_pred = component_accs.mean()
-            
-            # TODO: factor in x error?
+            if len(component_accs) != len(component_cases):
+                # TODO: this bug might be huge, fix it
+                print("problem!")
+                sys.exit(-1)
 
+            x_pred = component_accs.mean()
+            x_err = component_stds.mean()
+            
             # plot
-            axes.errorbar(x_pred, y_act, yerr=y_err, label=f"{net} {scheme} {case}",
-                capsize=3, elinewidth=1, c=clr, fmt=".")
+            ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
+                label=f"{net} {scheme} {case}", capsize=3, 
+                elinewidth=1, c=clr, fmt=".", markersize=10)
 
             i += 1
 
         # plot reference line
         x = np.linspace(0, 1, 50)
-        axes.plot(x, x, c=clrs[-1], dashes=[6,2])
+        ax.plot(x, x, c=(0.5, 0.5, 0.5, 0.25), dashes=[6,2])
 
         # set figure text
-        axes.set_title("Linear predicted vs actual mixed case final accuracy")
-        axes.set_xlabel("Predicted")
-        axes.set_ylabel("Actual")
-        axes.legend()
-        axes.set_xlim([0, 1])
-        axes.set_ylim([0, 1])
+        ax.set_title("Linear predicted vs actual mixed case final accuracy", fontsize=18)
+        ax.set_xlabel("Predicted", fontsize=16)
+        ax.set_ylabel("Actual", fontsize=16)
+        ax.set_xlim([0.1, 1])
+        ax.set_ylim([0.1, 1])
+        ax.set_aspect('equal', 'box')
+        ax.legend()
          
         # optional saving
         if not self.save_fig:
@@ -148,8 +161,8 @@ class Visualizer():
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
-        cases = ", ".join(cases)
-        filename = f"{net_names}_{schemes}_{cases}_scatter.png"
+        act_fns = ", ".join(act_fns)
+        filename = f"{net_names}_{schemes}_{act_fns}_scatter.png"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -277,7 +290,7 @@ class Visualizer():
             yerr = group_data["acc"]["std"].values * 2
             ax.plot(range(len(yvals)), yvals, label=f"{scheme} {case}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
-                    alpha=0.2, facecolor=clr)
+                    alpha=0.1, facecolor=clr)
             
         ax.set_title("Classification accuracy during training")
         ax.set_xlabel("Epoch")
@@ -427,13 +440,12 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("sticknet8", ["unmodified"], ["sgd"])
+    # visualizer.plot_accuracy("vgg11", ["unmodified", "swish_10", "tanhe_1.0", "swish10-tanhe1"], ["adam"])
     
-    visualizer.scatter_final_acc(["vgg11", "sticknet"], ["adam", "sgd"], 
-        ["swish_10", "tanhe_1.0", "swish10-tanhe1", 
-         "swish_1", "tanhe_2.0", "swish1-tanhe2"])
+    visualizer.scatter_final_acc(["vgg11", "sticknet8"], ["adam", "sgd"], 
+        ["swish", "tanhe"], refresh=False)
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
-    # visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(0.5), Tanhe(1)])
+    # visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(0.5), Tanhe(1), Tanhe(10)])
     # visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
