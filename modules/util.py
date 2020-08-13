@@ -108,7 +108,7 @@ def load_imagenette(dataset_dir, batch_size, n_workers):
         batch_size=batch_size, shuffle=True, num_workers=n_workers)
     
     val_loader = torch.utils.data.DataLoader(val_set, 
-        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+        batch_size=min(batch_size*4, 4), shuffle=False, num_workers=n_workers)
     
     return (train_set, val_set, train_loader, val_loader)
 
@@ -137,6 +137,6 @@ def load_cifar10(dataset_dir, batch_size, n_workers):
         batch_size=batch_size, shuffle=True, num_workers=n_workers)
 
     val_loader = torch.utils.data.DataLoader(val_set, 
-        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+        batch_size=min(batch_size*4, 4), shuffle=False, num_workers=n_workers)
 
     return (train_set, val_set, train_loader, val_loader)
