@@ -15,7 +15,7 @@ parser.add_argument("--data_dir", default="/home/briardoty/Source/allen-inst-cel
 parser.add_argument("--net_name", type=str, help="Set value for net_name", required=True)
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--n_samples", default=10, type=int, help="Set value for n_samples")
-parser.add_argument("--train_scheme", type=str, help="Set value for train_scheme", required=True)
+parser.add_argument("--scheme", type=str, help="Set value for scheme", required=True)
 
 # config params
 parser.add_argument("--case", type=str, help="Set value for case")
@@ -31,10 +31,10 @@ pretrained_parser.add_argument('--untrained', dest='pretrained', action='store_f
 parser.set_defaults(pretrained=False)
 
 def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir, 
-         net_name, n_classes, n_samples, pretrained, train_scheme):
+         net_name, n_classes, n_samples, pretrained, scheme):
     
     # init net manager
-    manager = NetManager(net_name, n_classes, data_dir, train_scheme, pretrained)
+    manager = NetManager(net_name, n_classes, data_dir, scheme, pretrained)
     
     # build and save nets
     for i in range(n_samples):
