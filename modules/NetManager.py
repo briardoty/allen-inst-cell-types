@@ -103,12 +103,13 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params):
 
 class NetManager():
     
-    def __init__(self, net_name, n_classes, data_dir, train_scheme, 
+    def __init__(self, dataset, net_name, n_classes, data_dir, train_scheme, 
         pretrained=False, seed=None):
 
         # SEED!
         self.seed_everything(seed)
 
+        self.dataset = dataset
         self.net_name = net_name
         self.n_classes = n_classes
         self.data_dir = os.path.expanduser(data_dir)
@@ -135,7 +136,7 @@ class NetManager():
     def init_net(self, case_id, sample):
         self.case_id = case_id
         self.sample = sample
-        self.net_dir = get_net_dir(self.data_dir, self.net_name, 
+        self.net_dir = get_net_dir(self.data_dir, self.dataset, self.net_name, 
             self.train_scheme, self.case_id, self.sample)
 
         if self.pretrained:
@@ -146,9 +147,6 @@ class NetManager():
         
         elif self.net_name == "sticknet8":
             self.net = StickNet(8)
-
-        elif self.net_name == "sticknet":
-            self.net = StickNet(16)
 
         else:
             print(f"Unrecognized network name {self.net_name}, exiting job.")
@@ -166,6 +164,7 @@ class NetManager():
         net_filepath = os.path.join(self.net_dir, filename)
         
         snapshot_state = {
+            "dataset": self.dataset,
             "net_name": self.net_name,
             "epoch": epoch,
             "train_scheme": self.train_scheme,
@@ -192,6 +191,7 @@ class NetManager():
         data = {
             f"{name}": np_arr,
             "net_name": self.net_name,
+            "dataset": self.dataset,
             "train_scheme": self.train_scheme,
             "case": self.case_id,
             "sample": self.sample,
@@ -276,12 +276,13 @@ class NetManager():
             "val_acc": snapshot_state.get("val_acc")
         }
     
-    def load_dataset(self, name, batch_size):
+    def load_dataset(self, batch_size):
 
         (self.train_set, 
          self.val_set, 
          self.train_loader, 
-         self.val_loader) = load_dataset(self.data_dir, name, batch_size)
+         self.val_loader) = load_dataset(self.data_dir, self.dataset, 
+            batch_size)
 
     def save_net_responses(self):
         # store responses as tensor
@@ -292,7 +293,8 @@ class NetManager():
         net_tag = get_net_tag(self.net_name)
         output_filename = f"output_{net_tag}.pt"
         input_filename = f"input_{net_tag}.pt"
-        resp_dir = os.path.join(self.data_dir, f"responses/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
+        resp_dir = os.path.join(self.data_dir, 
+            f"responses/{self.dataset}/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
         
         print(f"Saving network responses to {resp_dir}")
 
@@ -531,10 +533,10 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("sticknet8", 10, 
+    mgr = NetManager("cifar10", "sticknet8", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
     mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet8/adam/relu/sample-0/sticknet8_case-relu_sample-0_epoch-0.pt")
-    mgr.load_dataset("cifar10", 2)
+    mgr.load_dataset(2)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=0.0001)
