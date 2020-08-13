@@ -444,15 +444,11 @@ class NetManager():
                 
                 outputs = self.net(inputs)
 
-                if (torch.isnan(outputs).any().item() or
-                    not torch.isfinite(outputs).all().item()):
-                    outputs = self.net(inputs)
-
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
 
                 # backpropagate error and optimize weights
-                loss.backward(retain_graph=True)
+                loss.backward()
                 optimizer.step()
 
             # statistics
