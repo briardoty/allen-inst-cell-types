@@ -276,13 +276,13 @@ class NetManager():
             "val_acc": snapshot_state.get("val_acc")
         }
     
-    def load_imagenette(self, batch_size):
-        (self.image_datasets,
+    def load_dataset(self, name, batch_size):
+
+        (self.train_set, 
+         self.val_set, 
          self.train_loader, 
-         self.val_loader, 
-         self.dataset_sizes, 
-         self.n_classes) = load_imagenette(self.data_dir, batch_size)
-        
+         self.val_loader) = load_dataset(self.data_dir, name, batch_size)
+
     def save_net_responses(self):
         # store responses as tensor
         self.responses_input = torch.stack(self.responses_input)
@@ -394,8 +394,9 @@ class NetManager():
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
 
-        epoch_loss = running_loss / self.dataset_sizes[phase]
-        epoch_acc = running_corrects.double() / self.dataset_sizes[phase]
+        dataset_size = len(self.val_set)
+        epoch_loss = running_loss / dataset_size
+        epoch_acc = running_corrects.double() / dataset_size
 
         print('{} Loss: {:.6f} Acc: {:.6f}'.format(
             phase, epoch_loss, epoch_acc))
@@ -462,7 +463,8 @@ class NetManager():
         if scheduler is not None:
             scheduler.step()
 
-        epoch_size = self.dataset_sizes[phase] * train_frac
+        dataset_size = len(train_set)
+        epoch_size = dataset_size * train_frac
         epoch_loss = running_loss / epoch_size
         epoch_acc = running_corrects.double() / epoch_size
 
@@ -529,10 +531,10 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("vgg11", 10, 
+    mgr = NetManager("sticknet8", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/vgg11/adam/tanhe_10/sample-0/vgg11_case-tanhe_10_sample-0_epoch-0.pt")
-    mgr.load_imagenette(1)
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet8/adam/relu/sample-0/sticknet8_case-relu_sample-0_epoch-0.pt")
+    mgr.load_dataset("cifar10", 2)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=0.0001)

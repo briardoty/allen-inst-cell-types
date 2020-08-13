@@ -1,4 +1,5 @@
 import torch
+import torchvision
 from torchvision import datasets, models, transforms
 import os
 
@@ -58,42 +59,77 @@ def ensure_sub_dir(data_dir, sub_dir):
         
     return sub_dir
 
-def load_imagenette(data_dir, batch_size=4, img_xy=227):
-    # standard normalization applied to all stimuli
-    normalize = transforms.Normalize(
-        [0.485, 0.456, 0.406], 
-        [0.229, 0.224, 0.225])
+# standard normalization applied to all stimuli
+normalize = transforms.Normalize(
+    [0.485, 0.456, 0.406], 
+    [0.229, 0.224, 0.225])
 
-    data_transforms = {
-        "train": transforms.Compose([
-            transforms.CenterCrop(img_xy),
-            transforms.RandomHorizontalFlip(), 
-            transforms.ToTensor(),
-            normalize
-        ]),
-        "val": transforms.Compose([
-            transforms.CenterCrop(img_xy),
-            transforms.ToTensor(),
-            normalize
-        ]),
-    }
+def load_dataset(data_dir, name, batch_size=4):
+
+    dataset_dir = os.path.join(data_dir, name)
+    n_workers = 4
+
+    if name == "cifar10":
+        return load_cifar10(dataset_dir, batch_size, n_workers)
+    elif name == "imagenette2":
+        return load_imagenette(dataset_dir, batch_size, n_workers)
+
+def load_imagenette(dataset_dir, batch_size, n_workers):
+
+    # standard transforms
+    img_xy = 227
+    train_xform = transforms.Compose([
+        transforms.CenterCrop(img_xy),
+        transforms.RandomHorizontalFlip(), 
+        transforms.ToTensor(),
+        normalize
+    ])
+    val_xform = transforms.Compose([
+        transforms.CenterCrop(img_xy),
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    # datasets
+    train_set = datasets.ImageFolder(os.path.join(dataset_dir, "train"),
+        transform=train_xform)
+    val_set = datasets.ImageFolder(os.path.join(dataset_dir, "val"),
+        transform=val_xform)
     
-    imagenette_dir = os.path.join(data_dir, "imagenette2/")
-    image_datasets = { x: datasets.ImageFolder(os.path.join(imagenette_dir, x),
-                                               data_transforms[x])
-                      for x in ["train", "val"] }
+    # loaders
+    train_loader = torch.utils.data.DataLoader(train_set, 
+        batch_size=batch_size, shuffle=True, num_workers=n_workers)
     
-    train_loader = torch.utils.data.DataLoader(
-        image_datasets["train"], batch_size=batch_size, shuffle=True, num_workers=4)
+    val_loader = torch.utils.data.DataLoader(val_set, 
+        batch_size=batch_size, shuffle=False, num_workers=n_workers)
     
-    val_loader = torch.utils.data.DataLoader(
-        image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=4)
+    return (train_set, val_set, train_loader, val_loader)
+
+def load_cifar10(dataset_dir, batch_size, n_workers):
+
+    # standard transforms
+    train_xform = transforms.Compose([
+        transforms.RandomHorizontalFlip(), 
+        transforms.ToTensor(),
+        normalize
+    ])
+    val_xform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    # datasets
+    train_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
+        download=True, transform=train_xform)
     
-    dataset_sizes = { 
-        x: len(image_datasets[x]) for x in ["train", "val"] 
-    }
-    
-    class_names = image_datasets["train"].classes
-    n_classes = len(class_names)
-    
-    return (image_datasets, train_loader, val_loader, dataset_sizes, n_classes)
+    val_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=False,
+        download=True, transform=val_xform)
+
+    # loaders
+    train_loader = torch.utils.data.DataLoader(train_set,
+        batch_size=batch_size, shuffle=True, num_workers=n_workers)
+
+    val_loader = torch.utils.data.DataLoader(val_set, 
+        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+
+    return (train_set, val_set, train_loader, val_loader)
