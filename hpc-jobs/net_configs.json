@@ -8,6 +8,9 @@
     "unmodified": {
         "pretrained": false
     },
+    "unmodified2": {
+        "pretrained": false
+    },
     "relu": {
         "n_repeat": 1,
         "act_fns": ["relu"],
