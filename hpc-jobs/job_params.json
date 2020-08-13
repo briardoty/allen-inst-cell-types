@@ -24,7 +24,6 @@
     },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
-        "cases": ["swish1-relu", "swish0.1-relu"],
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "n_classes": 10,
