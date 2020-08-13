@@ -463,7 +463,7 @@ class NetManager():
         if scheduler is not None:
             scheduler.step()
 
-        dataset_size = len(train_set)
+        dataset_size = len(self.train_set)
         epoch_size = dataset_size * train_frac
         epoch_loss = running_loss / epoch_size
         epoch_acc = running_corrects.double() / epoch_size
