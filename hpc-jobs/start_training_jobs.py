@@ -62,7 +62,7 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
     net_filepaths = set()
 
     # walk dir looking for nets to train
-    net_dir = os.path.join(run_params["data_dir"], f"nets/{net_name}")
+    net_dir = os.path.join(run_params["data_dir"], f"nets/{dataset}/{net_name}")
     for root, dirs, files in os.walk(net_dir):
         
         # only interested in locations files (nets) are saved
