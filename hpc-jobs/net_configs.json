@@ -8,6 +8,12 @@
     "unmodified": {
         "pretrained": false
     },
+    "relu": {
+        "n_repeat": 1,
+        "act_fns": ["relu"],
+        "act_fn_params": [null],
+        "pretrained": false
+    },
 
 
 
@@ -222,13 +228,6 @@
         "act_fn_params": [10, 1.0],
         "pretrained": false
     },
-    "swish10-tanhe1b": {
-        "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
-        "n_repeat": 1,
-        "act_fns": ["swish", "tanhe"],
-        "act_fn_params": [10, 1.0],
-        "pretrained": false
-    },
     "swish1-tanhe2": {
         "layer_names": ["relu1", "relu2", "relu3", "relu4", "relu5", "relu6", "relu7", "relu8", "relu9", "relu10"],
         "n_repeat": 1,
@@ -286,14 +285,5 @@
         "act_fns": ["swish", "tanhe", "relu"],
         "act_fn_params": [10, 1.0, null],
         "pretrained": false
-    },
-
-
-
-    "sanity1": {
-        "layer_names": ["relu10"],
-        "n_repeat": 1,
-        "act_fns": ["sanityCheck"],
-        "act_fn_params": [-1]
     }
 }
