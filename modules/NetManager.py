@@ -221,6 +221,13 @@ class NetManager():
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
+        # make any modifications
+        if self.modified_layers is not None:
+            n_repeat = self.modified_layers["n_repeat"]
+            act_fns = self.modified_layers["act_fns"]
+            act_fn_params = self.modified_layers["act_fn_params"]
+            self.replace_act_layers(n_repeat, act_fns, act_fn_params)
+
         return self.net
         
     def load_net_snapshot_from_path(self, net_filepath):
@@ -437,11 +444,15 @@ class NetManager():
                 
                 outputs = self.net(inputs)
 
+                if (torch.isnan(outputs).any().item() or
+                    not torch.isfinite(outputs).all().item()):
+                    outputs = self.net(inputs)
+
                 _, preds = torch.max(outputs, 1)
                 loss = criterion(outputs, labels)
 
                 # backpropagate error and optimize weights
-                loss.backward()
+                loss.backward(retain_graph=True)
                 optimizer.step()
 
             # statistics
@@ -452,7 +463,8 @@ class NetManager():
             i = i + 1
 
         # step through the learning rate scheduler
-        scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
 
         epoch_size = self.dataset_sizes[phase] * train_frac
         epoch_loss = running_loss / epoch_size
@@ -521,9 +533,9 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("asdf", 10, 
+    mgr = NetManager("vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet/adam/tanhe_10/sample-0/sticknet_case-tanhe_10_sample-0_epoch-0.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/vgg11/adam/tanhe_10/sample-0/vgg11_case-tanhe_10_sample-0_epoch-0.pt")
     mgr.load_imagenette(1)
 
     criterion = nn.CrossEntropyLoss()
