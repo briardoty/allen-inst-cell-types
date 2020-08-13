@@ -25,11 +25,11 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 parser = argparse.ArgumentParser()
 parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
-parser.add_argument("--train_scheme", type=str, help="Set train_scheme", required=True)
+parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.set_defaults(resume=False)
 
-def main(net_name, cases, train_scheme, resume):
+def main(net_name, cases, scheme, resume):
     
     job_title = "train_net"
     
@@ -41,7 +41,7 @@ def main(net_name, cases, train_scheme, resume):
     script = job_params["script"]
     run_params = job_params["run_params"]
     run_params["net_name"] = net_name
-    run_params["train_scheme"] = train_scheme
+    run_params["scheme"] = scheme
     job_settings = job_params["job_settings"]
     
     # set to avoid submitting jobs for the same net twice
@@ -58,7 +58,7 @@ def main(net_name, cases, train_scheme, resume):
         slugs = root.split("/")
 
         # only interested in the given training scheme
-        if not train_scheme in slugs:
+        if not scheme in slugs:
             continue
 
         # only interested in the given case
