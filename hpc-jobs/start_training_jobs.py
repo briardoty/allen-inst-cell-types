@@ -23,9 +23,10 @@ job_dir = "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/log_files/"
 
 # args
 parser = argparse.ArgumentParser()
-parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
+parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
+parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.add_argument("--lr", type=float)
 parser.add_argument("--lr_step_size", type=int)
@@ -34,7 +35,7 @@ parser.add_argument("--batch_size", type=int)
 parser.set_defaults(resume=False)
 
 def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma, 
-    batch_size):
+    batch_size, dataset):
     
     job_title = "train_net"
     
@@ -49,6 +50,7 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
     run_params = job_params["run_params"]
     run_params["net_name"] = net_name
     run_params["scheme"] = scheme
+    run_params["dataset"] = dataset
     run_params["lr"] = lr if lr is not None else run_params["lr"]
     run_params["lr_step_size"] = lr_step_size if lr_step_size is not None else run_params["lr_step_size"]
     run_params["lr_gamma"] = lr_gamma if lr_gamma is not None else run_params["lr_gamma"]
@@ -68,6 +70,10 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
             continue
         
         slugs = root.split("/")
+
+        # only interested in the given dataset
+        if not dataset in slugs:
+            continue
 
         # only interested in the given training scheme
         if not scheme in slugs:

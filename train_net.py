@@ -14,6 +14,7 @@ from torch.optim import lr_scheduler
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_dir", default="/home/briardoty/Source/neuro511-artiphysiology/data/", type=str, help="Set value for data_dir")
+parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for net_name")
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--epochs", default=10, type=int, help="Set value for epochs")
@@ -50,10 +51,10 @@ def get_training_vars(name, manager, lr, lr_step_size, lr_gamma):
     return (criterion, optimizer, scheduler)
 
 def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
-         lr, lr_step_size, lr_gamma, batch_size, scheme):
+         lr, lr_step_size, lr_gamma, batch_size, scheme, dataset):
     
     # init net manager
-    manager = NetManager(net_name, n_classes, data_dir, scheme)
+    manager = NetManager(dataset, net_name, n_classes, data_dir, scheme)
     manager.load_dataset(batch_size)
     
     # load the proper net
