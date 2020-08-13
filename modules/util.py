@@ -2,6 +2,7 @@ import torch
 import torchvision
 from torchvision import datasets, models, transforms
 import os
+import sys
 
 # function for getting an identifier for a given net state
 def get_net_tag(net_name, case_id, sample, epoch):
@@ -73,6 +74,9 @@ def load_dataset(data_dir, name, batch_size=4):
         return load_cifar10(dataset_dir, batch_size, n_workers)
     elif name == "imagenette2":
         return load_imagenette(dataset_dir, batch_size, n_workers)
+    else:
+        print(f"Unrecognized dataset name {name}")
+        sys.exit(-1)
 
 def load_imagenette(dataset_dir, batch_size, n_workers):
 
