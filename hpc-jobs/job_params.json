@@ -14,7 +14,7 @@
         "job_settings": {
             "queue": "braintv",
             "mem": "32g",
-            "walltime": "10:00:00",
+            "walltime": "20:00:00",
             "ppn": 4,
             "nodes": 1,
             "gpus": 1,
