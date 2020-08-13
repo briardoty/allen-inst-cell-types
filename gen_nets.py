@@ -43,7 +43,8 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         manager.init_net(case, i)
         
         # modify layers
-        manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
+        if (act_fns is not None and len(act_fns) > 0):
+            manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
         
         # save
         manager.save_net_snapshot()
