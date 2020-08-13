@@ -239,10 +239,8 @@ class NetManager():
         self.case_id = snapshot_state.get("case")
         self.sample = snapshot_state.get("sample")
         
-        self.modified_layers = (snapshot_state.get("modified_layers") 
-                                if snapshot_state.get("modified_layers") is not None 
-                                else snapshot_state.get("mixed_layer"))
-        
+        self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
+        self.modified_layers = snapshot_state.get("modified_layers")        
         self.epoch = snapshot_state.get("epoch")
         
         # load net state

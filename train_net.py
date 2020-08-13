@@ -54,7 +54,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     
     # init net manager
     manager = NetManager(net_name, n_classes, data_dir, scheme)
-    manager.load_imagenette(batch_size)
+    manager.load_dataset(batch_size)
     
     # load the proper net
     manager.load_net_snapshot_from_path(net_filepath)
