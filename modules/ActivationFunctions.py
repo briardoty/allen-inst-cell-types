@@ -178,13 +178,14 @@ class Tanhe(nn.Module):
         
         # return torch.tanh(input_tensor)
         # new: anything inside torch.exp() needs to be clamped to 80.0 to avoid inf
-        p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=80)
-        p2 = torch.clamp(torch.neg(input_tensor), max=80)
+        # p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=80)
+        # p2 = torch.clamp(torch.neg(input_tensor), max=80)
         
-        top = torch.exp(p1) - torch.exp(p2)
-        bot = torch.exp(p1) + torch.exp(p2)
+        # top = torch.exp(p1) - torch.exp(p2)
+        # bot = torch.exp(p1) + torch.exp(p2)
         
-        return torch.div(top, bot)
+        # return torch.div(top, bot)
+        return torch.tanh(torch.mul((self.beta + 1.0) / 2.0, input_tensor))
 
 class SanityCheck(nn.Module):
     """
