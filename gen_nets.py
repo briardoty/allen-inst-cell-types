@@ -42,10 +42,8 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         # init net
         manager.init_net(case, i)
         
-        # control nets are unmodified
-        if (layer_names is not None and
-            len(layer_names) > 0):
-            manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
+        # modify layers
+        manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
         
         # save
         manager.save_net_snapshot()
