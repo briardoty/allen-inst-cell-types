@@ -27,9 +27,14 @@ parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", 
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 parser.add_argument("--resume", dest="resume", action="store_true")
+parser.add_argument("--lr", type=float)
+parser.add_argument("--lr_step_size", type=int)
+parser.add_argument("--lr_gamma", type=float)
+parser.add_argument("--batch_size", type=int)
 parser.set_defaults(resume=False)
 
-def main(net_name, cases, scheme, resume):
+def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma, 
+    batch_size):
     
     job_title = "train_net"
     
@@ -39,9 +44,16 @@ def main(net_name, cases, scheme, resume):
     
     job_params = job_params[job_title]
     script = job_params["script"]
+
+    # update any run params
     run_params = job_params["run_params"]
     run_params["net_name"] = net_name
     run_params["scheme"] = scheme
+    run_params["lr"] = lr if lr is not None else run_params["lr"]
+    run_params["lr_step_size"] = lr_step_size if lr_step_size is not None else run_params["lr_step_size"]
+    run_params["lr_gamma"] = lr_gamma if lr_gamma is not None else run_params["lr_gamma"]
+    run_params["batch_size"] = batch_size if batch_size is not None else run_params["batch_size"]
+
     job_settings = job_params["job_settings"]
     
     # set to avoid submitting jobs for the same net twice

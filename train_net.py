@@ -21,7 +21,7 @@ parser.add_argument("--train_frac", default=1., type=float, help="Set value for 
 parser.add_argument("--lr", type=float, required=True)
 parser.add_argument("--lr_step_size", type=int, required=True)
 parser.add_argument("--lr_gamma", type=float, required=True)
-parser.add_argument("--batch_size", default=4, type=int)
+parser.add_argument("--batch_size", type=int, required=True)
 parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 
