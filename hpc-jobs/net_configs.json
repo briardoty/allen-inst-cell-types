@@ -1,14 +1,8 @@
 {
-    "control1": {
-        "pretrained": true
-    },
-    "control2": {
+    "control": {
         "pretrained": false
     },
     "unmodified": {
-        "pretrained": false
-    },
-    "unmodified2": {
         "pretrained": false
     },
     "relu": {
