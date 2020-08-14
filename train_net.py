@@ -45,11 +45,8 @@ def get_training_vars(name, manager, lr, lr_step_size, lr_gamma, momentum):
     criterion = nn.CrossEntropyLoss()
     optimizer = create_optimizer(name, manager, lr, momentum)
 
-    if name == "adam":
-        scheduler = None
-    else:
-        scheduler = lr_scheduler.StepLR(optimizer, step_size=lr_step_size, 
-            gamma=lr_gamma)
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=lr_step_size, 
+        gamma=lr_gamma)
 
     return (criterion, optimizer, scheduler)
 
