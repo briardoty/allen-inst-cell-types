@@ -19,7 +19,7 @@ parser.add_argument("--net_name", default="vgg11", type=str, help="Set value for
 parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_classes")
 parser.add_argument("--epochs", default=10, type=int, help="Set value for epochs")
 parser.add_argument("--train_frac", default=1., type=float, help="Set value for train_frac")
-parser.add_argument("--lr", type=float, required=True)
+parser.add_argument("--lr", type=float)
 parser.add_argument("--lr_step_size", type=int, required=True)
 parser.add_argument("--lr_gamma", type=float, required=True)
 parser.add_argument("--batch_size", type=int, required=True)
