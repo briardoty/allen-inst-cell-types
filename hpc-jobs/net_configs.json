@@ -137,13 +137,13 @@
         "act_fn_params": [0.5],
         "pretrained": false
     },
-    "tanhe_1.0": {
+    "tanhe_1": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [1.0],
         "pretrained": false
     },
-    "tanhe_2.0": {
+    "tanhe_2": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [2.0],
