@@ -51,7 +51,8 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
     run_params["net_name"] = net_name
     run_params["scheme"] = scheme
     run_params["dataset"] = dataset
-    run_params["lr"] = lr if lr is not None else run_params["lr"]
+    if lr is not None:
+        run_params["lr"] = lr
     run_params["lr_step_size"] = lr_step_size if lr_step_size is not None else run_params["lr_step_size"]
     run_params["lr_gamma"] = lr_gamma if lr_gamma is not None else run_params["lr_gamma"]
     run_params["batch_size"] = batch_size if batch_size is not None else run_params["batch_size"]

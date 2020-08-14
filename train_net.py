@@ -31,6 +31,8 @@ def create_optimizer(name, manager, lr):
 
     if name == "sgd":
         return optim.SGD(manager.net.parameters(), lr=lr)
+    elif name == "adam" and lr is not None:
+        return optim.Adam(manager.net.parameters(), lr=lr)
     elif name == "adam":
         return optim.Adam(manager.net.parameters())
     else:
