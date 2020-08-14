@@ -14,7 +14,7 @@
 
 
 
-    "renlu_0.5": {
+    "renlu0.5": {
         "n_repeat": 1,
         "act_fns": ["renlu"],
         "act_fn_params": [0.5],
@@ -23,43 +23,43 @@
 
 
 
-    "swish_0.1": {
+    "swish0.1": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [0.1],
         "pretrained": false
     },
-    "swish_0.5": {
+    "swish0.5": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [0.5],
         "pretrained": false
     },
-    "swish_1": {
+    "swish1": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [1],
         "pretrained": false
     },
-    "swish_2": {
+    "swish2": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [2],
         "pretrained": false
     },
-    "swish_5": {
+    "swish5": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [5],
         "pretrained": false
     },
-    "swish_7.5": {
+    "swish7.5": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [7.5],
         "pretrained": false
     },
-    "swish_10": {
+    "swish10": {
         "n_repeat": 1,
         "act_fns": ["swish"],
         "act_fn_params": [10],
@@ -68,25 +68,25 @@
 
 
 
-    "swish_1-2": {
+    "swish1-2": {
         "n_repeat": 1,
         "act_fns": ["swish", "swish"],
         "act_fn_params": [1, 2],
         "pretrained": false
     },
-    "swish_5-7.5": {
+    "swish5-7.5": {
         "n_repeat": 1,
         "act_fns": ["swish", "swish"],
         "act_fn_params": [5, 7.5],
         "pretrained": false
     },
-    "swish_5-10": {
+    "swish5-10": {
         "n_repeat": 1,
         "act_fns": ["swish", "swish"],
         "act_fn_params": [5, 10],
         "pretrained": false
     },
-    "swish_1-10": {
+    "swish1-10": {
         "n_repeat": 1,
         "act_fns": ["swish", "swish"],
         "act_fn_params": [1, 10],
@@ -95,37 +95,37 @@
 
 
 
-    "tanhe_0.01": {
+    "tanhe0.01": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [0.01],
         "pretrained": false
     },
-    "tanhe_0.1": {
+    "tanhe0.1": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [0.1],
         "pretrained": false
     },
-    "tanhe_0.5": {
+    "tanhe0.5": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [0.5],
         "pretrained": false
     },
-    "tanhe_1": {
+    "tanhe1": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [1.0],
         "pretrained": false
     },
-    "tanhe_2": {
+    "tanhe2": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [2.0],
         "pretrained": false
     },
-    "tanhe_5": {
+    "tanhe5": {
         "n_repeat": 1,
         "act_fns": ["tanhe"],
         "act_fn_params": [5.0],
@@ -134,25 +134,25 @@
 
 
 
-    "tanhe_0.01-0.1": {
+    "tanhe0.01-0.1": {
         "n_repeat": 1,
         "act_fns": ["tanhe", "tanhe"],
         "act_fn_params": [0.01, 0.1],
         "pretrained": false
     },
-    "tanhe_0.5-1": {
+    "tanhe0.5-1": {
         "n_repeat": 1,
         "act_fns": ["tanhe", "tanhe"],
         "act_fn_params": [0.5, 1.0],
         "pretrained": false
     },
-    "tanhe_1-2": {
+    "tanhe1-2": {
         "n_repeat": 1,
         "act_fns": ["tanhe", "tanhe"],
         "act_fn_params": [1.0, 2.0],
         "pretrained": false
     },
-    "tanhe_0.1-5": {
+    "tanhe0.1-5": {
         "n_repeat": 1,
         "act_fns": ["tanhe", "tanhe"],
         "act_fn_params": [0.1, 5],
