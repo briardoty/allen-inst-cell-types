@@ -117,6 +117,7 @@ def load_cifar10(dataset_dir, batch_size, n_workers):
     # standard transforms
     train_xform = transforms.Compose([
         transforms.RandomHorizontalFlip(), 
+        transforms.RandomCrop(32, 4),
         transforms.ToTensor(),
         normalize
     ])
