@@ -20,6 +20,7 @@ parser.add_argument("--n_classes", default=10, type=int, help="Set value for n_c
 parser.add_argument("--epochs", default=10, type=int, help="Set value for epochs")
 parser.add_argument("--train_frac", default=1., type=float, help="Set value for train_frac")
 parser.add_argument("--lr", type=float)
+parser.add_argument("--momentum", type=float, required=True)
 parser.add_argument("--lr_step_size", type=int, required=True)
 parser.add_argument("--lr_gamma", type=float, required=True)
 parser.add_argument("--batch_size", type=int, required=True)
@@ -27,10 +28,10 @@ parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 
 
-def create_optimizer(name, manager, lr):
+def create_optimizer(name, manager, lr, momentum):
 
     if name == "sgd":
-        return optim.SGD(manager.net.parameters(), lr=lr)
+        return optim.SGD(manager.net.parameters(), lr=lr, momentum=momentum)
     elif name == "adam" and lr is not None:
         return optim.Adam(manager.net.parameters(), lr=lr)
     elif name == "adam":
@@ -39,10 +40,10 @@ def create_optimizer(name, manager, lr):
         print(f"Unknown optimizer configured: {name}")
         sys.exit(1)
 
-def get_training_vars(name, manager, lr, lr_step_size, lr_gamma):
+def get_training_vars(name, manager, lr, lr_step_size, lr_gamma, momentum):
     
     criterion = nn.CrossEntropyLoss()
-    optimizer = create_optimizer(name, manager, lr)
+    optimizer = create_optimizer(name, manager, lr, momentum)
 
     if name == "adam":
         scheduler = None
@@ -53,7 +54,7 @@ def get_training_vars(name, manager, lr, lr_step_size, lr_gamma):
     return (criterion, optimizer, scheduler)
 
 def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
-         lr, lr_step_size, lr_gamma, batch_size, scheme, dataset):
+         lr, lr_step_size, lr_gamma, batch_size, scheme, dataset, momentum):
     
     # init net manager
     manager = NetManager(dataset, net_name, n_classes, data_dir, scheme)
@@ -64,7 +65,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     
     # training scheme vars
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
-        manager, lr, lr_step_size, lr_gamma)
+        manager, lr, lr_step_size, lr_gamma, momentum)
      
     # manually step lr scheduler up to current epoch to preserve training continuity
     if manager.epoch > 0 and scheduler is not None:
