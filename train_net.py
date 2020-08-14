@@ -76,7 +76,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
         # load perf stats
         stats_filepath = os.path.join(manager.net_dir, "perf_stats.npy")
         perf_stats = np.load(stats_filepath, allow_pickle=True).item().get("perf_stats")
-        manager.perf_stats = perf_stats
+        manager.perf_stats = perf_stats.tolist()
 
     # train
     manager.run_training_loop(criterion, optimizer, scheduler, train_frac, 
