@@ -214,42 +214,44 @@ class StatsProcessor():
 
         return df_stats
     
-    def load_final_acc_df(self, net_names, schemes, refresh_df=True):
+    def load_final_acc_df(self, refresh_df=True):
         """
         Loads dataframe with final validation accuracy for different 
         experimental cases.
 
         Args:
-            net_names
-            schemes
             refresh
 
         Returns:
             df_stats (dataframe): Dataframe containing final accuracy.
-            act_fn_param_dict (dict): Dict() of act fn names to their params
+            case_dict (dict): Dict() of act fn names to their params
         """
 
         # optional refresh
         if refresh_df:
-            self.refresh_final_acc_df(net_names, schemes)
+            self.refresh_final_acc_df()
 
         # load
         sub_dir = os.path.join(self.data_dir, "dataframes/")
         acc_df = pd.read_csv(os.path.join(sub_dir, "final_acc_df.csv"))
-        with open(os.path.join(sub_dir, "act_fn_param_dict.json"), "r") as json_file:
-            act_fn_param_dict = json.load(json_file)
+        with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
+            case_dict = json.load(json_file)
 
         # aggregate
-        acc_df.set_index(["net_name", "train_scheme", "case"], inplace=True)
-        df_groups = acc_df.groupby(["net_name", "train_scheme", "case"])
+        index_cols = ["dataset", "net_name", "train_scheme", "case"]
+        acc_df.set_index(index_cols, inplace=True)
+        df_groups = acc_df.groupby(index_cols)
         df_stats = df_groups.agg({ "final_val_acc": [np.mean, np.std] })
 
-        return df_stats, act_fn_param_dict
+        return df_stats, case_dict, index_cols
 
-    def refresh_final_acc_df(self, net_names, schemes):
+    def refresh_final_acc_df(self):
+        """
+        Refreshes dataframe with final validation accuracy.
+        """
 
         acc_arr = []
-        act_fn_param_dict = dict()
+        case_dict = dict()
 
         # walk dir looking for saved net stats
         net_dir = os.path.join(self.data_dir, f"nets/")
@@ -257,16 +259,6 @@ class StatsProcessor():
             
             # only interested in locations files are saved
             if len(files) <= 0:
-                continue
-            
-            slugs = root.split("/")
-
-            # only interested in the given training nets
-            if not any(n in slugs for n in net_names):
-                continue
-
-            # only interested in the given training schemes
-            if not any(t in slugs for t in schemes):
                 continue
             
             # consider all files...
@@ -279,24 +271,28 @@ class StatsProcessor():
                 filepath = os.path.join(root, filename)
                 stats_dict = np.load(filepath, allow_pickle=True).item()
                 
+                # extract data
+                dataset = stats_dict.get("dataset") if stats_dict.get("dataset") is not None else "imagenette2"
                 net_name = stats_dict.get("net_name")
                 train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
                 modified_layers = stats_dict.get("modified_layers")
                 if modified_layers is not None:
-                    act_fn_params = modified_layers.get("act_fn_params")
-                    act_fn_param_dict[case] = act_fn_params
+                    case_dict[case] = {
+                        "act_fns": modified_layers.get("act_fns"),
+                        "act_fn_params": modified_layers.get("act_fn_params")
+                    }
 
                 perf_stats = stats_dict.get("perf_stats")
                 (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
-                acc_arr.append([net_name, train_scheme, case, sample, val_acc])
+                acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["net_name", "train_scheme", "case", "sample", "final_val_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "final_val_acc"])
 
         self.save_df("final_acc_df.csv", acc_df)
-        self.save_json("act_fn_param_dict.json", act_fn_param_dict)
+        self.save_json("case_dict.json", case_dict)
 
     def save_df(self, name, df):
 
@@ -312,13 +308,13 @@ class StatsProcessor():
         with open(filename, "w") as json_file:
             json_file.write(json_obj)
 
-    def load_accuracy_df(self, net_name, case_ids, train_schemes):
+    def load_accuracy_df(self, dataset, net_name, cases, train_schemes):
         """
         Loads dataframe with accuracy over training for different experimental 
         cases.
 
         Args:
-            case_ids (list): Experimental cases to include in figure.
+            cases (list): Experimental cases to include in figure.
             train_schemes (list): Valid training schemes to include in figure.
 
         Returns:
@@ -327,7 +323,7 @@ class StatsProcessor():
         acc_arr = []
             
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{net_name}")
+        net_dir = os.path.join(self.data_dir, f"nets/{dataset}/{net_name}")
         for root, dirs, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -341,7 +337,7 @@ class StatsProcessor():
                 continue
 
             # only interested in the given cases
-            if not any(c in slugs for c in case_ids):
+            if not any(c in slugs for c in cases):
                 continue
             
             # consider all files...

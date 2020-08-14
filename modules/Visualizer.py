@@ -41,6 +41,33 @@ def get_key(dct, val):
             return k
         return None
 
+def get_component_cases(case_dict, case):
+    """
+    Returns the names of cases that compose the given mixed case
+
+    Args:
+        case_dict (dict)
+        case: the mixed case 
+    """
+
+    # identify "component" cases...
+    def param_to_float(p):
+        return float(p) if p != "None" else p
+
+    z = list(zip(case_dict[case]["act_fns"], [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
+    component_cases = []
+
+    for k, v in case_dict.items():
+
+        if len(component_cases) >= len(z):
+            return component_cases
+        
+        if (len(v["act_fns"]) == 1 
+            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z):
+            component_cases.append(k)
+
+    return component_cases
+
 class Visualizer():
     
     def __init__(self, data_dir, n_classes=10, save_fig=False):
@@ -78,7 +105,7 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def scatter_final_acc(self, net_names, schemes, act_fns, refresh):
+    def scatter_final_acc(self, dataset, net_names, schemes, act_fns, refresh):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -91,34 +118,45 @@ class Visualizer():
         """
 
         # pull data
-        df, act_fn_param_dict = self.stats_processor.load_final_acc_df(net_names, schemes, refresh)
-        df_groups = df.groupby(["net_name", "train_scheme", "case"])
-        mixed_cases = [a for a in act_fn_param_dict.keys() if len(act_fn_param_dict[a]) > 1]
+        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(refresh)
+        df_groups = df.groupby(index_cols)
+        mixed_cases = [a for a in case_dict.keys() if len(case_dict[a]["act_fns"]) > 1]
 
         # plot
         fig, ax = plt.subplots(figsize=(14,14))
-        clrs = sns.color_palette("hls", len(net_names)*len(schemes)*len(mixed_cases) + 1)
-        
+        fmts = [".", "^"]
+        mfcs = ["None", None]
+        clrs = sns.color_palette("husl", len(mixed_cases))
+
         # plot mixed cases
         i = 0
         for g in df_groups.groups:
 
-            net, scheme, case = g
-            if (not case in mixed_cases) or (not any(f in case for f in act_fns)):
+            gset, net, scheme, case = g
+
+            # only interested in mixed cases and cases with the given act fns
+            if ((not case in mixed_cases) or 
+                (not any(f in case for f in act_fns)) or
+                (gset != dataset) or
+                (not net in net_names)):
                 continue
 
-            g_data = df_groups.get_group((net, scheme, case))
-            clr = clrs[i]
+            g_data = df_groups.get_group((dataset, net, scheme, case))
+            fmt = fmts[net_names.index(net)]
+            mfc = mfcs[schemes.index(scheme)]
+            clr = clrs[mixed_cases.index(case)]
 
             # actual
             y_act = g_data["final_val_acc"]["mean"].values[0]
             y_err = g_data["final_val_acc"]["std"].values[0] * 2
 
-            # prediction
-            act_fn_params = [p for p in act_fn_param_dict[case]]
-            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in act_fn_params]
-            component_accs = df["final_val_acc"]["mean"][net][scheme].get(component_cases)
-            component_stds = df["final_val_acc"]["std"][net][scheme].get(component_cases)
+            # prediction - get component cases...
+            component_cases = get_component_cases(case_dict, case)
+            print(case)
+            print(component_cases)
+            # ...and their accuracies
+            component_accs = df["final_val_acc"]["mean"][dataset][net][scheme].get(component_cases)
+            component_stds = df["final_val_acc"]["std"][dataset][net][scheme].get(component_cases)
 
             if component_accs is None:
                 print(f"Component case accuracies do not exist for: {net} {scheme} {' '.join(component_cases)}")
@@ -134,8 +172,9 @@ class Visualizer():
             
             # plot
             ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
-                label=f"{net} {scheme} {case}", capsize=3, 
-                elinewidth=1, c=clr, fmt=".", markersize=10)
+                label=f"{net} {scheme} {case}", 
+                elinewidth=1, c=clr, fmt=fmt, markersize=10,
+                markerfacecolor=mfc)
 
             i += 1
 
@@ -144,12 +183,12 @@ class Visualizer():
         ax.plot(x, x, c=(0.5, 0.5, 0.5, 0.25), dashes=[6,2])
 
         # set figure text
-        ax.set_title("Linear predicted vs actual mixed case final accuracy", fontsize=18)
+        ax.set_title(f"Linear predicted vs actual mixed case final accuracy - {dataset}", fontsize=18)
         ax.set_xlabel("Predicted", fontsize=16)
         ax.set_ylabel("Actual", fontsize=16)
         ax.set_xlim([0.1, 1])
         ax.set_ylim([0.1, 1])
-        ax.set_aspect('equal', 'box')
+        ax.set_aspect("equal", "box")
         ax.legend()
          
         # optional saving
@@ -158,7 +197,7 @@ class Visualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/{dataset}")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         act_fns = ", ".join(act_fns)
@@ -175,7 +214,7 @@ class Visualizer():
         """
 
         # pull data
-        acc_df, act_fn_param_dict = self.stats_processor.load_final_acc_df(
+        acc_df, case_dict = self.stats_processor.load_final_acc_df(
             net_name, control_cases + mixed_cases)
         acc_df_groups = acc_df.groupby("case")
 
@@ -191,7 +230,7 @@ class Visualizer():
 
             case = control_cases[i]
             group = acc_df_groups.get_group(case)
-            p = float(act_fn_param_dict[case][0])
+            p = float(case_dict[case][0])
 
             # error bars = 2 standard devs
             yvals = group["final_val_acc"]["mean"].values
@@ -219,8 +258,8 @@ class Visualizer():
             handles.append(h)
 
             # predicted
-            ps = [p for p in act_fn_param_dict[mixed_case]]
-            component_cases = [k for k, v in act_fn_param_dict.items() if len(v) == 1 and v[0] in ps]
+            ps = [p for p in case_dict[mixed_case]]
+            component_cases = [k for k, v in case_dict.items() if len(v) == 1 and v[0] in ps]
             y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
             l = f"{mixed_case} prediction"
             h = axes[1].plot(i, y_pred, "x", label=l,
@@ -255,11 +294,14 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_accuracy(self, net_name, cases, train_schemes):
+    def plot_accuracy(self, dataset, net_name, schemes, cases):
         """
         Plots accuracy over training for different experimental cases.
 
         Args:
+            dataset
+            net_name
+            schemes
             cases (list): Experimental cases to include in figure.
 
         Returns:
@@ -267,8 +309,8 @@ class Visualizer():
 
         """
         # pull data
-        acc_df = self.stats_processor.load_accuracy_df(net_name, cases, 
-            train_schemes)
+        acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
+            cases, schemes)
 
         # group and compute stats
         acc_df.set_index(["train_scheme", "case", "epoch"], inplace=True)
@@ -305,7 +347,7 @@ class Visualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
         case_names = " & ".join(cases)
         filename = f"{case_names} accuracy.png"
         filename = os.path.join(sub_dir, filename)
@@ -432,7 +474,8 @@ class Visualizer():
 
 if __name__=="__main__":
     
-    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 10, False)
+    visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
+        10, False)
     
     # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 
@@ -440,9 +483,9 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("vgg11", ["unmodified", "swish_10", "tanhe_1.0", "swish10-tanhe1"], ["adam"])
+    # visualizer.plot_accuracy("imagenette2", "sticknet8", ["adam"], ["relu", "control"])
     
-    visualizer.scatter_final_acc(["vgg11", "sticknet8"], ["adam", "sgd"], 
+    visualizer.scatter_final_acc("imagenette2", ["vgg11", "sticknet8"], ["adam", "sgd"], 
         ["swish", "tanhe"], refresh=False)
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
