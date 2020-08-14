@@ -117,6 +117,7 @@ class NetManager():
         self.pretrained = pretrained
         self.epoch = 0
         self.modified_layers = None
+        self.perf_stats = []
 
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
@@ -474,7 +475,7 @@ class NetManager():
         return (epoch_acc.item(), epoch_loss)
     
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-                          n_epochs=10):
+        n_epochs=10):
         """
         Run n_epochs of training and validation
         """
@@ -484,13 +485,18 @@ class NetManager():
         best_acc = 0.0
         best_epoch = -1
     
-        # validate initial state for science
-        (val_acc, val_loss) = self.evaluate_net(criterion)
-        self.save_net_snapshot(self.epoch, val_acc)
+        if self.epoch == 0:
+            # validate initial state for science
+            (val_acc, val_loss) = self.evaluate_net(criterion)
+            self.save_net_snapshot(self.epoch, val_acc)
 
-        # track accuracy and loss
-        perf_stats = [[val_acc, val_loss, None, None]]
-    
+            # track accuracy and loss
+            self.perf_stats.extend([] for i in range(n_epochs + 1))
+            self.perf_stats[self.epoch] = [val_acc, val_loss, None, None]
+        else:
+            # on resume, the current state will have already been eval'd
+            self.perf_stats.extend([] for i in range(n_epochs))
+
         epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
         for epoch in epochs:
             print('Epoch {}/{}'.format(epoch, self.epoch + n_epochs))
@@ -506,7 +512,7 @@ class NetManager():
             self.save_net_snapshot(epoch, val_acc)
             
             # track stats
-            perf_stats.append([val_acc, val_loss, train_acc, train_loss])
+            self.perf_stats[epoch] = [val_acc, val_loss, train_acc, train_loss]
     
             # copy net if best yet
             if val_acc > best_acc:
@@ -526,7 +532,7 @@ class NetManager():
         self.save_net_snapshot(best_epoch, best_acc)
 
         # save perf stats
-        self.save_arr("perf_stats", np.array(perf_stats))
+        self.save_arr("perf_stats", np.array(self.perf_stats))
 
 
 

@@ -6,6 +6,8 @@ Created on Thu Jun 25 17:22:40 2020
 @author: briardoty
 """
 import sys
+import os
+import numpy as np
 import argparse
 from modules.NetManager import NetManager
 import torch.nn as nn
@@ -59,15 +61,22 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     
     # load the proper net
     manager.load_net_snapshot_from_path(net_filepath)
-    
+
     # training scheme vars
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
         manager, lr, lr_step_size, lr_gamma, momentum)
      
-    # manually step lr scheduler up to current epoch to preserve training continuity
-    if manager.epoch > 0 and scheduler is not None:
-        for i in range(manager.epoch):
-            scheduler.step()
+    if manager.epoch > 0:
+        
+        # manually step lr scheduler to current epoch to preserve training continuity
+        if scheduler is not None:
+            for i in range(manager.epoch):
+                scheduler.step()
+        
+        # load perf stats
+        stats_filepath = os.path.join(manager.net_dir, "perf_stats.npy")
+        perf_stats = np.load(stats_filepath, allow_pickle=True).item().get("perf_stats")
+        manager.perf_stats = perf_stats
 
     # train
     manager.run_training_loop(criterion, optimizer, scheduler, train_frac, 
