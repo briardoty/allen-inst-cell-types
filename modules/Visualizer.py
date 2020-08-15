@@ -31,8 +31,8 @@ except:
     from util import ensure_sub_dir
 
 import matplotlib
-matplotlib.rc('xtick', labelsize=14) 
-matplotlib.rc('ytick', labelsize=14) 
+matplotlib.rc("xtick", labelsize=14) 
+matplotlib.rc("ytick", labelsize=14) 
 
 def get_key(dct, val):
 
@@ -106,20 +106,77 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def plot_prediction(self, pred_type="linear"):
+    def plot_predictions(self, dataset, net_names, schemes, pred_type="linear"):
         """
+        Plot a single axis figure of offset from predicted final accuracy for
+        the given mixed cases.
         """
 
         # pull data
         df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
-        df_groups = df.groupby(index_cols)
 
+        # performance relative to predictions
+        df["acc_vs_linear"] = df["final_val_acc"]["mean"] - df["linear_pred"]
+        df["acc_vs_max"] = df["final_val_acc"]["mean"] - df["max_pred"]
+
+        sort_df = df.query("is_mixed == True").sort_values(by=f"acc_vs_{pred_type}")
+        
         # plot
-        fig, ax = plt.subplots(figsize=(9,12))
+        plt.figure(figsize=(9,12))
+        plt.gca().axvline(0, color='k', linestyle='--')
 
+        ylabels = []
+        for i, midx in enumerate(sort_df.index.values):
 
+            # dataset, net, scheme, case, mixed
+            d, n, s, c, m = midx
+            if (not m 
+                or not d == dataset 
+                or not n in net_names
+                or not s in schemes):
+                continue
 
-    def scatter_final_acc(self, dataset, net_names, schemes, act_fns, pred_type="linear"):
+            # prettify
+            if np.mod(i,2) == 0:
+                plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
+            
+            perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0]
+            err = sort_df.loc[midx]["final_val_acc"]["std"] * 2
+
+            # plot good and bad
+            if perf - err > 0:
+                plt.plot([perf - err, perf + err], [i,i], "b-",linewidth=6,
+                    alpha=.5)
+                plt.plot(perf, i, "bo")
+            else:
+                plt.plot([perf - err, perf + err], [i,i], "k-",linewidth=6,
+                    alpha=.5)
+                plt.plot(perf, i, "ko")
+
+            ylabels.append(f"{n} {s} {c}")
+
+        # set figure text
+        plt.xlabel(f"Performance - {pred_type} prediction", fontsize=16)
+        plt.ylabel("Network")    
+        plt.yticks(np.arange(0,i,1), ylabels)
+        plt.ylim(-0.5, i + .5)
+        plt.tight_layout()
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction/{dataset}")
+        net_names = ", ".join(net_names)
+        schemes = ", ".join(schemes)
+        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction.svg"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)  
+
+    def scatter_final_acc(self, dataset, net_names, schemes, pred_type="linear"):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -127,7 +184,6 @@ class Visualizer():
         Args:
             net_names
             schemes
-            act_fns
         """
 
         # pull data
@@ -148,7 +204,10 @@ class Visualizer():
 
             # dataset, net, scheme, case, mixed
             d, n, s, c, m = g
-            if not m or not d == dataset:
+            if (not m 
+                or not d == dataset 
+                or not n in net_names
+                or not s in schemes):
                 continue
 
             g_data = df_groups.get_group(g)
@@ -194,8 +253,7 @@ class Visualizer():
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/{dataset}")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
-        act_fns = ", ".join(act_fns)
-        filename = f"{net_names}_{schemes}_{act_fns}_scatter.svg"
+        filename = f"{dataset}_{net_names}_{schemes}_scatter.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -273,7 +331,7 @@ class Visualizer():
         axes[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
 
         # append legend to second axis
-        axes[1].legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+        axes[1].legend(handles, labels, loc="center left", bbox_to_anchor=(1, 0.5))
          
         # optional saving
         if not self.save_fig:
@@ -479,10 +537,13 @@ if __name__=="__main__":
     
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
     
-    visualizer.scatter_final_acc("cifar10", 
+    visualizer.plot_predictions("cifar10", 
         ["vgg11"], 
-        ["adam"], 
-        ["swish", "tanhe", "relu"])
+        ["adam"])
+
+    # visualizer.scatter_final_acc("cifar10", 
+    #     ["vgg11"], 
+    #     ["adam"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
