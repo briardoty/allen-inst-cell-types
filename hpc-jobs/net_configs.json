@@ -167,16 +167,16 @@
         "act_fn_params": [10, 1.0],
         "pretrained": false
     },
-    "swish1-tanhe2": {
+    "swish5-tanhe0.5": {
         "n_repeat": 1,
         "act_fns": ["swish", "tanhe"],
-        "act_fn_params": [1.0, 2.0],
+        "act_fn_params": [5, 0.5],
         "pretrained": false
     },
-    "swish0.1-tanhe2": {
+    "swish0.1-tanhe5": {
         "n_repeat": 1,
         "act_fns": ["swish", "tanhe"],
-        "act_fn_params": [0.1, 2],
+        "act_fn_params": [0.1, 5],
         "pretrained": false
     },
 
