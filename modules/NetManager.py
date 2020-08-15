@@ -474,10 +474,26 @@ class NetManager():
 
         return (epoch_acc.item(), epoch_loss)
     
+    def update_resume_state(self, scheduler, end_epoch):
+
+        # load perf_stats from before resume
+        stats_filepath = os.path.join(self.net_dir, "perf_stats.npy")
+        perf_stats = np.load(stats_filepath, allow_pickle=True).item().get("perf_stats")
+        self.perf_stats = perf_stats.tolist()
+
+        # on resume, the current state will have already been eval'd
+        addnl_epochs = end_epoch - len(self.perf_stats) + 1
+        self.perf_stats.extend([None] * addnl_epochs)
+
+        # step lr schedule forward
+        if scheduler is not None:
+            for _ in range(self.epoch):
+                scheduler.step()
+
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-        n_epochs=10):
+        end_epoch=10):
         """
-        Run n_epochs of training and validation
+        Run end_epoch of training and validation
         """
         since = time.time()
         
@@ -491,15 +507,14 @@ class NetManager():
             self.save_net_snapshot(self.epoch, val_acc)
 
             # track accuracy and loss
-            self.perf_stats.extend([] for i in range(n_epochs + 1))
-            self.perf_stats[self.epoch] = [val_acc, val_loss, None, None]
+            self.perf_stats = [None] * (end_epoch + 1)
+            self.perf_stats[0] = [val_acc, val_loss, None, None]
         else:
-            # on resume, the current state will have already been eval'd
-            self.perf_stats.extend([] for i in range(n_epochs))
+            self.update_resume_state(scheduler, end_epoch)
 
-        epochs = range(self.epoch + 1, self.epoch + n_epochs + 1)
+        epochs = range(self.epoch + 1, end_epoch + 1)
         for epoch in epochs:
-            print('Epoch {}/{}'.format(epoch, self.epoch + n_epochs))
+            print('Epoch {}/{}'.format(epoch, end_epoch))
             print('-' * 10)
     
             # training phase
