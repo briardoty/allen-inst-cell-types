@@ -106,7 +106,7 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def plot_predictions(self, dataset, net_names, schemes, pred_type="linear"):
+    def plot_predictions(self, dataset, net_names, schemes, pred_type="max"):
         """
         Plot a single axis figure of offset from predicted final accuracy for
         the given mixed cases.
@@ -126,7 +126,8 @@ class Visualizer():
         plt.gca().axvline(0, color='k', linestyle='--')
 
         ylabels = []
-        for i, midx in enumerate(sort_df.index.values):
+        i = 0
+        for midx in sort_df.index.values:
 
             # dataset, net, scheme, case, mixed
             d, n, s, c, m = midx
@@ -137,11 +138,11 @@ class Visualizer():
                 continue
 
             # prettify
-            if np.mod(i,2) == 0:
+            if np.mod(i, 2) == 0:
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
             
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0]
-            err = sort_df.loc[midx]["final_val_acc"]["std"] * 2
+            err = sort_df.loc[midx]["final_val_acc"]["std"] * 1.98
 
             # plot good and bad
             if perf - err > 0:
@@ -153,13 +154,15 @@ class Visualizer():
                     alpha=.5)
                 plt.plot(perf, i, "ko")
 
+            i += 1
             ylabels.append(f"{n} {s} {c}")
 
         # set figure text
         plt.xlabel(f"Performance - {pred_type} prediction", fontsize=16)
-        plt.ylabel("Network")    
-        plt.yticks(np.arange(0,i,1), ylabels)
+        plt.ylabel("Network configuration", fontsize=16)
+        plt.yticks(np.arange(0, i, 1), ylabels)
         plt.ylim(-0.5, i + .5)
+        # plt.xlim(-0.1, 0.3)
         plt.tight_layout()
 
         # optional saving
@@ -217,11 +220,11 @@ class Visualizer():
 
             # actual
             y_act = g_data["final_val_acc"]["mean"].values[0]
-            y_err = g_data["final_val_acc"]["std"].values[0] * 2
+            y_err = g_data["final_val_acc"]["std"].values[0] * 1.98
 
             # prediction
             x_pred = g_data[f"{pred_type}_pred"].values[0]
-            x_err = g_data[f"{pred_type}_std"].values[0] * 2
+            x_err = g_data[f"{pred_type}_std"].values[0] * 1.98
             
             # plot
             ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
@@ -286,7 +289,7 @@ class Visualizer():
 
             # error bars = 2 standard devs
             yvals = group["final_val_acc"]["mean"].values
-            yerr = group["final_val_acc"]["std"].values * 2
+            yerr = group["final_val_acc"]["std"].values * 1.98
             h = axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
                 capsize=3, elinewidth=1, c=clrs[i], fmt=".")
             
@@ -301,7 +304,7 @@ class Visualizer():
             # actual
             group = acc_df_groups.get_group(mixed_case)
             y_act = group["final_val_acc"]["mean"].values[0]
-            y_err = group["final_val_acc"]["std"].values * 2
+            y_err = group["final_val_acc"]["std"].values * 1.98
             l = f"{mixed_case} actual"
             h = axes[1].errorbar(i, y_act, yerr=y_err, label=l,
                 capsize=3, elinewidth=1, c=clrs[len(control_cases) + i], fmt=".")
@@ -381,7 +384,7 @@ class Visualizer():
 
             # error bars = 2 standard devs
             yvals = group_data["acc"]["mean"].values
-            yerr = group_data["acc"]["std"].values * 2
+            yerr = group_data["acc"]["std"].values * 1.98
             ax.plot(range(len(yvals)), yvals, label=f"{scheme} {case}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
