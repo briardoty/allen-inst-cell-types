@@ -498,7 +498,7 @@ class NetManager():
         since = time.time()
         
         best_net_state = copy.deepcopy(self.net.state_dict())
-        best_acc = 0.0
+        best_acc = -1
         best_epoch = -1
     
         if self.epoch == 0:
@@ -540,14 +540,16 @@ class NetManager():
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
             time_elapsed // 60, time_elapsed % 60))
-        print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
-        
-        # load best net state from training and save it to disk
-        self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
-        self.save_net_snapshot(best_epoch, best_acc)
 
-        # save perf stats
-        self.save_arr("perf_stats", np.array(self.perf_stats))
+        if best_acc > 0:
+            print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
+            
+            # load best net state from training and save it to disk
+            self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
+            self.save_net_snapshot(best_epoch, best_acc)
+
+            # save perf stats
+            self.save_arr("perf_stats", np.array(self.perf_stats))
 
 
 
