@@ -543,11 +543,6 @@ class NetManager():
 
         if best_acc > 0:
             print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
-            
-            # load best net state from training and save it to disk
-            self.load_net_state(self.case_id, self.sample, best_epoch, best_net_state)
-            self.save_net_snapshot(best_epoch, best_acc)
-
             # save perf stats
             self.save_arr("perf_stats", np.array(self.perf_stats))
 
