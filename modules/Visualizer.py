@@ -70,10 +70,11 @@ def get_component_cases(case_dict, case):
 
 class Visualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False, refresh=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
+        self.refresh = refresh
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
         
@@ -105,7 +106,20 @@ class Visualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
 
-    def scatter_final_acc(self, dataset, net_names, schemes, act_fns, refresh):
+    def plot_prediction(self, pred_type="linear"):
+        """
+        """
+
+        # pull data
+        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
+        df_groups = df.groupby(index_cols)
+
+        # plot
+        fig, ax = plt.subplots(figsize=(9,12))
+
+
+
+    def scatter_final_acc(self, dataset, net_names, schemes, act_fns):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -114,13 +128,11 @@ class Visualizer():
             net_names
             schemes
             act_fns
-            refresh
         """
 
         # pull data
-        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(refresh)
+        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
         df_groups = df.groupby(index_cols)
-        mixed_cases = [a for a in case_dict.keys() if len(case_dict[a]["act_fns"]) > 1]
 
         # plot
         fig, ax = plt.subplots(figsize=(14,14))
@@ -134,13 +146,6 @@ class Visualizer():
 
             gset, net, scheme, case = g
 
-            # only interested in mixed cases and cases with the given act fns
-            if ((not case in mixed_cases) or 
-                (not any(f in case for f in act_fns)) or
-                (gset != dataset) or
-                (not net in net_names)):
-                continue
-
             g_data = df_groups.get_group((dataset, net, scheme, case))
             fmt = fmts[net_names.index(net)]
             mfc = mfcs[schemes.index(scheme)]
@@ -151,22 +156,6 @@ class Visualizer():
             y_err = g_data["final_val_acc"]["std"].values[0] * 2
 
             # prediction - get component cases...
-            component_cases = get_component_cases(case_dict, case)
-            print(case)
-            print(component_cases)
-            # ...and their accuracies
-            component_accs = df["final_val_acc"]["mean"][dataset][net][scheme].get(component_cases)
-            component_stds = df["final_val_acc"]["std"][dataset][net][scheme].get(component_cases)
-
-            if component_accs is None:
-                print(f"Component case accuracies do not exist for: {net} {scheme} {' '.join(component_cases)}")
-                continue
-
-            if len(component_accs) != len(component_cases):
-                # TODO: this bug might be huge, fix it
-                print("problem!")
-                sys.exit(-1)
-
             x_pred = component_accs.mean()
             x_err = component_stds.mean()
             
@@ -475,7 +464,7 @@ class Visualizer():
 if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, False)
+        10, save_fig=False, refresh=False)
     
     # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 
@@ -483,10 +472,12 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("imagenette2", "sticknet8", ["adam"], ["relu", "control"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["control", "swish10", "tanhe1", "swish10-tanhe1"])
     
-    visualizer.scatter_final_acc("imagenette2", ["vgg11", "sticknet8"], ["adam", "sgd"], 
-        ["swish", "tanhe"], refresh=False)
+    visualizer.scatter_final_acc("imagenette2", 
+        ["vgg11", "sticknet8"], 
+        ["adam", "sgd"], 
+        ["swish", "tanhe"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])

@@ -54,6 +54,33 @@ def get_last_epoch(net_filenames):
 
     return last_net_filename
     
+def get_component_cases(case_dict, case):
+    """
+    Returns the names of cases that compose the given mixed case
+
+    Args:
+        case_dict (dict)
+        case: the mixed case 
+    """
+
+    # identify "component" cases...
+    def param_to_float(p):
+        return float(p) if p != "None" else p
+
+    z = list(zip(case_dict[case]["act_fns"], [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
+    component_cases = []
+
+    for k, v in case_dict.items():
+
+        if len(component_cases) >= len(z):
+            return component_cases
+        
+        if (len(v["act_fns"]) == 1 
+            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z):
+            component_cases.append(k)
+
+    return component_cases
+
 class StatsProcessor():
     """
     Class to handle processing network snapshots into meaningful statistics.
@@ -237,13 +264,59 @@ class StatsProcessor():
         with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
 
-        # aggregate
-        index_cols = ["dataset", "net_name", "train_scheme", "case"]
-        acc_df.set_index(index_cols, inplace=True)
-        df_groups = acc_df.groupby(index_cols)
-        df_stats = df_groups.agg({ "final_val_acc": [np.mean, np.std] })
+        # process
+        # 1. mark mixed nets
+        acc_df.drop(columns="Unnamed: 0", inplace=True)
+        acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
-        return df_stats, case_dict, index_cols
+        # 2. aggregate
+        idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed"]
+        df_stats = acc_df.groupby(idx_cols).agg(
+            { "final_val_acc": [np.mean, np.std] })
+        df_groups = df_stats.groupby(idx_cols)
+
+        # 3. predictions
+        linear_preds = []
+        linear_stds = []
+        max_preds = []
+        max_stds = []
+        for g in df_groups.groups:
+            d, n, s, c, m = g
+
+            # only predict for mixed cases
+            if not m:
+                linear_preds.append(None)
+                max_preds.append(None)
+                linear_stds.append(None)
+                max_stds.append(None)
+                continue
+            
+            # get component cases and their stats
+            component_cases = get_component_cases(case_dict, c)
+            component_accs = df_stats["final_val_acc"]["mean"][d][n][s].get(component_cases)
+            component_stds = df_stats["final_val_acc"]["std"][d][n][s].get(component_cases)
+
+            # this shouldn't happen much
+            if component_accs is None or len(component_cases) == 0:
+                linear_preds.append(None)
+                max_preds.append(None)
+                linear_stds.append(None)
+                max_stds.append(None)
+                print(f"Component case accuracies do not exist for: {d} {n} {s} {c}")
+                continue
+            
+            # predictions!
+            linear_preds.append(component_accs.mean())
+            max_preds.append(component_accs.max())
+            linear_stds.append(component_stds.mean())
+            max_stds.append(component_stds[component_accs.to_list().index(component_accs.max())])
+
+        df_stats["linear_pred"] = linear_preds
+        df_stats["max_pred"] = max_preds
+        df_stats["linear_std"] = linear_stds
+        df_stats["max_std"] = max_stds
+
+        return df_stats, case_dict, idx_cols
 
     def refresh_final_acc_df(self):
         """
