@@ -76,7 +76,8 @@ def get_component_cases(case_dict, case):
             return component_cases
         
         if (len(v["act_fns"]) == 1 
-            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z):
+            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z
+            and "_" not in k): # THIS IS A HACK TO GET RID OF OLD CASES
             component_cases.append(k)
 
     return component_cases
@@ -297,7 +298,7 @@ class StatsProcessor():
             component_stds = df_stats["final_val_acc"]["std"][d][n][s].get(component_cases)
 
             # this shouldn't happen much
-            if component_accs is None or len(component_cases) == 0:
+            if component_accs is None or len(component_cases) == 0 or len(component_accs) == 0:
                 linear_preds.append(None)
                 max_preds.append(None)
                 linear_stds.append(None)
@@ -358,9 +359,13 @@ class StatsProcessor():
                     }
 
                 perf_stats = stats_dict.get("perf_stats")
-                (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
-                acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc])
-                
+                try:
+                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
+                    acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc])
+                except ValueError:
+                    print(f"Final entry in {case} {sample} perf_stats did not match expectations.")
+                    continue
+
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "final_val_acc"])
 

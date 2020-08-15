@@ -101,7 +101,7 @@ class Visualizer():
         
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/act_fns/")
         fn_names = " & ".join([str(fn) for fn in act_fns])
-        filename = f"{fn_names}.png"
+        filename = f"{fn_names}.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
@@ -119,7 +119,7 @@ class Visualizer():
 
 
 
-    def scatter_final_acc(self, dataset, net_names, schemes, act_fns):
+    def scatter_final_acc(self, dataset, net_names, schemes, act_fns, pred_type="linear"):
         """
         Plot a scatter plot of predicted vs actual final accuracy for the 
         given mixed cases.
@@ -133,35 +133,40 @@ class Visualizer():
         # pull data
         df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
         df_groups = df.groupby(index_cols)
+        mixed_cases = df.query("is_mixed == True").index.unique(level=3).tolist()
+        n_mixed = len(mixed_cases)
 
         # plot
         fig, ax = plt.subplots(figsize=(14,14))
         fmts = [".", "^"]
         mfcs = ["None", None]
-        clrs = sns.color_palette("husl", len(mixed_cases))
+        clrs = sns.color_palette("husl", n_mixed)
 
         # plot mixed cases
         i = 0
         for g in df_groups.groups:
 
-            gset, net, scheme, case = g
+            # dataset, net, scheme, case, mixed
+            d, n, s, c, m = g
+            if not m or not d == dataset:
+                continue
 
-            g_data = df_groups.get_group((dataset, net, scheme, case))
-            fmt = fmts[net_names.index(net)]
-            mfc = mfcs[schemes.index(scheme)]
-            clr = clrs[mixed_cases.index(case)]
+            g_data = df_groups.get_group(g)
+            fmt = fmts[net_names.index(n)]
+            mfc = mfcs[schemes.index(s)]
+            clr = clrs[mixed_cases.index(c)]
 
             # actual
             y_act = g_data["final_val_acc"]["mean"].values[0]
             y_err = g_data["final_val_acc"]["std"].values[0] * 2
 
-            # prediction - get component cases...
-            x_pred = component_accs.mean()
-            x_err = component_stds.mean()
+            # prediction
+            x_pred = g_data[f"{pred_type}_pred"].values[0]
+            x_err = g_data[f"{pred_type}_std"].values[0] * 2
             
             # plot
             ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
-                label=f"{net} {scheme} {case}", 
+                label=f"{n} {s} {c}", 
                 elinewidth=1, c=clr, fmt=fmt, markersize=10,
                 markerfacecolor=mfc)
 
@@ -190,7 +195,7 @@ class Visualizer():
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         act_fns = ", ".join(act_fns)
-        filename = f"{net_names}_{schemes}_{act_fns}_scatter.png"
+        filename = f"{net_names}_{schemes}_{act_fns}_scatter.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -278,7 +283,7 @@ class Visualizer():
 
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/final accuracy/")
         cases = " & ".join(mixed_cases)
-        filename = f"{cases} final acc.png"
+        filename = f"{cases} final acc.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -327,8 +332,8 @@ class Visualizer():
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Validation accuracy")
         ax.legend()
-        step = 5
-        ax.set_xticks([i * step for i in range(int((len(yvals) + 1)/step))])
+        # step = 5
+        # ax.set_xticks([i * step for i in range(int((len(yvals) + 1)/step))])
         
         # optional saving
         if not self.save_fig:
@@ -338,7 +343,7 @@ class Visualizer():
         
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
         case_names = " & ".join(cases)
-        filename = f"{case_names} accuracy.png"
+        filename = f"{case_names} accuracy.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -391,7 +396,7 @@ class Visualizer():
             return
 
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/weight distr/")
-        filename = f"{case} weight distr.png"
+        filename = f"{case} weight distr.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -455,7 +460,7 @@ class Visualizer():
 
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/weight change/")
         cases = " & ".join(cases)
-        filename = f"{cases} weight.png"
+        filename = f"{cases} weight.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)
@@ -472,12 +477,12 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["control", "swish10", "tanhe1", "swish10-tanhe1"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
     
-    visualizer.scatter_final_acc("imagenette2", 
-        ["vgg11", "sticknet8"], 
-        ["adam", "sgd"], 
-        ["swish", "tanhe"])
+    visualizer.scatter_final_acc("cifar10", 
+        ["vgg11"], 
+        ["adam"], 
+        ["swish", "tanhe", "relu"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
     # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
