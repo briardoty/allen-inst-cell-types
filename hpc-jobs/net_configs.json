@@ -179,6 +179,12 @@
         "act_fn_params": [0.1, 5],
         "pretrained": false
     },
+    "swish1-tanhe1": {
+        "n_repeat": 1,
+        "act_fns": ["swish", "tanhe"],
+        "act_fn_params": [1, 1],
+        "pretrained": false
+    },
 
 
 
