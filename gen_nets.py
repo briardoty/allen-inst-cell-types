@@ -39,7 +39,7 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
     
     # init net manager
     manager = NetManager(dataset, net_name, n_classes, data_dir, scheme, 
-        spatial, pretrained)
+        pretrained)
     
     # build and save nets
     for i in range(n_samples):
@@ -49,7 +49,7 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         
         # modify layers
         if (act_fns is not None and len(act_fns) > 0):
-            manager.replace_act_layers(n_repeat, act_fns, act_fn_params)
+            manager.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
         
         # save
         manager.save_net_snapshot()

@@ -19,8 +19,7 @@ def get_net_tag(net_name, case_id, sample, epoch):
         
     return net_tag
 
-def get_net_dir(data_dir, dataset, net_name, train_scheme, case, sample, 
-    spatial):
+def get_net_dir(data_dir, dataset, net_name, train_scheme, case, sample):
     """
     Builds and ensures the proper net directory exists, then returns
     its full path
@@ -30,9 +29,6 @@ def get_net_dir(data_dir, dataset, net_name, train_scheme, case, sample,
 
     if dataset is not None:
         net_dir += f"{dataset}/"
-
-    if spatial:
-        net_dir += f"spatial/"
 
     if net_name is not None:
         net_dir += f"{net_name}/"

@@ -25,11 +25,9 @@ parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_names", type=str, nargs="+", required=True, help="Set net_names")
 parser.add_argument("--schemes", type=str, nargs="+", required=True, help="Set schemes")
 parser.add_argument("--cases", type=str, nargs="+", required=True, help="Set cases")
-parser.add_argument("--spatial", dest="spatial", action="store_true")
-parser.set_defaults(spatial=False)
 
 
-def main(dataset, net_names, cases, schemes, spatial):
+def main(dataset, net_names, cases, schemes):
     
     job_title = "gen_nets"
     
@@ -81,6 +79,7 @@ def main(dataset, net_names, cases, schemes, spatial):
                 else:
                     params_list.append("--untrained")
 
+                spatial = config.get("spatial")
                 if spatial:
                     params_list.append("--spatial")
 

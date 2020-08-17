@@ -110,7 +110,7 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
 class NetManager():
     
     def __init__(self, dataset, net_name, n_classes, data_dir, train_scheme, 
-        spatial=False, pretrained=False, seed=None):
+        pretrained=False, seed=None):
 
         # SEED!
         self.seed_everything(seed)
@@ -124,7 +124,6 @@ class NetManager():
         self.epoch = 0
         self.modified_layers = None
         self.perf_stats = []
-        self.spatial = spatial
 
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
@@ -145,7 +144,7 @@ class NetManager():
         self.case_id = case_id
         self.sample = sample
         self.net_dir = get_net_dir(self.data_dir, self.dataset, self.net_name, 
-            self.train_scheme, self.case_id, self.sample, self.spatial)
+            self.train_scheme, self.case_id, self.sample)
 
         if self.pretrained:
             print("Initializing pretrained net!")
@@ -181,7 +180,6 @@ class NetManager():
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
             "modified_layers": self.modified_layers,
-            "spatial": self.spatial
         }
 
         print(f"Saving network snapshot {filename}")
@@ -205,7 +203,6 @@ class NetManager():
             "case": self.case_id,
             "sample": self.sample,
             "modified_layers": self.modified_layers,
-            "spatial": self.spatial
         }
 
         # save
@@ -236,7 +233,8 @@ class NetManager():
             n_repeat = self.modified_layers["n_repeat"]
             act_fns = self.modified_layers["act_fns"]
             act_fn_params = self.modified_layers["act_fn_params"]
-            self.replace_act_layers(n_repeat, act_fns, act_fn_params)
+            spatial = self.modified_layers.get("spatial")
+            self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
 
         return self.net
         
@@ -248,7 +246,6 @@ class NetManager():
         state_dict = snapshot_state.get("state_dict")
         self.case_id = snapshot_state.get("case")
         self.sample = snapshot_state.get("sample")
-        self.spatial = snapshot_state.get("spatial")
         
         self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
         self.modified_layers = snapshot_state.get("modified_layers")        
@@ -264,7 +261,8 @@ class NetManager():
             n_repeat = self.modified_layers["n_repeat"]
             act_fns = self.modified_layers["act_fns"]
             act_fn_params = self.modified_layers["act_fn_params"]
-            self.replace_act_layers(n_repeat, act_fns, act_fn_params)
+            spatial = self.modified_layers.get("spatial")
+            self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
         
         # print net summary
         print(self.net)
@@ -317,7 +315,7 @@ class NetManager():
         torch.save(self.responses_output, output_filepath)
         torch.save(self.responses_input, input_filepath)
         
-    def replace_act_layers(self, n_repeat, act_fns, act_fn_params):
+    def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial):
         """
         Replace all nn.ReLU layers with MixedActivationLayers
         """
@@ -331,7 +329,7 @@ class NetManager():
 
         # call on recursive helper function
         self.net = replace_act_layers(self.net, n_repeat, act_fns, 
-            act_fn_params, self.spatial)
+            act_fn_params, spatial)
     
     def set_input_hook(self, layer_name):
         # store responses here...
