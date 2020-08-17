@@ -325,6 +325,7 @@ class NetManager():
             "n_repeat": n_repeat,
             "act_fns": act_fns,
             "act_fn_params": act_fn_params, 
+            "spatial": spatial
         }   
 
         # call on recursive helper function
@@ -559,7 +560,7 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "sticknet8", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1/sample-0/sticknet8_case-swish10-tanhe1_sample-0_epoch-94.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1-spatial/sample-2/sticknet8_case-swish10-tanhe1-spatial_sample-2_epoch-0.pt")
     mgr.load_dataset(2)
 
     criterion = nn.CrossEntropyLoss()
