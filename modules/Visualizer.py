@@ -113,19 +113,22 @@ class Visualizer():
         """
 
         # pull data
-        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
+        df, _, _ = self.stats_processor.load_final_acc_df(self.refresh)
 
         # performance relative to predictions
         df["acc_vs_linear"] = df["final_val_acc"]["mean"] - df["linear_pred"]
         df["acc_vs_max"] = df["final_val_acc"]["mean"] - df["max_pred"]
 
-        sort_df = df.query("is_mixed == True").sort_values(by=f"acc_vs_{pred_type}")
+        sort_df = df.query("is_mixed == True").sort_values(["net_name", f"acc_vs_{pred_type}"])
+        unique_nets = df.query(f"is_mixed & dataset == '{dataset}' & net_name in {net_names} & train_scheme in {schemes}").index.unique(level=1).tolist()
         
         # plot
-        plt.figure(figsize=(9,12))
+        fig = plt.figure(figsize=(16,12))
         plt.gca().axvline(0, color='k', linestyle='--')
+        clrs = sns.color_palette("husl", len(unique_nets))
 
         ylabels = []
+        handles = dict()
         i = 0
         for midx in sort_df.index.values:
 
@@ -144,26 +147,38 @@ class Visualizer():
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0]
             err = sort_df.loc[midx]["final_val_acc"]["std"] * 1.98
 
+            clr = clrs[unique_nets.index(n)]
             # plot good and bad
             if perf - err > 0:
-                plt.plot([perf - err, perf + err], [i,i], "b-",linewidth=6,
-                    alpha=.5)
-                plt.plot(perf, i, "bo")
+                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                    c=clr, linewidth=6, alpha=.6)
+                h = plt.plot(perf, i, c=clr, marker="o")
+                handles[n] = h[0]
             else:
-                plt.plot([perf - err, perf + err], [i,i], "k-",linewidth=6,
-                    alpha=.5)
-                plt.plot(perf, i, "ko")
+                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                    c=clr, linewidth=6, alpha=.2)
+                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                    linewidth=6, c='k', alpha=.1)
+                h = plt.plot(perf, i, c=clr, marker="o", alpha=0.5)
+                if handles.get(n) is None:
+                    handles[n] = h[0]
 
             i += 1
             ylabels.append(f"{n} {s} {c}")
 
         # set figure text
-        plt.xlabel(f"Performance - {pred_type} prediction", fontsize=16)
-        plt.ylabel("Network configuration", fontsize=16)
+        plt.title("Mixed network performance relative to predicted performance", 
+            fontsize=20, pad=20)
+        plt.xlabel(f"Accuracy relative to {pred_type} prediction", 
+            fontsize=16, labelpad=10)
+        plt.ylabel("Network configuration", fontsize=16, labelpad=10)
         plt.yticks(np.arange(0, i, 1), ylabels)
-        plt.ylim(-0.5, i + .5)
+        plt.ylim(-0.5, i - 0.5)
         # plt.xlim(-0.1, 0.3)
+        plt.legend(handles.values(), handles.keys())
         plt.tight_layout()
+        # yax = plt.gca().get_yaxis()
+        # yax.set_tick_params(pad=100)
 
         # optional saving
         if not self.save_fig:
@@ -389,12 +404,11 @@ class Visualizer():
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
             
-        ax.set_title("Classification accuracy during training")
+        ax.set_title(f"Classification accuracy during training: {net_name}")
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Validation accuracy")
+        ax.set_ylim([0.1, 1])
         ax.legend()
-        # step = 5
-        # ax.set_xticks([i * step for i in range(int((len(yvals) + 1)/step))])
         
         # optional saving
         if not self.save_fig:
@@ -530,7 +544,7 @@ class Visualizer():
 if __name__=="__main__":
     
     visualizer = Visualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
     # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 
@@ -538,14 +552,20 @@ if __name__=="__main__":
 
     # visualizer.plot_weight_changes(["unmodified"], ["adam"])
     
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish10", "tanhe1", "swish10-tanhe1"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
+    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     
-    visualizer.plot_predictions("cifar10", 
-        ["vgg11"], 
-        ["adam"])
+    visualizer.plot_predictions("cifar10",
+        ["vgg11", "sticknet8"],
+        ["adam"], "linear")
 
     # visualizer.scatter_final_acc("cifar10", 
-    #     ["vgg11"], 
+    #     ["vgg11", "sticknet8"], 
     #     ["adam"])
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])

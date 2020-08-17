@@ -95,7 +95,7 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
             if type(prev) == nn.Conv2d:
                 n_features = prev.out_channels
                 model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-                    act_fns, act_fn_params, spatial) # TODO: don't always mix spatially! 
+                    act_fns, act_fn_params, spatial) 
             else:
                 n_features = prev.out_features
                 model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
