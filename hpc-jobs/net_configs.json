@@ -11,6 +11,13 @@
         "act_fn_params": [null],
         "pretrained": false
     },
+    "relu-spatial": {
+        "n_repeat": 1,
+        "act_fns": ["relu"],
+        "act_fn_params": [null],
+        "pretrained": false,
+        "spatial": true
+    },
 
 
 
@@ -166,6 +173,13 @@
         "act_fns": ["swish", "tanhe"],
         "act_fn_params": [10, 1.0],
         "pretrained": false
+    },
+    "swish10-tanhe1-spatial": {
+        "n_repeat": 1,
+        "act_fns": ["swish", "tanhe"],
+        "act_fn_params": [10, 1.0],
+        "pretrained": false,
+        "spatial": true
     },
     "swish5-tanhe0.5": {
         "n_repeat": 1,
