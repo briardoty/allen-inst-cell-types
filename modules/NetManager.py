@@ -73,7 +73,7 @@ nets = {
     }
 }
 
-def replace_act_layers(model, n_repeat, act_fns, act_fn_params):
+def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
     """
     Recursive helper function to replace all relu layers with
     instances of MixedActivationLayer with the given params
@@ -87,13 +87,19 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params):
         # recursive case
         if len(list(module.children())) > 0:
             model._modules[name] = replace_act_layers(module, 
-                n_repeat, act_fns, act_fn_params)
+                n_repeat, act_fns, act_fn_params, spatial)
         
         # base case
         if type(module) == nn.ReLU:
-            n_features = prev.out_channels if type(prev) == nn.Conv2d else prev.out_features
-            model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-                act_fns, act_fn_params)
+
+            if type(prev) == nn.Conv2d:
+                n_features = prev.out_channels
+                model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+                    act_fns, act_fn_params, spatial) # TODO: don't always mix spatially! 
+            else:
+                n_features = prev.out_features
+                model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+                    act_fns, act_fn_params)
 
         # update previous layer
         prev = module
@@ -104,7 +110,7 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params):
 class NetManager():
     
     def __init__(self, dataset, net_name, n_classes, data_dir, train_scheme, 
-        pretrained=False, seed=None):
+        spatial=False, pretrained=False, seed=None):
 
         # SEED!
         self.seed_everything(seed)
@@ -118,6 +124,7 @@ class NetManager():
         self.epoch = 0
         self.modified_layers = None
         self.perf_stats = []
+        self.spatial = spatial
 
         if (torch.cuda.is_available()):
             print("Enabling GPU speedup!")
@@ -138,7 +145,7 @@ class NetManager():
         self.case_id = case_id
         self.sample = sample
         self.net_dir = get_net_dir(self.data_dir, self.dataset, self.net_name, 
-            self.train_scheme, self.case_id, self.sample)
+            self.train_scheme, self.case_id, self.sample, self.spatial)
 
         if self.pretrained:
             print("Initializing pretrained net!")
@@ -173,7 +180,8 @@ class NetManager():
             "sample": self.sample,
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
-            "modified_layers": self.modified_layers
+            "modified_layers": self.modified_layers,
+            "spatial": self.spatial
         }
 
         print(f"Saving network snapshot {filename}")
@@ -196,7 +204,8 @@ class NetManager():
             "train_scheme": self.train_scheme,
             "case": self.case_id,
             "sample": self.sample,
-            "modified_layers": self.modified_layers
+            "modified_layers": self.modified_layers,
+            "spatial": self.spatial
         }
 
         # save
@@ -239,6 +248,7 @@ class NetManager():
         state_dict = snapshot_state.get("state_dict")
         self.case_id = snapshot_state.get("case")
         self.sample = snapshot_state.get("sample")
+        self.spatial = snapshot_state.get("spatial")
         
         self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
         self.modified_layers = snapshot_state.get("modified_layers")        
@@ -316,12 +326,12 @@ class NetManager():
         self.modified_layers = {
             "n_repeat": n_repeat,
             "act_fns": act_fns,
-            "act_fn_params": act_fn_params
+            "act_fn_params": act_fn_params, 
         }   
 
         # call on recursive helper function
         self.net = replace_act_layers(self.net, n_repeat, act_fns, 
-            act_fn_params)
+            act_fn_params, self.spatial)
     
     def set_input_hook(self, layer_name):
         # store responses here...
@@ -551,11 +561,11 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "sticknet8", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/sticknet8/adam/relu/sample-0/sticknet8_case-relu_sample-0_epoch-0.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1/sample-0/sticknet8_case-swish10-tanhe1_sample-0_epoch-94.pt")
     mgr.load_dataset(2)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(mgr.net.parameters(), lr=0.0001)
+    optimizer = optim.Adam(mgr.net.parameters())
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     
     # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)

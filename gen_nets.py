@@ -24,6 +24,8 @@ parser.add_argument("--n_repeat", type=int)
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
 parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
+parser.add_argument("--spatial", dest="spatial", action="store_true")
+parser.set_defaults(spatial=False)
 
 # pretrained is a PITA since it's a bool
 pretrained_parser = parser.add_mutually_exclusive_group(required=False)
@@ -32,10 +34,12 @@ pretrained_parser.add_argument('--untrained', dest='pretrained', action='store_f
 parser.set_defaults(pretrained=False)
 
 def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir, 
-         net_name, n_classes, n_samples, pretrained, scheme, dataset):
+         net_name, n_classes, n_samples, pretrained, scheme, dataset,
+         spatial):
     
     # init net manager
-    manager = NetManager(dataset, net_name, n_classes, data_dir, scheme, pretrained)
+    manager = NetManager(dataset, net_name, n_classes, data_dir, scheme, 
+        spatial, pretrained)
     
     # build and save nets
     for i in range(n_samples):
