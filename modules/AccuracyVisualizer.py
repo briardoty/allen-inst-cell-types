@@ -21,11 +21,6 @@ except:
     from NetManager import nets
 
 try:
-    from .ActivationFunctions import *
-except:
-    from ActivationFunctions import *
-
-try:
     from .util import ensure_sub_dir
 except:
     from util import ensure_sub_dir
@@ -45,7 +40,8 @@ class AccuracyVisualizer():
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
 
-    def plot_predictions(self, dataset, net_names, schemes, pred_type="max"):
+    def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max"):
         """
         Plot a single axis figure of offset from predicted final accuracy for
         the given mixed cases.
@@ -58,66 +54,98 @@ class AccuracyVisualizer():
         df["acc_vs_linear"] = df["final_val_acc"]["mean"] - df["linear_pred"]
         df["acc_vs_max"] = df["final_val_acc"]["mean"] - df["max_pred"]
 
-        sort_df = df.query("is_mixed == True").sort_values(["net_name", f"acc_vs_{pred_type}"])
-        unique_nets = df.query(f"is_mixed & dataset == '{dataset}' & net_name in {net_names} & train_scheme in {schemes}").index.unique(level=1).tolist()
+        # filter dataframe
+        df = df.query(f"is_mixed")
+        df = df.query(f"dataset == '{dataset}'") 
+        df = df.query(f"net_name in {net_names}")
+        df = df.query(f"train_scheme in {schemes}")
+        for excl in excl_arr:
+            df = df.query(f"not case.str.contains('{excl}')", engine="python")
+        unique_nets = df.index.unique(level=1).tolist()
+        sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
         
+        # determine each label length for alignment
+        lengths = {}
+        for i in range(4):
+            lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
+
         # plot
-        fig = plt.figure(figsize=(16,12))
+        plt.figure(figsize=(16,12))
         plt.gca().axvline(0, color='k', linestyle='--')
         clrs = sns.color_palette("husl", len(unique_nets))
 
-        ylabels = []
+        ylabels = list()
         handles = dict()
         i = 0
         for midx in sort_df.index.values:
 
-            # dataset, net, scheme, case, mixed
-            d, n, s, c, m = midx
-            if (not m 
-                or not d == dataset 
-                or not n in net_names
-                or not s in schemes):
-                continue
+            # dataset, net, scheme, case, mixed, cross-family
+            d, n, s, c, m, cf = midx
+            clr = clrs[unique_nets.index(n)]
 
             # prettify
             if np.mod(i, 2) == 0:
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
             
-            perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0]
-            err = sort_df.loc[midx]["final_val_acc"]["std"] * 1.98
+            # stats
+            perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
+            err = sort_df.loc[midx]["final_val_acc"]["std"] * 1.98 * 100
 
-            clr = clrs[unique_nets.index(n)]
-            # plot good and bad
+            # plot "good" and "bad"
+            dashes = (4,1)
             if perf - err > 0:
-                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                    c=clr, linewidth=6, alpha=.6)
+                if cf:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        c=clr, linewidth=6, alpha=.8)
+                else:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        c=clr, linewidth=6, alpha=.8)
                 h = plt.plot(perf, i, c=clr, marker="o")
                 handles[n] = h[0]
             else:
-                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                    c=clr, linewidth=6, alpha=.2)
-                plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                    linewidth=6, c='k', alpha=.1)
+                if cf:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        c=clr, linewidth=6, alpha=.2)
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        linewidth=6, c='k', alpha=.1)
+                else:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        c=clr, linewidth=6, alpha=.2)
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        linewidth=6, c='k', alpha=.1)
                 h = plt.plot(perf, i, c=clr, marker="o", alpha=0.5)
                 if handles.get(n) is None:
                     handles[n] = h[0]
 
+            # make an aligned label
+            aligned = d.ljust(lengths[0]) + n.ljust(lengths[1]) +\
+                s.ljust(lengths[2]) + c.ljust(lengths[3])
+            ylabels.append(aligned)
+
+            # track vars
             i += 1
-            ylabels.append(f"{n} {s} {c}")
+
+        # determine padding for labels
+        max_length = np.max([len(l) for l in ylabels])
+
+        # add handles
+        h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
+        h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
+        handles["cross-family"] = h1
+        handles["inter-family"] = h2
 
         # set figure text
         plt.title("Mixed network performance relative to predicted performance", 
             fontsize=20, pad=20)
-        plt.xlabel(f"Accuracy relative to {pred_type} prediction", 
+        plt.xlabel(f"Accuracy relative to {pred_type} prediction (%)", 
             fontsize=16, labelpad=10)
         plt.ylabel("Network configuration", fontsize=16, labelpad=10)
-        plt.yticks(np.arange(0, i, 1), ylabels)
+        plt.yticks(np.arange(0, i, 1), ylabels, ha="left")
         plt.ylim(-0.5, i - 0.5)
-        # plt.xlim(-0.1, 0.3)
         plt.legend(handles.values(), handles.keys())
+        yax = plt.gca().get_yaxis()
+        yax.set_tick_params(pad=max_length*7)
         plt.tight_layout()
-        # yax = plt.gca().get_yaxis()
-        # yax.set_tick_params(pad=100)
 
         # optional saving
         if not self.save_fig:
@@ -343,9 +371,9 @@ class AccuracyVisualizer():
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
             
-        ax.set_title(f"Classification accuracy during training: {net_name}")
-        ax.set_xlabel("Epoch")
-        ax.set_ylabel("Validation accuracy")
+        ax.set_title(f"Classification accuracy during training: {net_name}", fontsize=20)
+        ax.set_xlabel("Epoch", fontsize=16)
+        ax.set_ylabel("Validation accuracy", fontsize=16)
         ax.set_ylim([0.1, 1])
         ax.legend()
         
@@ -377,10 +405,12 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
-    
+
     visualizer.plot_predictions("cifar10",
         ["vgg11", "sticknet8"],
-        ["adam"], "linear")
+        ["adam"], 
+        excl_arr=["spatial"],
+        pred_type="max")
 
     # visualizer.scatter_final_acc("cifar10", 
     #     ["vgg11", "sticknet8"], 

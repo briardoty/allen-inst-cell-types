@@ -10,15 +10,6 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-try:
-    from .StatsProcessor import StatsProcessor
-except:
-    from StatsProcessor import StatsProcessor
-
-try:
-    from .NetManager import nets
-except:
-    from NetManager import nets
 
 try:
     from .ActivationFunctions import *
@@ -41,8 +32,6 @@ class FunctionVisualizer():
         self.data_dir = data_dir
         self.save_fig = save_fig
         self.refresh = refresh
-        
-        self.stats_processor = StatsProcessor(data_dir, n_classes)
         
     def plot_activation_fns(self, act_fns):
         """

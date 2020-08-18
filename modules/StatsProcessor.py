@@ -269,9 +269,10 @@ class StatsProcessor():
         # 1. mark mixed nets
         acc_df.drop(columns="Unnamed: 0", inplace=True)
         acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
+        acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
         # 2. aggregate
-        idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed"]
+        idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(idx_cols).agg(
             { "final_val_acc": [np.mean, np.std] })
         df_groups = df_stats.groupby(idx_cols)
@@ -282,7 +283,7 @@ class StatsProcessor():
         max_preds = []
         max_stds = []
         for g in df_groups.groups:
-            d, n, s, c, m = g
+            d, n, s, c, m, cf = g
 
             # only predict for mixed cases
             if not m:
