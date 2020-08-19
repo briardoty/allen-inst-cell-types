@@ -330,7 +330,7 @@ class StatsProcessor():
 
         # walk dir looking for saved net stats
         net_dir = os.path.join(self.data_dir, f"nets/")
-        for root, dirs, files in os.walk(net_dir):
+        for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
             if len(files) <= 0:
@@ -387,7 +387,40 @@ class StatsProcessor():
         with open(filename, "w") as json_file:
             json_file.write(json_obj)
 
-    def load_accuracy_df(self, dataset, net_name, cases, train_schemes):
+    def load_accuracy_df(self, dataset, net_name, cases, schemes, refresh):
+        """
+        Loads dataframe with validation accuracy for different 
+        experimental cases over epochs.
+
+        Args:
+            refresh
+
+        Returns:
+            df_stats (dataframe): Dataframe containing final accuracy.
+        """
+        # optional refresh
+        if refresh:
+            self.refresh_accuracy_df()
+
+        # load
+        sub_dir = os.path.join(self.data_dir, "dataframes/")
+        df = pd.read_csv(os.path.join(sub_dir, "acc_df.csv"))
+
+        # filter and process a bit
+        df.drop(columns="Unnamed: 0", inplace=True)
+        df = df.query(f"dataset == '{dataset}'") 
+        df = df.query(f"net_name == '{net_name}'")
+        df = df.query(f"train_scheme in {schemes}")
+        df = df.query(f"case in {cases}")
+
+        index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
+        df.set_index(index_cols, inplace=True)
+        df_groups = df.groupby(index_cols)
+        df_stats = df_groups.agg({ "acc": [np.mean, np.std] })
+
+        return df_stats, index_cols
+
+    def refresh_accuracy_df(self):
         """
         Loads dataframe with accuracy over training for different experimental 
         cases.
@@ -402,22 +435,14 @@ class StatsProcessor():
         acc_arr = []
             
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/{dataset}/{net_name}")
-        for root, dirs, files in os.walk(net_dir):
+        net_dir = os.path.join(self.data_dir, f"nets/")
+        for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
             if len(files) <= 0:
                 continue
             
             slugs = root.split("/")
-
-            # only interested in the given training schemes
-            if not any(t in slugs for t in train_schemes):
-                continue
-
-            # only interested in the given cases
-            if not any(c in slugs for c in cases):
-                continue
             
             # consider all files...
             for filename in files:
@@ -429,6 +454,8 @@ class StatsProcessor():
                 filepath = os.path.join(root, filename)
                 stats_dict = np.load(filepath, allow_pickle=True).item()
                 
+                dataset = stats_dict.get("dataset") if stats_dict.get("dataset") is not None else "imagenette2"
+                net_name = stats_dict.get("net_name")
                 train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
@@ -436,18 +463,20 @@ class StatsProcessor():
                 perf_stats = stats_dict.get("perf_stats")
                 for epoch in range(len(perf_stats)):
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
-                    acc_arr.append([train_scheme, case, sample, epoch, val_acc])
+                    acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["train_scheme", "case", "sample", "epoch", "acc"])  
-        return acc_df
+        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "epoch", "acc"])  
+        
+        # save df
+        self.save_df("acc_df.csv", acc_df)
 
-if __name__=="__main__":
+# if __name__=="__main__":
     
-    processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data", "sgd")
+#     processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data", "sgd")
     
-    processor.load_accuracy_df(["control2"])
-    # processor.load_weight_change_df(["control1"])
+#     processor.load_accuracy_df(["control2"])
+#     # processor.load_weight_change_df(["control1"])
     
     
     

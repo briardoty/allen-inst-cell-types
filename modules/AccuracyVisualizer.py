@@ -10,15 +10,14 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+
 try:
     from .StatsProcessor import StatsProcessor
 except:
     from StatsProcessor import StatsProcessor
-
-try:
-    from .NetManager import nets
-except:
-    from NetManager import nets
 
 try:
     from .util import ensure_sub_dir
@@ -153,7 +152,7 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction/{dataset}")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/prediction")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction.svg"
@@ -346,36 +345,55 @@ class AccuracyVisualizer():
 
         """
         # pull data
-        acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            cases, schemes)
+        acc_df, index_cols = self.stats_processor.load_accuracy_df(dataset, net_name, 
+            cases, schemes, self.refresh)
 
-        # group and compute stats
-        acc_df.set_index(["train_scheme", "case", "epoch"], inplace=True)
-        acc_df_groups = acc_df.groupby(["train_scheme", "case", "epoch"])
-        acc_df_stats = acc_df_groups.agg({ "acc": [np.mean, np.std] })
-        acc_df_stats_groups = acc_df_stats.groupby(["train_scheme", "case"])
+        # group
+        df_groups = acc_df.groupby(index_cols[:-1])
         
         # plot
         fig, ax = plt.subplots(figsize=(14,8))
-        clrs = sns.color_palette("hls", len(acc_df_stats_groups.groups))
+        clrs = sns.color_palette("hls", len(df_groups.groups))
         
-        for group, clr in zip(acc_df_stats_groups.groups, clrs):
+        y_arr = []
+        yerr_arr = []
+        for group, clr in zip(df_groups.groups, clrs):
 
-            scheme, case = group
-            group_data = acc_df_stats_groups.get_group((scheme, case))
+            d, n, s, c = group
+            group_data = df_groups.get_group(group)
 
             # error bars = 2 standard devs
             yvals = group_data["acc"]["mean"].values
             yerr = group_data["acc"]["std"].values * 1.98
-            ax.plot(range(len(yvals)), yvals, label=f"{scheme} {case}", c=clr)
+            ax.plot(range(len(yvals)), yvals, label=f"{s} {c}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
+
+            # for the insert...
+            y_arr.append(yvals)
+            yerr_arr.append(yerr)
             
+        # zoomed inset?
+        axins = zoomed_inset_axes(ax, zoom=6, loc=8)
+        for yvals, yerr, clr in zip(y_arr, yerr_arr, clrs):
+            nlast = 10
+            x = [i for i in range(len(yvals) - nlast, len(yvals))]
+            y_end = yvals[-nlast:]
+            yerr_end = yerr[-nlast:]
+            axins.plot(x, y_end, c=clr)
+            axins.fill_between(x, y_end - yerr_end, y_end + yerr_end,
+                    alpha=0.1, facecolor=clr)
+
+        mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+
         ax.set_title(f"Classification accuracy during training: {net_name}", fontsize=20)
         ax.set_xlabel("Epoch", fontsize=16)
         ax.set_ylabel("Validation accuracy", fontsize=16)
         ax.set_ylim([0.1, 1])
         ax.legend()
+        axins.xaxis.set_ticks([])
+        
+        plt.tight_layout()
         
         # optional saving
         if not self.save_fig:
@@ -394,23 +412,23 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=False, refresh=False)
     
     # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
+    visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish10", "tanhe1", "swish10-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
 
-    visualizer.plot_predictions("cifar10",
-        ["vgg11", "sticknet8"],
-        ["adam"], 
-        excl_arr=["spatial"],
-        pred_type="max")
+    # visualizer.plot_predictions("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"], 
+    #     excl_arr=[],
+    #     pred_type="max")
 
     # visualizer.scatter_final_acc("cifar10", 
     #     ["vgg11", "sticknet8"], 
