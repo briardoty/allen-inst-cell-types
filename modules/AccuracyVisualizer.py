@@ -40,7 +40,7 @@ class AccuracyVisualizer():
         self.stats_processor = StatsProcessor(data_dir, n_classes)
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
-        pred_type="max"):
+        include_xfam, pred_type="max"):
         """
         Plot a single axis figure of offset from predicted final accuracy for
         the given mixed cases.
@@ -58,6 +58,8 @@ class AccuracyVisualizer():
         df = df.query(f"dataset == '{dataset}'") 
         df = df.query(f"net_name in {net_names}")
         df = df.query(f"train_scheme in {schemes}")
+        if not include_xfam:
+            df = df.query(f"cross_fam == False")
         for excl in excl_arr:
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
         unique_nets = df.index.unique(level=1).tolist()
@@ -93,7 +95,7 @@ class AccuracyVisualizer():
             # plot "good" and "bad"
             dashes = (4,1)
             if perf - err > 0:
-                if cf:
+                if cf or not include_xfam:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=6, alpha=.8)
                 else:
@@ -102,7 +104,7 @@ class AccuracyVisualizer():
                 h = plt.plot(perf, i, c=clr, marker="o")
                 handles[n] = h[0]
             else:
-                if cf:
+                if cf or not include_xfam:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=6, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
@@ -128,10 +130,11 @@ class AccuracyVisualizer():
         max_length = np.max([len(l) for l in ylabels])
 
         # add handles
-        h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
-        h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
-        handles["cross-family"] = h1
-        handles["inter-family"] = h2
+        if include_xfam:
+            h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
+            h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
+            handles["cross-family"] = h1
+            handles["inter-family"] = h2
 
         # set figure text
         plt.title("Mixed network performance relative to predicted performance", 
@@ -141,7 +144,7 @@ class AccuracyVisualizer():
         plt.ylabel("Network configuration", fontsize=16, labelpad=10)
         plt.yticks(np.arange(0, i, 1), ylabels, ha="left")
         plt.ylim(-0.5, i - 0.5)
-        plt.legend(handles.values(), handles.keys())
+        plt.legend(handles.values(), handles.keys(), fontsize=14)
         yax = plt.gca().get_yaxis()
         yax.set_tick_params(pad=max_length*7)
         plt.tight_layout()
@@ -155,10 +158,11 @@ class AccuracyVisualizer():
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/prediction")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
-        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction.svg"
+        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)  
+        plt.savefig(f"{filename}.svg")  
+        plt.savefig(f"{filename}.png", dpi=300)  
 
     def scatter_final_acc(self, dataset, net_names, schemes, pred_type="linear"):
         """
@@ -226,7 +230,7 @@ class AccuracyVisualizer():
         ax.set_xlim([0.1, 1])
         ax.set_ylim([0.1, 1])
         ax.set_aspect("equal", "box")
-        ax.legend()
+        ax.legend(fontsize=14)
          
         # optional saving
         if not self.save_fig:
@@ -363,8 +367,8 @@ class AccuracyVisualizer():
             group_data = df_groups.get_group(group)
 
             # error bars = 2 standard devs
-            yvals = group_data["acc"]["mean"].values
-            yerr = group_data["acc"]["std"].values * 1.98
+            yvals = group_data["acc"]["mean"].values * 100
+            yerr = group_data["acc"]["std"].values * 1.98 * 100
             ax.plot(range(len(yvals)), yvals, label=f"{s} {c}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
@@ -374,7 +378,7 @@ class AccuracyVisualizer():
             yerr_arr.append(yerr)
             
         # zoomed inset?
-        axins = zoomed_inset_axes(ax, zoom=6, loc=8)
+        axins = zoomed_inset_axes(ax, zoom=10, loc=8)
         for yvals, yerr, clr in zip(y_arr, yerr_arr, clrs):
             nlast = 10
             x = [i for i in range(len(yvals) - nlast, len(yvals))]
@@ -386,11 +390,11 @@ class AccuracyVisualizer():
 
         mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
 
-        ax.set_title(f"Classification accuracy during training: {net_name}", fontsize=20)
+        ax.set_title(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
         ax.set_xlabel("Epoch", fontsize=16)
-        ax.set_ylabel("Validation accuracy", fontsize=16)
-        ax.set_ylim([0.1, 1])
-        ax.legend()
+        ax.set_ylabel("Validation accuracy (%)", fontsize=16)
+        ax.set_ylim([10, 100])
+        ax.legend(fontsize=14)
         axins.xaxis.set_ticks([])
         
         plt.tight_layout()
@@ -403,31 +407,35 @@ class AccuracyVisualizer():
         
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
         case_names = " & ".join(cases)
-        filename = f"{case_names} accuracy.svg"
+        filename = f"{case_names} accuracy"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)
+        plt.savefig(f"{filename}.svg")
+        plt.savefig(f"{filename}.png", dpi=300)
         
 
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
     # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2", "tanhe5"])
-    visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish10", "tanhe1", "swish10-tanhe1"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
+    visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish10", "swish1-10"])
 
     # visualizer.plot_predictions("cifar10",
     #     ["vgg11", "sticknet8"],
     #     ["adam"], 
-    #     excl_arr=[],
+    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+    #     include_xfam=True,
     #     pred_type="max")
 
     # visualizer.scatter_final_acc("cifar10", 

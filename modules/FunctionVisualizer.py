@@ -10,6 +10,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch
 
 try:
     from .ActivationFunctions import *
@@ -38,15 +39,75 @@ class FunctionVisualizer():
         Plots the given activation functions on the same figure
         """
 
-        x = np.linspace(-5, 5, 50)
+        x = np.linspace(-2, 2, 1000)
         x = torch.tensor(x)
-        fig, ax = plt.subplots(figsize=(7,5))
+        fig, ax = plt.subplots(figsize=(8,6))
 
         for fn in act_fns:
             y = fn(x)
             ax.plot(x, y, label=str(fn))
 
-        ax.legend()
+        # axes
+        ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
+        ax.axvline(x=0, color="k", linestyle="--", alpha=0.2)
+
+        ax.set_xticks([-1, 0, 1])
+        ax.set_yticks([-1, 0, 1])
+        ax.set_xlim([-2, 2])
+        ax.set_ylim([-1.5, 1.5])
+        # ax.axis("equal")
+        ax.set_aspect("equal", "box")
+        ax.set_xlabel("Input", fontsize=16)
+        ax.set_ylabel("Activation", fontsize=16)
+        ax.legend(fontsize=14)
+        plt.tight_layout()
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+        
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/act_fns/")
+        fn_names = " & ".join([str(fn) for fn in act_fns])
+        filename = f"{fn_names}"
+        print(f"Saving... {filename}")
+        plt.savefig(os.path.join(sub_dir, f"{filename}.svg"), dpi=500)
+        plt.savefig(os.path.join(sub_dir, f"{filename}.png"), dpi=500)
+
+    def plot_act_fn_mapping(self, act_fn1, act_fn2):
+        """
+        Visualize the expressivity of mixed activation functions
+        """
+
+        # plot input space
+        fig, ax = plt.subplots(figsize=(7,5))
+        circle = plt.Circle((0,0),1, color="k", fill=False, linewidth=2)
+        ax.add_artist(circle)
+        ax.axis("equal")
+        ax.set(xlim=(-2,2), ylim=(-2,2))
+        ax.axvline(0, linestyle="--", alpha=0.25,color="k")
+        ax.axhline(0, linestyle="--", alpha=0.25,color="k")
+        # plt.savefig("unit_circle.svg")
+
+        # plot output space
+        fig, ax = plt.subplots(figsize=(7,5))
+        ax.axis("equal")
+        ax.set(xlim=(-2,2), ylim=(-2,2))
+        ax.axvline(0, linestyle="--", alpha=0.25,color="k")
+        ax.axhline(0, linestyle="--", alpha=0.25,color="k")
+        x = np.arange(0,2*np.pi, 1/100)
+        x1 = torch.tensor(np.sin(x))
+        x2 = torch.tensor(np.cos(x))
+        ax.plot(x1, x2, "k:", linewidth=2, label="Input")
+
+        # output space
+        ax.plot(act_fn1(x1), act_fn1(x2), "b--", linewidth=2, label="act_fn1")
+        ax.plot(act_fn2(x1), act_fn2(x2), "g--", linewidth=2, label="act_fn2")
+
+        # mixed space
+        ax.plot(act_fn1(x1), act_fn2(x2), "r", linewidth=2, label="Mixed")
+        plt.legend()
 
         # optional saving
         if not self.save_fig:
@@ -65,9 +126,12 @@ class FunctionVisualizer():
 if __name__=="__main__":
     
     visualizer = FunctionVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=True)
 
     # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
-    # visualizer.plot_activation_fns([Swish(3), Swish(5), Swish(10)])
-    # visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(0.5), Tanhe(1), Tanhe(10)])
+    # visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
+    visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(1), Tanhe(5)])
     # visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
+    # visualizer.plot_activation_fns([torch.relu, Swish(3), Tanhe(1)])
+
+    # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)
