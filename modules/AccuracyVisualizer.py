@@ -334,7 +334,7 @@ class AccuracyVisualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_accuracy(self, dataset, net_name, schemes, cases):
+    def plot_accuracy(self, dataset, net_name, schemes, cases, inset=True):
         """
         Plots accuracy over training for different experimental cases.
 
@@ -377,25 +377,26 @@ class AccuracyVisualizer():
             y_arr.append(yvals)
             yerr_arr.append(yerr)
             
-        # zoomed inset?
-        axins = zoomed_inset_axes(ax, zoom=10, loc=8)
-        for yvals, yerr, clr in zip(y_arr, yerr_arr, clrs):
-            nlast = 10
-            x = [i for i in range(len(yvals) - nlast, len(yvals))]
-            y_end = yvals[-nlast:]
-            yerr_end = yerr[-nlast:]
-            axins.plot(x, y_end, c=clr)
-            axins.fill_between(x, y_end - yerr_end, y_end + yerr_end,
-                    alpha=0.1, facecolor=clr)
+        # zoomed inset
+        if inset:
+            axins = zoomed_inset_axes(ax, zoom=10, loc=8)
+            for yvals, yerr, clr in zip(y_arr, yerr_arr, clrs):
+                nlast = 10
+                x = [i for i in range(len(yvals) - nlast, len(yvals))]
+                y_end = yvals[-nlast:]
+                yerr_end = yerr[-nlast:]
+                axins.plot(x, y_end, c=clr)
+                axins.fill_between(x, y_end - yerr_end, y_end + yerr_end,
+                        alpha=0.1, facecolor=clr)
 
-        mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+            mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+            axins.xaxis.set_ticks([])
 
         ax.set_title(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
         ax.set_xlabel("Epoch", fontsize=16)
         ax.set_ylabel("Validation accuracy (%)", fontsize=16)
         ax.set_ylim([10, 100])
         ax.legend(fontsize=14)
-        axins.xaxis.set_ticks([])
         
         plt.tight_layout()
         
@@ -417,7 +418,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=True)
+        10, save_fig=False, refresh=False)
     
     # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
@@ -429,14 +430,14 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish10", "swish1-10"])
+    visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
 
-    visualizer.plot_predictions("cifar10",
-        ["sticknet8"],
-        ["adam"], 
-        excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-        pred_type="max",
-        cross_family=True)
+    # visualizer.plot_predictions("cifar10",
+    #     ["sticknet8"],
+    #     ["adam"], 
+    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+    #     pred_type="max",
+    #     cross_family=None)
 
     # visualizer.scatter_max_acc("cifar10", 
     #     ["vgg11", "sticknet8"], 
