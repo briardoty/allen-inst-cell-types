@@ -40,26 +40,26 @@ class AccuracyVisualizer():
         self.stats_processor = StatsProcessor(data_dir, n_classes)
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
-        include_xfam, pred_type="max"):
+        pred_type="max", cross_family=None):
         """
-        Plot a single axis figure of offset from predicted final accuracy for
+        Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
         """
 
         # pull data
-        df, _, _ = self.stats_processor.load_final_acc_df(self.refresh)
+        df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
 
         # performance relative to predictions
-        df["acc_vs_linear"] = df["final_val_acc"]["mean"] - df["linear_pred"]
-        df["acc_vs_max"] = df["final_val_acc"]["mean"] - df["max_pred"]
+        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]
+        df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]
 
         # filter dataframe
         df = df.query(f"is_mixed")
         df = df.query(f"dataset == '{dataset}'") 
         df = df.query(f"net_name in {net_names}")
         df = df.query(f"train_scheme in {schemes}")
-        if not include_xfam:
-            df = df.query(f"cross_fam == False")
+        if cross_family is not None:
+            df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
         unique_nets = df.index.unique(level=1).tolist()
@@ -71,7 +71,7 @@ class AccuracyVisualizer():
             lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
 
         # plot
-        plt.figure(figsize=(16,12))
+        plt.figure(figsize=(16,16))
         plt.gca().axvline(0, color='k', linestyle='--')
         clrs = sns.color_palette("husl", len(unique_nets))
 
@@ -90,12 +90,12 @@ class AccuracyVisualizer():
             
             # stats
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
-            err = sort_df.loc[midx]["final_val_acc"]["std"] * 1.98 * 100
+            err = sort_df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
 
             # plot "good" and "bad"
             dashes = (4,1)
             if perf - err > 0:
-                if cf or not include_xfam:
+                if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=6, alpha=.8)
                 else:
@@ -104,7 +104,7 @@ class AccuracyVisualizer():
                 h = plt.plot(perf, i, c=clr, marker="o")
                 handles[n] = h[0]
             else:
-                if cf or not include_xfam:
+                if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=6, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
@@ -130,7 +130,7 @@ class AccuracyVisualizer():
         max_length = np.max([len(l) for l in ylabels])
 
         # add handles
-        if include_xfam:
+        if cross_family is None:
             h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
             h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
             handles["cross-family"] = h1
@@ -164,9 +164,9 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")  
         plt.savefig(f"{filename}.png", dpi=300)  
 
-    def scatter_final_acc(self, dataset, net_names, schemes, pred_type="linear"):
+    def scatter_max_acc(self, dataset, net_names, schemes, pred_type="linear"):
         """
-        Plot a scatter plot of predicted vs actual final accuracy for the 
+        Plot a scatter plot of predicted vs actual max accuracy for the 
         given mixed cases.
 
         Args:
@@ -175,7 +175,7 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        df, case_dict, index_cols = self.stats_processor.load_final_acc_df(self.refresh)
+        df, case_dict, index_cols = self.stats_processor.load_max_acc_df(self.refresh)
         df_groups = df.groupby(index_cols)
         mixed_cases = df.query("is_mixed == True").index.unique(level=3).tolist()
         n_mixed = len(mixed_cases)
@@ -204,8 +204,8 @@ class AccuracyVisualizer():
             clr = clrs[mixed_cases.index(c)]
 
             # actual
-            y_act = g_data["final_val_acc"]["mean"].values[0]
-            y_err = g_data["final_val_acc"]["std"].values[0] * 1.98
+            y_act = g_data["max_val_acc"]["mean"].values[0]
+            y_err = g_data["max_val_acc"]["std"].values[0] * 1.98
 
             # prediction
             x_pred = g_data[f"{pred_type}_pred"].values[0]
@@ -224,7 +224,7 @@ class AccuracyVisualizer():
         ax.plot(x, x, c=(0.5, 0.5, 0.5, 0.25), dashes=[6,2])
 
         # set figure text
-        ax.set_title(f"Linear predicted vs actual mixed case final accuracy - {dataset}", fontsize=18)
+        ax.set_title(f"Linear predicted vs actual mixed case max accuracy - {dataset}", fontsize=18)
         ax.set_xlabel("Predicted", fontsize=16)
         ax.set_ylabel("Actual", fontsize=16)
         ax.set_xlim([0.1, 1])
@@ -246,7 +246,7 @@ class AccuracyVisualizer():
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
 
-    def plot_final_accuracy(self, net_name, control_cases, mixed_cases):
+    def plot_max_accuracy(self, net_name, control_cases, mixed_cases):
         """
         Plot accuracy at the end of training for given control cases
         and mixed case, including predicted mixed case accuracy based
@@ -254,7 +254,7 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        acc_df, case_dict = self.stats_processor.load_final_acc_df(
+        acc_df, case_dict = self.stats_processor.load_max_acc_df(
             net_name, control_cases + mixed_cases)
         acc_df_groups = acc_df.groupby("case")
 
@@ -273,8 +273,8 @@ class AccuracyVisualizer():
             p = float(case_dict[case][0])
 
             # error bars = 2 standard devs
-            yvals = group["final_val_acc"]["mean"].values
-            yerr = group["final_val_acc"]["std"].values * 1.98
+            yvals = group["max_val_acc"]["mean"].values
+            yerr = group["max_val_acc"]["std"].values * 1.98
             h = axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
                 capsize=3, elinewidth=1, c=clrs[i], fmt=".")
             
@@ -288,8 +288,8 @@ class AccuracyVisualizer():
 
             # actual
             group = acc_df_groups.get_group(mixed_case)
-            y_act = group["final_val_acc"]["mean"].values[0]
-            y_err = group["final_val_acc"]["std"].values * 1.98
+            y_act = group["max_val_acc"]["mean"].values[0]
+            y_err = group["max_val_acc"]["std"].values * 1.98
             l = f"{mixed_case} actual"
             h = axes[1].errorbar(i, y_act, yerr=y_err, label=l,
                 capsize=3, elinewidth=1, c=clrs[len(control_cases) + i], fmt=".")
@@ -300,7 +300,7 @@ class AccuracyVisualizer():
             # predicted
             ps = [p for p in case_dict[mixed_case]]
             component_cases = [k for k, v in case_dict.items() if len(v) == 1 and v[0] in ps]
-            y_pred = acc_df["final_val_acc"]["mean"][component_cases].mean()
+            y_pred = acc_df["max_val_acc"]["mean"][component_cases].mean()
             l = f"{mixed_case} prediction"
             h = axes[1].plot(i, y_pred, "x", label=l,
                 c=clrs[len(control_cases) + i + 1])
@@ -308,10 +308,10 @@ class AccuracyVisualizer():
             labels.append(l)
             handles.append(h)
 
-        fig.suptitle("Final accuracy")
+        fig.suptitle("Max accuracy")
         axes[0].set_xlabel("Activation function parameter value")
         axes[1].set_xlabel("Mixed cases")
-        axes[0].set_ylabel("Final validation accuracy")
+        axes[0].set_ylabel("Max validation accuracy")
         axes[1].xaxis.set_ticks([])
 
         # shrink second axis by 20%
@@ -327,9 +327,9 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/final accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/max accuracy/")
         cases = " & ".join(mixed_cases)
-        filename = f"{cases} final acc.svg"
+        filename = f"{cases} max acc.svg"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(filename, dpi=300)  
@@ -417,9 +417,9 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=True, refresh=True)
     
-    # visualizer.plot_final_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
+    # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
@@ -427,17 +427,17 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
-    visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish10", "swish1-10"])
 
-    # visualizer.plot_predictions("cifar10",
-    #     ["vgg11", "sticknet8"],
-    #     ["adam"], 
-    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-    #     include_xfam=True,
-    #     pred_type="max")
+    visualizer.plot_predictions("cifar10",
+        ["sticknet8"],
+        ["adam"], 
+        excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+        pred_type="max",
+        cross_family=True)
 
-    # visualizer.scatter_final_acc("cifar10", 
+    # visualizer.scatter_max_acc("cifar10", 
     #     ["vgg11", "sticknet8"], 
     #     ["adam"])

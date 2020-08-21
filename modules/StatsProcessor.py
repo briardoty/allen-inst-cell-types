@@ -242,26 +242,26 @@ class StatsProcessor():
 
         return df_stats
     
-    def load_final_acc_df(self, refresh_df=True):
+    def load_max_acc_df(self, refresh_df=True):
         """
-        Loads dataframe with final validation accuracy for different 
+        Loads dataframe with max validation accuracy for different 
         experimental cases.
 
         Args:
             refresh
 
         Returns:
-            df_stats (dataframe): Dataframe containing final accuracy.
+            df_stats (dataframe): Dataframe containing max accuracy.
             case_dict (dict): Dict() of act fn names to their params
         """
 
         # optional refresh
         if refresh_df:
-            self.refresh_final_acc_df()
+            self.refresh_max_acc_df()
 
         # load
         sub_dir = os.path.join(self.data_dir, "dataframes/")
-        acc_df = pd.read_csv(os.path.join(sub_dir, "final_acc_df.csv"))
+        acc_df = pd.read_csv(os.path.join(sub_dir, "max_acc_df.csv"))
         with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
 
@@ -274,7 +274,7 @@ class StatsProcessor():
         # 2. aggregate
         idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(idx_cols).agg(
-            { "final_val_acc": [np.mean, np.std] })
+            { "max_val_acc": [np.mean, np.std] })
         df_groups = df_stats.groupby(idx_cols)
 
         # 3. predictions
@@ -295,8 +295,8 @@ class StatsProcessor():
             
             # get component cases and their stats
             component_cases = get_component_cases(case_dict, c)
-            component_accs = df_stats["final_val_acc"]["mean"][d][n][s].get(component_cases)
-            component_stds = df_stats["final_val_acc"]["std"][d][n][s].get(component_cases)
+            component_accs = df_stats["max_val_acc"]["mean"][d][n][s].get(component_cases)
+            component_stds = df_stats["max_val_acc"]["std"][d][n][s].get(component_cases)
 
             # this shouldn't happen much
             if component_accs is None or len(component_cases) == 0 or len(component_accs) == 0:
@@ -320,9 +320,9 @@ class StatsProcessor():
 
         return df_stats, case_dict, idx_cols
 
-    def refresh_final_acc_df(self):
+    def refresh_max_acc_df(self):
         """
-        Refreshes dataframe with final validation accuracy.
+        Refreshes dataframe with max validation accuracy.
         """
 
         acc_arr = []
@@ -361,16 +361,17 @@ class StatsProcessor():
 
                 perf_stats = stats_dict.get("perf_stats")
                 try:
-                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[-1]
+                    i_max = np.argmax(perf_stats[:,0])
+                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_max]
                     acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc])
                 except ValueError:
-                    print(f"Final entry in {case} {sample} perf_stats did not match expectations.")
+                    print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "final_val_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc"])
 
-        self.save_df("final_acc_df.csv", acc_df)
+        self.save_df("max_acc_df.csv", acc_df)
         self.save_json("case_dict.json", case_dict)
 
     def save_df(self, name, df):
@@ -396,7 +397,7 @@ class StatsProcessor():
             refresh
 
         Returns:
-            df_stats (dataframe): Dataframe containing final accuracy.
+            df_stats (dataframe): Dataframe containing max accuracy.
         """
         # optional refresh
         if refresh:
