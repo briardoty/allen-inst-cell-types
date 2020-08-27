@@ -421,6 +421,40 @@ class StatsProcessor():
 
         return df_stats, index_cols
 
+    def reduce_snapshots(self):
+
+        # walk networks directory
+        net_dir = os.path.join(self.data_dir, f"nets/")
+        for root, _, files in os.walk(net_dir):
+            
+            # only interested in locations files are saved
+            if len(files) <= 0:
+                continue
+            
+            slugs = root.split("/")
+            
+            # consider all files...
+            for filename in files:
+
+                # ...as long as they are snapshots
+                if not filename.endswith(".pt"):
+                    continue
+                
+                epoch = get_epoch_from_filename(filename)
+
+                if epoch is None:
+                    continue
+
+                if epoch % 10 == 0:
+                    continue
+                else:
+                    # delete
+                    filepath = os.path.join(root, filename)
+                    print(f"Deleting {filepath}")
+                    os.remove(filepath)
+
+
+
     def refresh_accuracy_df(self):
         """
         Loads dataframe with accuracy over training for different experimental 
@@ -472,10 +506,12 @@ class StatsProcessor():
         # save df
         self.save_df("acc_df.csv", acc_df)
 
-# if __name__=="__main__":
+if __name__=="__main__":
     
-#     processor = StatsProcessor("vgg11", 10, "/home/briardoty/Source/allen-inst-cell-types/data", "sgd")
+    processor = StatsProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 10)
     
+    processor.reduce_snapshots()
+
 #     processor.load_accuracy_df(["control2"])
 #     # processor.load_weight_change_df(["control1"])
     
