@@ -500,7 +500,7 @@ class NetManager():
                 scheduler.step()
 
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-        end_epoch=10):
+        end_epoch=10, snap_freq=10):
         """
         Run end_epoch of training and validation
         """
@@ -533,7 +533,8 @@ class NetManager():
             (val_acc, val_loss) = self.evaluate_net(criterion)
     
             # save a snapshot of net state
-            self.save_net_snapshot(epoch, val_acc)
+            if epoch % snap_freq == 0:
+                self.save_net_snapshot(epoch, val_acc)
             
             # track stats
             self.perf_stats[epoch] = [val_acc, val_loss, train_acc, train_loss]
@@ -558,9 +559,10 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("cifar10", "sticknet8", 10, 
+    mgr = NetManager("cifar10", "vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1-spatial/sample-2/sticknet8_case-swish10-tanhe1-spatial_sample-2_epoch-0.pt")
+    mgr.init_net("asdf", "asdf")
+    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1-spatial/sample-2/sticknet8_case-swish10-tanhe1-spatial_sample-2_epoch-0.pt")
     mgr.load_dataset(2)
 
     criterion = nn.CrossEntropyLoss()
