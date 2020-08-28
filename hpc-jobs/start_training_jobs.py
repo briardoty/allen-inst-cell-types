@@ -117,7 +117,7 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
             python_executable,
             conda_env = conda_env,
             python_args = params_string,
-            jobname = job_title + f" {net_filename}",
+            jobname = job_title + f" {net_filepath}",
             jobdir = job_dir,
             **job_settings
         ).run(dryrun=False)
