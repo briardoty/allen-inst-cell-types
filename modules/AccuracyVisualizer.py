@@ -62,7 +62,6 @@ class AccuracyVisualizer():
             df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
-        unique_nets = df.index.unique(level=1).tolist()
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
         
         # determine each label length for alignment
@@ -73,7 +72,7 @@ class AccuracyVisualizer():
         # plot
         plt.figure(figsize=(16,16))
         plt.gca().axvline(0, color='k', linestyle='--')
-        clrs = sns.color_palette("husl", len(unique_nets))
+        clrs = sns.color_palette("husl", len(net_names))
 
         ylabels = list()
         handles = dict()
@@ -82,7 +81,7 @@ class AccuracyVisualizer():
 
             # dataset, net, scheme, case, mixed, cross-family
             d, n, s, c, m, cf = midx
-            clr = clrs[unique_nets.index(n)]
+            clr = clrs[net_names.index(n)]
 
             # prettify
             if np.mod(i, 2) == 0:
@@ -134,7 +133,7 @@ class AccuracyVisualizer():
             h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
             h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
             handles["cross-family"] = h1
-            handles["inter-family"] = h2
+            handles["within-family"] = h2
 
         # set figure text
         plt.title("Mixed network performance relative to predicted performance", 
@@ -159,78 +158,103 @@ class AccuracyVisualizer():
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
+        if cross_family == True:
+            filename += "_xfam"
+        elif cross_family == False:
+            filename += "_infam"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(f"{filename}.svg")  
         plt.savefig(f"{filename}.png", dpi=300)  
 
-    def scatter_max_acc(self, dataset, net_names, schemes, pred_type="linear"):
+    def scatter_acc(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None):
         """
         Plot a scatter plot of predicted vs actual max accuracy for the 
         given mixed cases.
-
-        Args:
-            net_names
-            schemes
         """
 
         # pull data
-        df, case_dict, index_cols = self.stats_processor.load_max_acc_df(self.refresh)
-        df_groups = df.groupby(index_cols)
-        mixed_cases = df.query("is_mixed == True").index.unique(level=3).tolist()
-        n_mixed = len(mixed_cases)
+        df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
+
+        # filter dataframe
+        df = df.query(f"is_mixed")
+        df = df.query(f"dataset == '{dataset}'") 
+        df = df.query(f"net_name in {net_names}")
+        df = df.query(f"train_scheme in {schemes}")
+        if cross_family is not None:
+            df = df.query(f"cross_fam == {cross_family}")
+        for excl in excl_arr:
+            df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # plot
-        fig, ax = plt.subplots(figsize=(14,14))
+        fig, ax = plt.subplots(figsize=(16,16))
+
+        # identifiers
         fmts = [".", "^"]
         mfcs = ["None", None]
-        clrs = sns.color_palette("husl", n_mixed)
+        clrs = sns.color_palette("husl", len(net_names))
 
         # plot mixed cases
         i = 0
-        for g in df_groups.groups:
+        xmin, ymin, xmax, ymax = 100, 100, 10, 10
+        handles = dict()
+        for midx in df.index.values:
 
             # dataset, net, scheme, case, mixed
-            d, n, s, c, m = g
-            if (not m 
-                or not d == dataset 
-                or not n in net_names
-                or not s in schemes):
-                continue
+            d, n, s, c, m, cf = midx
 
-            g_data = df_groups.get_group(g)
-            fmt = fmts[net_names.index(n)]
-            mfc = mfcs[schemes.index(s)]
-            clr = clrs[mixed_cases.index(c)]
+            # pick identifiers
+            clr = clrs[net_names.index(n)] # net
+            mfc = None if cf else "None" # xfam vs within fam
+            fmt = fmts[0]
 
             # actual
-            y_act = g_data["max_val_acc"]["mean"].values[0]
-            y_err = g_data["max_val_acc"]["std"].values[0] * 1.98
+            y_act = df.loc[midx]["max_val_acc"]["mean"] * 100
+            y_err = df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
 
             # prediction
-            x_pred = g_data[f"{pred_type}_pred"].values[0]
-            x_err = g_data[f"{pred_type}_std"].values[0] * 1.98
+            x_pred = df.loc[midx][f"{pred_type}_pred"].values[0] * 100
+            x_err = df.loc[midx][f"{pred_type}_std"].values[0] * 1.98 * 100
             
             # plot
-            ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
-                label=f"{n} {s} {c}", 
-                elinewidth=1, c=clr, fmt=fmt, markersize=10,
+            h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=10,
                 markerfacecolor=mfc)
+            
+            handles[n] = h[0]
+
+            lipse = matplotlib.patches.Ellipse((x_pred, y_act), x_err, y_err, 
+                facecolor=clr, edgecolor=None, alpha=0.25)
+            ax.add_patch(lipse)
+
+            # ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
+            #     label=f"{n} {s} {c}", 
+            #     elinewidth=1, c=clr, fmt=fmt, markersize=10,
+            #     markerfacecolor=mfc)
+
+            # update limits
+            xmin = x_pred if x_pred < xmin else xmin
+            ymin = y_act if y_act < ymin else ymin
+            xmax = x_pred if x_pred > xmax else xmax
+            ymax = y_act if y_act > ymax else ymax
 
             i += 1
 
         # plot reference line
-        x = np.linspace(0, 1, 50)
+        x = np.linspace(0, 100, 500)
         ax.plot(x, x, c=(0.5, 0.5, 0.5, 0.25), dashes=[6,2])
 
         # set figure text
-        ax.set_title(f"Linear predicted vs actual mixed case max accuracy - {dataset}", fontsize=18)
-        ax.set_xlabel("Predicted", fontsize=16)
-        ax.set_ylabel("Actual", fontsize=16)
-        ax.set_xlim([0.1, 1])
-        ax.set_ylim([0.1, 1])
+        ax.set_title(f"Predicted {pred_type} vs actual mixed network max accuracy - {dataset}", fontsize=20)
+        ax.set_xlabel(f"Predicted {pred_type} accuracy (%)", fontsize=16)
+        ax.set_ylabel("Actual accuracy (%)", fontsize=16)
+        
+        ax.set_xlim([xmin - 1, xmax + 1])
+        ax.set_ylim([ymin - 1, ymax + 1])
         ax.set_aspect("equal", "box")
-        ax.legend(fontsize=14)
+        ax.legend(handles.values(), handles.keys(), fontsize=14)
+
+        plt.tight_layout()
          
         # optional saving
         if not self.save_fig:
@@ -430,15 +454,19 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
-    visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=True)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
 
     # visualizer.plot_predictions("cifar10",
-    #     ["sticknet8"],
+    #     ["vgg11", "sticknet8"],
     #     ["adam"], 
     #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-    #     pred_type="max",
-    #     cross_family=None)
+    #     pred_type="linear",
+    #     cross_family=True)
 
-    # visualizer.scatter_max_acc("cifar10", 
-    #     ["vgg11", "sticknet8"], 
-    #     ["adam"])
+    visualizer.scatter_acc("cifar10",
+        ["vgg11", "sticknet8"],
+        ["adam"], 
+        excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+        pred_type="linear",
+        cross_family=None)
