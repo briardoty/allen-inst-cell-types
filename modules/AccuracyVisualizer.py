@@ -188,17 +188,15 @@ class AccuracyVisualizer():
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # plot
-        fig, ax = plt.subplots(figsize=(16,16))
+        fig, ax = plt.subplots(figsize=(12,12))
 
         # identifiers
         fmts = [".", "^"]
-        mfcs = ["None", None]
         clrs = sns.color_palette("husl", len(net_names))
 
         # plot mixed cases
         i = 0
         xmin, ymin, xmax, ymax = 100, 100, 10, 10
-        handles = dict()
         for midx in df.index.values:
 
             # dataset, net, scheme, case, mixed
@@ -220,17 +218,10 @@ class AccuracyVisualizer():
             # plot
             h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=10,
                 markerfacecolor=mfc)
-            
-            handles[n] = h[0]
 
             lipse = matplotlib.patches.Ellipse((x_pred, y_act), x_err, y_err, 
-                facecolor=clr, edgecolor=None, alpha=0.25)
+                facecolor=clr, edgecolor=None, alpha=0.15)
             ax.add_patch(lipse)
-
-            # ax.errorbar(x_pred, y_act, xerr = x_err, yerr=y_err, 
-            #     label=f"{n} {s} {c}", 
-            #     elinewidth=1, c=clr, fmt=fmt, markersize=10,
-            #     markerfacecolor=mfc)
 
             # update limits
             xmin = x_pred if x_pred < xmin else xmin
@@ -244,8 +235,23 @@ class AccuracyVisualizer():
         x = np.linspace(0, 100, 500)
         ax.plot(x, x, c=(0.5, 0.5, 0.5, 0.25), dashes=[6,2])
 
+        # build legend handles
+        handles = dict()
+        for n in net_names:
+            clr = clrs[net_names.index(n)]
+            h = ax.plot(1000, 1000, c=clr, marker=fmt, markersize=10)
+            handles[n] = h[0]
+
+        if cross_family is None:
+            gray = (0.5, 0.5, 0.5)
+            h1 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=10, mfc=None)
+            h2 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=10, mfc="None")
+            handles["cross-family"] = h1[0]
+            handles["within-family"] = h2[0]
+
         # set figure text
-        ax.set_title(f"Predicted {pred_type} vs actual mixed network max accuracy - {dataset}", fontsize=20)
+        ax.set_title(f"Predicted {pred_type} vs actual mixed network max accuracy - {dataset}", 
+            fontsize=20, pad=20)
         ax.set_xlabel(f"Predicted {pred_type} accuracy (%)", fontsize=16)
         ax.set_ylabel("Actual accuracy (%)", fontsize=16)
         
@@ -262,13 +268,18 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter/{dataset}")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/scatter")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
-        filename = f"{dataset}_{net_names}_{schemes}_scatter.svg"
+        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-scatter"
+        if cross_family == True:
+            filename += "_xfam"
+        elif cross_family == False:
+            filename += "_infam"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)  
+        plt.savefig(f"{filename}.svg")  
+        plt.savefig(f"{filename}.png", dpi=300)  
 
     def plot_max_accuracy(self, net_name, control_cases, mixed_cases):
         """
@@ -442,7 +453,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
     # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
@@ -468,5 +479,5 @@ if __name__=="__main__":
         ["vgg11", "sticknet8"],
         ["adam"], 
         excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-        pred_type="linear",
+        pred_type="max",
         cross_family=None)
