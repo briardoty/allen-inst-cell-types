@@ -219,8 +219,10 @@ class AccuracyVisualizer():
             h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=10,
                 markerfacecolor=mfc)
 
+            facecolor = clr if cf else "None"
+            alpha = 0.15 if cf else 0.4
             lipse = matplotlib.patches.Ellipse((x_pred, y_act), x_err, y_err, 
-                facecolor=clr, edgecolor=None, alpha=0.15)
+                facecolor=facecolor, edgecolor=clr, alpha=alpha)
             ax.add_patch(lipse)
 
             # update limits
@@ -239,20 +241,20 @@ class AccuracyVisualizer():
         handles = dict()
         for n in net_names:
             clr = clrs[net_names.index(n)]
-            h = ax.plot(1000, 1000, c=clr, marker=fmt, markersize=10)
+            h = ax.plot(1000, 1000, c=clr, marker=fmt, markersize=20)
             handles[n] = h[0]
 
         if cross_family is None:
             gray = (0.5, 0.5, 0.5)
-            h1 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=10, mfc=None)
-            h2 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=10, mfc="None")
+            h1 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=20, mfc=None)
+            h2 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=20, mfc="None")
             handles["cross-family"] = h1[0]
             handles["within-family"] = h2[0]
 
         # set figure text
-        ax.set_title(f"Predicted {pred_type} vs actual mixed network max accuracy - {dataset}", 
+        ax.set_title(f"{pred_type.capitalize()} prediction vs actual mixed network accuracy", 
             fontsize=20, pad=20)
-        ax.set_xlabel(f"Predicted {pred_type} accuracy (%)", fontsize=16)
+        ax.set_xlabel(f"{pred_type.capitalize()} predicted accuracy (%)", fontsize=16)
         ax.set_ylabel("Actual accuracy (%)", fontsize=16)
         
         ax.set_xlim([xmin - 1, xmax + 1])
