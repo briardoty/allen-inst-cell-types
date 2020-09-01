@@ -24,10 +24,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_names", type=str, nargs="+", required=True, help="Set net_names")
 parser.add_argument("--schemes", type=str, nargs="+", required=True, help="Set schemes")
-parser.add_argument("--cases", type=str, nargs="+", required=True, help="Set cases")
+parser.add_argument("--config_groups", type=str, nargs="+", required=True, help="Set config_groups")
 
 
-def main(dataset, net_names, cases, schemes):
+def main(dataset, net_names, schemes, config_groups):
     
     job_title = "gen_nets"
     
@@ -49,52 +49,57 @@ def main(dataset, net_names, cases, schemes):
 
         for scheme in schemes:
 
-            for case in cases:
+            for group in config_groups:
                 
-                # get net config
-                config = net_configs[case]
+                # get net configs in group
+                configs = net_configs[group]
                 
-                # update params for this net config
-                run_params["net_name"] = net_name
-                run_params["scheme"] = scheme
-                run_params["case"] = case
+                for case in configs.keys():
 
-                if config.get("n_repeat") is not None:
-                    run_params["n_repeat"] = config.get("n_repeat")
-                
-                if config.get("layer_names") is not None:
-                    run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
+                    # get net config details
+                    config = configs[case]
+
+                    # update params for this net config
+                    run_params["net_name"] = net_name
+                    run_params["scheme"] = scheme
+                    run_params["case"] = case
+
+                    if config.get("n_repeat") is not None:
+                        run_params["n_repeat"] = config.get("n_repeat")
                     
-                if config.get("act_fns") is not None:
-                    run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
-                
-                if config.get("act_fn_params") is not None:
-                    run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
-                
-                # prepare args
-                params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
-                pretrained = config["pretrained"]
-                if pretrained:
-                    params_list.append("--pretrained")
-                else:
-                    params_list.append("--untrained")
+                    if config.get("layer_names") is not None:
+                        run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
+                        
+                    if config.get("act_fns") is not None:
+                        run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
+                    
+                    if config.get("act_fn_params") is not None:
+                        run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
+                    
+                    # prepare args
+                    params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
+                    pretrained = config["pretrained"]
+                    if pretrained:
+                        params_list.append("--pretrained")
+                    else:
+                        params_list.append("--untrained")
 
-                spatial = config.get("spatial")
-                if spatial:
-                    params_list.append("--spatial")
+                    spatial = config.get("spatial")
+                    if spatial:
+                        params_list.append("--spatial")
 
-                params_string = " ".join(params_list)
-                
-                # kick off HPC job
-                PythonJob(
-                    script,
-                    python_executable,
-                    conda_env = conda_env,
-                    python_args = params_string,
-                    jobname = job_title + f" c-{case}",
-                    jobdir = job_dir,
-                    **job_settings
-                ).run(dryrun=False)
+                    params_string = " ".join(params_list)
+                    
+                    # kick off HPC job
+                    PythonJob(
+                        script,
+                        python_executable,
+                        conda_env = conda_env,
+                        python_args = params_string,
+                        jobname = job_title + f" c-{case}",
+                        jobdir = job_dir,
+                        **job_settings
+                    ).run(dryrun=False)
       
 def param_arr_helper(param_arr):
     

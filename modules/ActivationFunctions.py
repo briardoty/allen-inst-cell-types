@@ -159,33 +159,63 @@ class Sigfreud(nn.Module):
         
         return self.beta ** torch.sigmoid(input_tensor) - 1
 
-class Tanhe(nn.Module):
+class Tanh(nn.Module):
     """
-    Pytorch nn module implementation of "Tanhe" activation function
-    where Tanhe(x, beta) = (e^*x*beta-e^-x)/(e^x*beta+e^-x)
+    Pytorch nn module implementation of "Tanh" activation function
+    where Tanh(x, beta) = 0.5 * (tanh(x) + tanh(b*x))
     """
     
     def __init__(self, beta=1.0):
         
-        super(Tanhe, self).__init__()
+        super(Tanh, self).__init__()
         self.beta = float(beta)
 
     def __repr__(self):
         
-        return f"Tanhe(beta={self.beta})"
+        return f"Tanh(beta={self.beta})"
     
     def forward(self, input_tensor):
         
         # return torch.tanh(input_tensor)
-        # new: anything inside torch.exp() needs to be clamped to 80.0 to avoid inf
-        # p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=80)
-        # p2 = torch.clamp(torch.neg(input_tensor), max=80)
+        # new: anything inside torch.exp() needs to be clamped to 50.0 to avoid inf
+        # p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=50)
+        # p2 = torch.clamp(torch.neg(input_tensor), max=50)
         
         # top = torch.exp(p1) - torch.exp(p2)
         # bot = torch.exp(p1) + torch.exp(p2)
         
         # return torch.div(top, bot)
-        return torch.tanh(torch.mul((self.beta + 1.0) / 2.0, input_tensor))
+        # return torch.tanh(torch.mul((self.beta + 1.0) / 2.0, input_tensor))
+        
+        return 0.5 * torch.add(
+            torch.tanh(input_tensor), 
+            torch.tanh(torch.mul(self.beta, input_tensor)))
+
+class Gompertz(nn.Module):
+    """
+    gompertz(x) = a*e^(-b*e^(-cx))
+    """
+
+    def __init__(self, c=1.0):
+        
+        super(Gompertz, self).__init__()
+        self.a = 2
+        self.b = float(c)
+        self.c = float(c)
+        self.y0 = -1
+
+    def __repr__(self):
+        
+        return f"Gompertz(c={self.c})"
+    
+    def forward(self, input_tensor):
+        
+        p1 = torch.clamp(torch.mul(-self.c, input_tensor), max=50)
+        exp1 = torch.exp(p1)
+        p2 = torch.clamp(torch.mul(-self.b, exp1), max=50)
+        exp2 = torch.exp(p2)
+        
+        return torch.mul(self.a, exp2)
 
 class SanityCheck(nn.Module):
     """

@@ -11,19 +11,19 @@ import torch.nn as nn
 from torch.autograd import Variable
 try:
     from .ActivationFunctions import (Renlu, Swish, SanityCheck, 
-    Heaviside, Sigfreud, HSwish, Tanhe)
+    Heaviside, Sigfreud, HSwish, Tanh)
 except:
     from ActivationFunctions import (Renlu, Swish, SanityCheck, 
-    Heaviside, Sigfreud, HSwish, Tanhe)
+    Heaviside, Sigfreud, HSwish, Tanh)
 
 
 # map act fn names to fns themselves
 act_fn_dict = {
     "relu": torch.relu,
-    "tanh": torch.tanh,
+    "torch.tanh": torch.tanh,
     "sigmoid": torch.sigmoid,
     "sigfreud": Sigfreud,
-    "tanhe": Tanhe,
+    "tanh": Tanh,
     "renlu": Renlu,
     "swish": Swish,
     "sanityCheck": SanityCheck,
