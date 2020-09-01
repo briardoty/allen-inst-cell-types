@@ -63,6 +63,14 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     manager.load_net_snapshot_from_path(net_filepath)
 
     # training scheme vars
+    lr_low = 1e-6
+    lr_high = 0.01
+    (criterion, optimizer, scheduler) = get_training_vars(scheme, 
+        manager, lr_low, lr_step_size, lr_gamma, momentum)
+
+    # call routine to determine best starting LR
+    lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
         manager, lr, lr_step_size, lr_gamma, momentum)
 

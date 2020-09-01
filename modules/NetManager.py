@@ -499,6 +499,71 @@ class NetManager():
             for _ in range(self.epoch):
                 scheduler.step()
 
+    def find_initial_lr(self, criterion, optimizer, lr_low, lr_high):
+        """
+        ???
+        """
+
+        self.net.train()
+        lr_find_epochs = 1
+
+        lr_lambda = lambda x: math.exp(x * math.log(lr_high / lr_low) / (lr_find_epochs * len(self.train_loader)))
+        scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+        # these arrays track loss and corresponding LR
+        lr_find_loss = []
+        lr_find_lr = []
+
+        iter = 0
+
+        smoothing = 0.05
+
+        for i in range(lr_find_epochs):
+
+            print(f"LR finding epoch {i}")
+
+            for inputs, labels in self.train_loader:
+
+                # support gpu
+                inputs = inputs.to(self.device)
+                labels = labels.to(self.device)
+
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                # run net forward, tracking history
+                with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
+                    
+                    outputs = self.net(inputs)
+                    loss = criterion(outputs, labels)
+
+                    # backpropagate error and optimize weights
+                    loss.backward()
+                    optimizer.step()
+
+                # Update LR
+                scheduler.step()
+                lr_step = optimizer.state_dict()["param_groups"][0]["lr"]
+                lr_find_lr.append(lr_step)
+
+                # smooth the loss
+                if iter == 0:
+                    lr_find_loss.append(loss)
+                else:
+                    loss = smoothing * loss + (1 - smoothing) * lr_find_loss[-1]
+                    lr_find_loss.append(loss)
+                
+                iter += 1
+
+        # find best LR
+        i_best_loss = np.argmin(lr_find_loss)
+        best_lr = lr_find_lr[i_best_loss] / 10
+
+        print(f"Computed best starting LR of {best_lr}")
+
+        return best_lr
+
+
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
         end_epoch=10, snap_freq=10):
         """
@@ -561,12 +626,14 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.init_net("asdf", "asdf")
-    # mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam/swish10-tanhe1-spatial/sample-2/sticknet8_case-swish10-tanhe1-spatial_sample-2_epoch-0.pt")
-    mgr.load_dataset(2)
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/tanh5/sample-5/vgg11_case-tanh5_sample-5_epoch-0.pt")
+    mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(mgr.net.parameters())
+    optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)
+
+    x = mgr.find_lr_range(criterion, optimizer)
+
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     
     # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
