@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
-parser.add_argument("--cases", type=str, nargs="+", help="Set value for cases", required=True)
+parser.add_argument("--config_groups", type=str, nargs="+", required=True, help="Set config_groups")
 parser.add_argument("--resume", dest="resume", action="store_true")
 parser.add_argument("--lr", type=float)
 parser.add_argument("--lr_step_size", type=int)
@@ -34,7 +34,7 @@ parser.add_argument("--lr_gamma", type=float)
 parser.add_argument("--batch_size", type=int)
 parser.set_defaults(resume=False)
 
-def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma, 
+def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma, 
     batch_size, dataset):
     
     # check
@@ -43,6 +43,9 @@ def main(net_name, cases, scheme, resume, lr, lr_step_size, lr_gamma,
         sys.exit(-1)
 
     job_title = "train_net"
+
+    # get cases
+    cases = get_cases_in_groups(config_groups)
     
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
@@ -154,6 +157,18 @@ def get_last_epoch(net_filenames):
             last_net_filename = filename
 
     return last_net_filename
+
+def get_cases_in_groups(config_groups):
+
+    cases = set()
+    with open("net_configs.json", "r") as json_file:
+        net_configs = json.load(json_file)
+
+    for group in config_groups:
+        configs = net_configs[group]
+        cases.update(configs.keys())
+
+    return list(cases)
 
 if __name__=="__main__":
     args = parser.parse_args()
