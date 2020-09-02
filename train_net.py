@@ -64,7 +64,7 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
 
     # training scheme vars
     lr_low = 1e-6
-    lr_high = 0.01
+    lr_high = 0.1
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
         manager, lr_low, lr_step_size, lr_gamma, momentum)
 
