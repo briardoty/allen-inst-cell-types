@@ -16,6 +16,7 @@ import copy
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import random
+import matplotlib.pyplot as plt
 import sys
 
 try:
@@ -554,6 +555,14 @@ class NetManager():
                     lr_find_loss.append(loss)
                 
                 iter += 1
+
+        # plot loss vs lr
+        fig, ax = plt.subplots(figsize=(12,12))
+        ax.plot(lr_find_lr, lr_find_loss)
+        ax.xscale("log")
+        plt.tight_layout()
+        plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
+        plt.savefig(plot_filepath)
 
         # find best LR
         i_best_loss = np.argmin(lr_find_loss)
