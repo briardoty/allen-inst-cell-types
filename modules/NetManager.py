@@ -557,7 +557,7 @@ class NetManager():
 
         # find best LR
         i_best_loss = np.argmin(lr_find_loss)
-        best_lr = lr_find_lr[i_best_loss] / 10
+        best_lr = lr_find_lr[i_best_loss]
 
         print(f"Computed best starting LR of {best_lr}")
 
