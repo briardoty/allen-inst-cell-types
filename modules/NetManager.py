@@ -559,7 +559,7 @@ class NetManager():
         # plot loss vs lr
         fig, ax = plt.subplots(figsize=(12,12))
         ax.plot(lr_find_lr, lr_find_loss)
-        ax.xscale("log")
+        ax.set_xscale("log")
         plt.tight_layout()
         plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
         plt.savefig(plot_filepath)
