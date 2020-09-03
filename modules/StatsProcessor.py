@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import numpy as np
 import json
+from scipy.stats import ttest_ind
 
 try:
     from .NetManager import NetManager, nets
@@ -280,6 +281,7 @@ class StatsProcessor():
         # 2. add columns
         acc_df["max_pred"] = -1.
         acc_df["lin_pred"] = -1.
+        acc_df["p_val"] = -1.
 
         # 2.9. multi-index
         midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
@@ -328,9 +330,19 @@ class StatsProcessor():
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "lin_pred"] = np.mean(c_accs)
 
-        # 4. significance?
+            # significance
+            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
+            acc_df.loc[(d, n, sch, c), "p_val"] = p
 
-        return acc_df, case_dict, midx_cols
+        # 4. aggregate
+        gidx_cols = midx_cols[:-1]
+        df_stats = acc_df.groupby(gidx_cols).agg(
+            { "max_val_acc": [np.mean, np.std],
+              "max_pred": np.mean,
+              "lin_pred": np.mean,
+              "p_val": np.mean })
+
+        return acc_df, case_dict, gidx_cols
 
     def refresh_max_acc_df(self):
         """
