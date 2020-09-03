@@ -272,53 +272,65 @@ class StatsProcessor():
         acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
         # 2. aggregate
-        idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
-        df_stats = acc_df.groupby(idx_cols).agg(
-            { "max_val_acc": [np.mean, np.std] })
-        df_groups = df_stats.groupby(idx_cols)
+        # idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
+        # df_stats = acc_df.groupby(idx_cols).agg(
+        #     { "max_val_acc": [np.mean, np.std] })
+        # df_groups = df_stats.groupby(idx_cols)
 
-        # 3. predictions
-        linear_preds = []
-        linear_stds = []
-        max_preds = []
-        max_stds = []
-        for g in df_groups.groups:
-            d, n, s, c, m, cf = g
+        # 2. add columns
+        acc_df["max_pred"] = -1.
+        acc_df["lin_pred"] = -1.
 
-            # only predict for mixed cases
-            if not m:
-                linear_preds.append(None)
-                max_preds.append(None)
-                linear_stds.append(None)
-                max_stds.append(None)
-                continue
+        # 2.9. multi-index
+        midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
+        acc_df.set_index(midx_cols, inplace=True)
+
+        # 3. predictions for mixed cases
+        for midx in acc_df.query("is_mixed == True").index.values:
+
+            # break up multi-index
+            d, n, sch, c, s = midx
             
-            # get component cases and their stats
+            # skip if already predicted
+            if acc_df.at[midx, "max_pred"] > -1:
+                continue
+
+            # get rows in this mixed case
+            mixed_case_rows = acc_df.loc[(d, n, sch, c)]
+            
+            # get component case rows
             component_cases = get_component_cases(case_dict, c)
-            component_accs = df_stats["max_val_acc"]["mean"][d][n][s].get(component_cases)
-            component_stds = df_stats["max_val_acc"]["std"][d][n][s].get(component_cases)
+            component_rows = acc_df.query(f"is_mixed == False") \
+                .query(f"dataset == '{d}'") \
+                .query(f"net_name == '{n}'") \
+                .query(f"train_scheme == '{sch}'") \
+                .query(f"case in {component_cases}")
 
-            # this shouldn't happen much
-            if component_accs is None or len(component_cases) == 0 or len(component_accs) == 0:
-                linear_preds.append(None)
-                max_preds.append(None)
-                linear_stds.append(None)
-                max_stds.append(None)
-                print(f"Component case accuracies do not exist for: {d} {n} {s} {c}")
-                continue
-            
-            # predictions!
-            linear_preds.append(component_accs.mean())
-            max_preds.append(component_accs.max())
-            linear_stds.append(component_stds.mean())
-            max_stds.append(component_stds[component_accs.to_list().index(component_accs.max())])
+            # flag to indicate whether row used in prediction yet
+            component_rows["used"] = False
 
-        df_stats["linear_pred"] = linear_preds
-        df_stats["max_pred"] = max_preds
-        df_stats["linear_std"] = linear_stds
-        df_stats["max_std"] = max_stds
+            # make a prediction for each sample in this mixed case
+            for i in range(len(mixed_case_rows)):
+                mixed_case_row = mixed_case_rows.iloc[i]
 
-        return df_stats, case_dict, idx_cols
+                # choose component row accs
+                c_accs = []
+                for cc in component_cases:
+                    c_row = component_rows \
+                        .query(f"case == '{cc}'") \
+                        .query(f"used == False") \
+                        .sample()
+                    c_accs.append(c_row.max_val_acc.values[0])
+
+                    # mark component row as used in prediction
+                    component_rows.at[c_row.index.values[0], "used"] = True
+
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "lin_pred"] = np.mean(c_accs)
+
+        # 4. significance?
+
+        return acc_df, case_dict, midx_cols
 
     def refresh_max_acc_df(self):
         """
@@ -510,10 +522,11 @@ if __name__=="__main__":
     
     processor = StatsProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 10)
     
-    processor.reduce_snapshots()
+    # processor.reduce_snapshots()
 
-#     processor.load_accuracy_df(["control2"])
-#     # processor.load_weight_change_df(["control1"])
+    # processor.load_accuracy_df(["control2"])
+    df, _, _ = processor.load_max_acc_df(False)
+    # processor.load_weight_change_df(["control1"])
     
     
     
