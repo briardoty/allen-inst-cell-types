@@ -272,12 +272,6 @@ class StatsProcessor():
         acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
         acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
-        # 2. aggregate
-        # idx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
-        # df_stats = acc_df.groupby(idx_cols).agg(
-        #     { "max_val_acc": [np.mean, np.std] })
-        # df_groups = df_stats.groupby(idx_cols)
-
         # 2. add columns
         acc_df["max_pred"] = -1.
         acc_df["lin_pred"] = -1.
@@ -335,14 +329,14 @@ class StatsProcessor():
             acc_df.loc[(d, n, sch, c), "p_val"] = p
 
         # 4. aggregate
-        gidx_cols = midx_cols[:-1]
+        gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
               "max_pred": np.mean,
               "lin_pred": np.mean,
               "p_val": np.mean })
 
-        return acc_df, case_dict, gidx_cols
+        return df_stats, case_dict, gidx_cols
 
     def refresh_max_acc_df(self):
         """

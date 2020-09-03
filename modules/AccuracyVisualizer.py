@@ -50,14 +50,14 @@ class AccuracyVisualizer():
         df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
 
         # performance relative to predictions
-        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]
-        df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]
+        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["lin_pred"]["mean"]
+        df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]["mean"]
 
         # filter dataframe
-        df = df.query(f"is_mixed")
-        df = df.query(f"dataset == '{dataset}'") 
-        df = df.query(f"net_name in {net_names}")
-        df = df.query(f"train_scheme in {schemes}")
+        df = df.query(f"is_mixed") \
+            .query(f"dataset == '{dataset}'") \
+            .query(f"net_name in {net_names}") \
+            .query(f"train_scheme in {schemes}")
         if cross_family is not None:
             df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
@@ -444,8 +444,9 @@ class AccuracyVisualizer():
             return
         
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
-        case_names = " & ".join(cases)
-        filename = f"{case_names} accuracy"
+        case_names = ", ".join(cases)
+        schemes = ", ".join(schemes)
+        filename = f"{dataset}_{net_name}_{schemes}_{case_names} accuracy"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(f"{filename}.svg")
@@ -455,11 +456,11 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=False, refresh=False)
     
     # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanhe0.01", "tanhe0.1", "tanhe0.5", "tanhe1", "tanhe2"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
@@ -467,19 +468,19 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=True)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
 
-    # visualizer.plot_predictions("cifar10",
-    #     ["vgg11", "sticknet8"],
-    #     ["adam"], 
-    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-    #     pred_type="linear",
-    #     cross_family=True)
-
-    visualizer.scatter_acc("cifar10",
+    visualizer.plot_predictions("cifar10",
         ["vgg11", "sticknet8"],
         ["adam"], 
         excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-        pred_type="max",
-        cross_family=None)
+        pred_type="linear",
+        cross_family=True)
+
+    # visualizer.scatter_acc("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"], 
+    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+    #     pred_type="max",
+    #     cross_family=True)
