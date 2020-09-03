@@ -283,94 +283,6 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")  
         plt.savefig(f"{filename}.png", dpi=300)  
 
-    def plot_max_accuracy(self, net_name, control_cases, mixed_cases):
-        """
-        Plot accuracy at the end of training for given control cases
-        and mixed case, including predicted mixed case accuracy based
-        on linear combination of control cases
-        """
-
-        # pull data
-        acc_df, case_dict = self.stats_processor.load_max_acc_df(
-            net_name, control_cases + mixed_cases)
-        acc_df_groups = acc_df.groupby("case")
-
-        # plot...
-        handles = []
-        labels = []
-
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
-        fig.subplots_adjust(wspace=0)
-        clrs = sns.color_palette("hls", len(control_cases) + 2 * len(mixed_cases))
-        
-        for i in range(len(control_cases)):
-
-            case = control_cases[i]
-            group = acc_df_groups.get_group(case)
-            p = float(case_dict[case][0])
-
-            # error bars = 2 standard devs
-            yvals = group["max_val_acc"]["mean"].values
-            yerr = group["max_val_acc"]["std"].values * 1.98
-            h = axes[0].errorbar(p, yvals[0], yerr=yerr, label=case,
-                capsize=3, elinewidth=1, c=clrs[i], fmt=".")
-            
-            handles.append(h)
-            labels.append(case)
-            
-        # plot mixed case
-        for i in range(len(mixed_cases)):
-
-            mixed_case = mixed_cases[i]
-
-            # actual
-            group = acc_df_groups.get_group(mixed_case)
-            y_act = group["max_val_acc"]["mean"].values[0]
-            y_err = group["max_val_acc"]["std"].values * 1.98
-            l = f"{mixed_case} actual"
-            h = axes[1].errorbar(i, y_act, yerr=y_err, label=l,
-                capsize=3, elinewidth=1, c=clrs[len(control_cases) + i], fmt=".")
-            
-            labels.append(l)
-            handles.append(h)
-
-            # predicted
-            ps = [p for p in case_dict[mixed_case]]
-            component_cases = [k for k, v in case_dict.items() if len(v) == 1 and v[0] in ps]
-            y_pred = acc_df["max_val_acc"]["mean"][component_cases].mean()
-            l = f"{mixed_case} prediction"
-            h = axes[1].plot(i, y_pred, "x", label=l,
-                c=clrs[len(control_cases) + i + 1])
-
-            labels.append(l)
-            handles.append(h)
-
-        fig.suptitle("Max accuracy")
-        axes[0].set_xlabel("Activation function parameter value")
-        axes[1].set_xlabel("Mixed cases")
-        axes[0].set_ylabel("Max validation accuracy")
-        axes[1].xaxis.set_ticks([])
-
-        # shrink second axis by 20%
-        box = axes[1].get_position()
-        axes[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
-
-        # append legend to second axis
-        axes[1].legend(handles, labels, loc="center left", bbox_to_anchor=(1, 0.5))
-         
-        # optional saving
-        if not self.save_fig:
-            print("Not saving.")
-            plt.show()
-            return
-
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/max accuracy/")
-        cases = " & ".join(mixed_cases)
-        filename = f"{cases} max acc.svg"
-        filename = os.path.join(sub_dir, filename)
-        print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)  
-
     def plot_accuracy(self, dataset, net_name, schemes, cases, inset=True):
         """
         Plots accuracy over training for different experimental cases.
@@ -472,10 +384,10 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
 
     visualizer.plot_predictions("cifar10",
-        ["vgg11", "sticknet8"],
+        ["vgg11"],
         ["adam"], 
         excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-        pred_type="linear",
+        pred_type="max",
         cross_family=True)
 
     # visualizer.scatter_acc("cifar10",

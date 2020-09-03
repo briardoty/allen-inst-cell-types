@@ -6,6 +6,7 @@ import re
 import numpy as np
 import json
 from scipy.stats import ttest_ind
+from statsmodels.stats.multitest import multipletests
 
 try:
     from .NetManager import NetManager, nets
@@ -266,75 +267,28 @@ class StatsProcessor():
         with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
 
-        # process
-        # 1. mark mixed nets
-        acc_df.drop(columns="Unnamed: 0", inplace=True)
-        acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
-        acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
-
-        # 2. add columns
-        acc_df["max_pred"] = -1.
-        acc_df["lin_pred"] = -1.
-        acc_df["p_val"] = -1.
-
-        # 2.9. multi-index
-        midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
-        acc_df.set_index(midx_cols, inplace=True)
-
-        # 3. predictions for mixed cases
-        for midx in acc_df.query("is_mixed == True").index.values:
-
-            # break up multi-index
-            d, n, sch, c, s = midx
-            
-            # skip if already predicted
-            if acc_df.at[midx, "max_pred"] > -1:
-                continue
-
-            # get rows in this mixed case
-            mixed_case_rows = acc_df.loc[(d, n, sch, c)]
-            
-            # get component case rows
-            component_cases = get_component_cases(case_dict, c)
-            component_rows = acc_df.query(f"is_mixed == False") \
-                .query(f"dataset == '{d}'") \
-                .query(f"net_name == '{n}'") \
-                .query(f"train_scheme == '{sch}'") \
-                .query(f"case in {component_cases}")
-
-            # flag to indicate whether row used in prediction yet
-            component_rows["used"] = False
-
-            # make a prediction for each sample in this mixed case
-            for i in range(len(mixed_case_rows)):
-                mixed_case_row = mixed_case_rows.iloc[i]
-
-                # choose component row accs
-                c_accs = []
-                for cc in component_cases:
-                    c_row = component_rows \
-                        .query(f"case == '{cc}'") \
-                        .query(f"used == False") \
-                        .sample()
-                    c_accs.append(c_row.max_val_acc.values[0])
-
-                    # mark component row as used in prediction
-                    component_rows.at[c_row.index.values[0], "used"] = True
-
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "lin_pred"] = np.mean(c_accs)
-
-            # significance
-            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
-            acc_df.loc[(d, n, sch, c), "p_val"] = p
+        # acc_df.drop(columns="Unnamed: 0", inplace=True)
 
         # 4. aggregate
         gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
-              "max_pred": np.mean,
-              "lin_pred": np.mean,
-              "p_val": np.mean })
+              "max_pred": [np.mean],
+              "lin_pred": [np.mean],
+              "max_pred_p_val": np.mean,
+              "lin_pred_p_val": np.mean })
+
+        # 5. benjamini hochberg correction?
+        mixed_idx = df_stats.query("is_mixed == True").index
+        pvals = df_stats.loc[mixed_idx]["max_pred_p_val","mean"].values
+        rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
+        df_stats.loc[mixed_idx, "max_pred_p_val_corr"] = pval_corr
+
+        pvals = df_stats.loc[mixed_idx]["lin_pred_p_val","mean"].values
+        rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
+        df_stats.loc[mixed_idx, "lin_pred_p_val_corr"] = pval_corr
+
+        df_stats.drop(columns=["max_pred_p_val", "lin_pred_p_val"], inplace=True)
 
         return df_stats, case_dict, gidx_cols
 
@@ -388,6 +342,71 @@ class StatsProcessor():
 
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc"])
+
+        # process
+        # 1. mark mixed nets
+        acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
+        acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
+
+        # 2. add columns
+        acc_df["max_pred"] = np.nan
+        acc_df["lin_pred"] = np.nan
+        acc_df["max_pred_p_val"] = np.nan
+        acc_df["lin_pred_p_val"] = np.nan
+
+        # 2.9. multi-index
+        midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
+        acc_df.set_index(midx_cols, inplace=True)
+
+        # 3. predictions for mixed cases
+        for midx in acc_df.query("is_mixed == True").index.values:
+
+            # break up multi-index
+            d, n, sch, c, s = midx
+            
+            # skip if already predicted
+            if acc_df.at[midx, "max_pred"] > -1:
+                continue
+
+            # get rows in this mixed case
+            mixed_case_rows = acc_df.loc[(d, n, sch, c)]
+            
+            # get component case rows
+            component_cases = get_component_cases(case_dict, c)
+            component_rows = acc_df.query(f"is_mixed == False") \
+                .query(f"dataset == '{d}'") \
+                .query(f"net_name == '{n}'") \
+                .query(f"train_scheme == '{sch}'") \
+                .query(f"case in {component_cases}")
+
+            # flag to indicate whether row used in prediction yet
+            component_rows["used"] = False
+
+            # make a prediction for each sample in this mixed case
+            for i in range(len(mixed_case_rows)):
+                mixed_case_row = mixed_case_rows.iloc[i]
+
+                # choose component row accs
+                c_accs = []
+                for cc in component_cases:
+                    c_row = component_rows \
+                        .query(f"case == '{cc}'") \
+                        .query(f"used == False") \
+                        .sample()
+                    c_accs.append(c_row.max_val_acc.values[0])
+
+                    # mark component row as used in prediction
+                    component_rows.at[c_row.index.values[0], "used"] = True
+
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "lin_pred"] = np.mean(c_accs)
+
+            # significance
+            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
+            acc_df.loc[(d, n, sch, c), "max_pred_p_val"] = p
+
+            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "lin_pred"])
+            acc_df.loc[(d, n, sch, c), "lin_pred_p_val"] = p
 
         self.save_df("max_acc_df.csv", acc_df)
         self.save_json("case_dict.json", case_dict)
@@ -531,7 +550,7 @@ if __name__=="__main__":
     # processor.reduce_snapshots()
 
     # processor.load_accuracy_df(["control2"])
-    df, _, _ = processor.load_max_acc_df(False)
+    df, _, _ = processor.load_max_acc_df(refresh_df=False)
     # processor.load_weight_change_df(["control1"])
     
     
