@@ -269,26 +269,28 @@ class StatsProcessor():
 
         # acc_df.drop(columns="Unnamed: 0", inplace=True)
 
-        # 4. aggregate
+        # aggregate
         gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
               "max_pred": [np.mean],
-              "lin_pred": [np.mean],
+              "linear_pred": [np.mean],
               "max_pred_p_val": np.mean,
-              "lin_pred_p_val": np.mean })
+              "linear_pred_p_val": np.mean })
 
-        # 5. benjamini hochberg correction?
+        # benjamini-hochberg correction
         mixed_idx = df_stats.query("is_mixed == True").index
         pvals = df_stats.loc[mixed_idx]["max_pred_p_val","mean"].values
         rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
         df_stats.loc[mixed_idx, "max_pred_p_val_corr"] = pval_corr
+        df_stats.loc[mixed_idx, "max_pred_rej_h0"] = rej_h0
 
-        pvals = df_stats.loc[mixed_idx]["lin_pred_p_val","mean"].values
+        pvals = df_stats.loc[mixed_idx]["linear_pred_p_val","mean"].values
         rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
-        df_stats.loc[mixed_idx, "lin_pred_p_val_corr"] = pval_corr
+        df_stats.loc[mixed_idx, "linear_pred_p_val_corr"] = pval_corr
+        df_stats.loc[mixed_idx, "linear_pred_rej_h0"] = rej_h0
 
-        df_stats.drop(columns=["max_pred_p_val", "lin_pred_p_val"], inplace=True)
+        df_stats.drop(columns=["max_pred_p_val", "linear_pred_p_val"], inplace=True)
 
         return df_stats, case_dict, gidx_cols
 
@@ -350,9 +352,9 @@ class StatsProcessor():
 
         # 2. add columns
         acc_df["max_pred"] = np.nan
-        acc_df["lin_pred"] = np.nan
+        acc_df["linear_pred"] = np.nan
         acc_df["max_pred_p_val"] = np.nan
-        acc_df["lin_pred_p_val"] = np.nan
+        acc_df["linear_pred_p_val"] = np.nan
 
         # 2.9. multi-index
         midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
@@ -399,14 +401,14 @@ class StatsProcessor():
                     component_rows.at[c_row.index.values[0], "used"] = True
 
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "lin_pred"] = np.mean(c_accs)
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
 
             # significance
             t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
             acc_df.loc[(d, n, sch, c), "max_pred_p_val"] = p
 
-            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "lin_pred"])
-            acc_df.loc[(d, n, sch, c), "lin_pred_p_val"] = p
+            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "linear_pred"])
+            acc_df.loc[(d, n, sch, c), "linear_pred_p_val"] = p
 
         self.save_df("max_acc_df.csv", acc_df)
         self.save_json("case_dict.json", case_dict)
@@ -550,7 +552,7 @@ if __name__=="__main__":
     # processor.reduce_snapshots()
 
     # processor.load_accuracy_df(["control2"])
-    df, _, _ = processor.load_max_acc_df(refresh_df=False)
+    df, _, _ = processor.load_max_acc_df(refresh_df=True)
     # processor.load_weight_change_df(["control1"])
     
     

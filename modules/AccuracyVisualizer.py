@@ -50,7 +50,7 @@ class AccuracyVisualizer():
         df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
 
         # performance relative to predictions
-        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["lin_pred"]["mean"]
+        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]["mean"]
         df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]["mean"]
 
         # filter dataframe
@@ -74,9 +74,12 @@ class AccuracyVisualizer():
         plt.gca().axvline(0, color='k', linestyle='--')
         clrs = sns.color_palette("husl", len(net_names))
 
-        ylabels = list()
+        ylabels = dict()
         handles = dict()
+        sig_arr = list()
         i = 0
+        xmax = 0
+        xmin = 0
         for midx in sort_df.index.values:
 
             # dataset, net, scheme, case, mixed, cross-family
@@ -91,8 +94,10 @@ class AccuracyVisualizer():
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
             err = sort_df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
 
+            xmin = min(xmin, perf - err)
+            xmax = max(xmax, perf + err)
+
             # plot "good" and "bad"
-            dashes = (4,1)
             if perf - err > 0:
                 if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
@@ -117,16 +122,26 @@ class AccuracyVisualizer():
                 if handles.get(n) is None:
                     handles[n] = h[0]
 
+            # BH corrected significance
+            sig_arr.append(sort_df.loc[midx, f"{pred_type}_pred_rej_h0"].values[0])
+
             # make an aligned label
             aligned = d.ljust(lengths[0]) + n.ljust(lengths[1]) +\
                 s.ljust(lengths[2]) + c.ljust(lengths[3])
-            ylabels.append(aligned)
+            ylabels[i] = aligned
 
             # track vars
             i += 1
 
+        # indicate BH corrected significance
+        h = plt.plot(i+100, 0, "k*", alpha=0.5)
+        handles["p < 0.05"] = h[0]
+        for i in range(len(sig_arr)):
+            if sig_arr[i]:
+                plt.plot(xmax + xmax/12., i, "k*", alpha=0.5)
+
         # determine padding for labels
-        max_length = np.max([len(l) for l in ylabels])
+        max_length = np.max([len(l) for l in ylabels.values()])
 
         # add handles
         if cross_family is None:
@@ -141,9 +156,10 @@ class AccuracyVisualizer():
         plt.xlabel(f"Accuracy relative to {pred_type} prediction (%)", 
             fontsize=16, labelpad=10)
         plt.ylabel("Network configuration", fontsize=16, labelpad=10)
-        plt.yticks(np.arange(0, i, 1), ylabels, ha="left")
+        plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
         plt.ylim(-0.5, i - 0.5)
-        plt.legend(handles.values(), handles.keys(), fontsize=14)
+        plt.legend(handles.values(), handles.keys(), fontsize=14, loc="upper left")
+        plt.xlim([xmin - xmax/10., xmax + xmax/10.])
         yax = plt.gca().get_yaxis()
         yax.set_tick_params(pad=max_length*7)
         plt.tight_layout()
@@ -226,10 +242,10 @@ class AccuracyVisualizer():
             ax.add_patch(lipse)
 
             # update limits
-            xmin = x_pred if x_pred < xmin else xmin
-            ymin = y_act if y_act < ymin else ymin
-            xmax = x_pred if x_pred > xmax else xmax
-            ymax = y_act if y_act > ymax else ymax
+            xmin = min(x_pred, xmin)
+            ymin = min(y_act, ymin)
+            xmax = max(x_pred, xmax)
+            ymax = max(y_act, ymax)
 
             i += 1
 
@@ -368,7 +384,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
     # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
@@ -384,7 +400,7 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
 
     visualizer.plot_predictions("cifar10",
-        ["vgg11"],
+        ["vgg11", "sticknet8"],
         ["adam"], 
         excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
         pred_type="max",
