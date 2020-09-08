@@ -90,9 +90,7 @@ class MixedActivationLayer(nn.Module):
         
         self.spatial = spatial
         if self.spatial:
-            print("Activation functions will be mixed spatially.")
-        else:
-            print("Activation functions will be mixed across units.")
+            print("Activation functions will be mixed spatially!")
         
     def __repr__(self):
         return f"MixedActivationLayer(n_features={self.n_features}, act_fns={self.act_fns})"
