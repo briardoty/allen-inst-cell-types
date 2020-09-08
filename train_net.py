@@ -10,6 +10,7 @@ import os
 import numpy as np
 import argparse
 from modules.NetManager import NetManager
+from modules.util import get_training_vars
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
@@ -30,28 +31,6 @@ parser.add_argument("--net_filepath", type=str, help="Set value for net_filepath
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 
 
-def create_optimizer(name, manager, lr, momentum):
-
-    if name == "sgd":
-        return optim.SGD(manager.net.parameters(), lr=lr, momentum=momentum)
-    elif name == "adam" and lr is not None:
-        return optim.Adam(manager.net.parameters(), lr=lr)
-    elif name == "adam":
-        return optim.Adam(manager.net.parameters())
-    else:
-        print(f"Unknown optimizer configured: {name}")
-        sys.exit(1)
-
-def get_training_vars(name, manager, lr, lr_step_size, lr_gamma, momentum):
-    
-    criterion = nn.CrossEntropyLoss()
-    optimizer = create_optimizer(name, manager, lr, momentum)
-
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=lr_step_size, 
-        gamma=lr_gamma)
-
-    return (criterion, optimizer, scheduler)
-
 def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
          lr, lr_step_size, lr_gamma, batch_size, scheme, dataset, momentum):
     
@@ -62,17 +41,11 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     # load the proper net
     manager.load_net_snapshot_from_path(net_filepath)
 
-    # training scheme vars
-    lr_low = 1e-7
-    lr_high = 0.1
-    (criterion, optimizer, scheduler) = get_training_vars(scheme, 
-        manager, lr_low, lr_step_size, lr_gamma, momentum)
-
-    # call routine to determine best starting LR
-    found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+    # set initial lr
+    initial_lr = manager.initial_lr if manager.initial_lr is not None else lr
 
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
-        manager, found_lr, lr_step_size, lr_gamma, momentum)
+        manager, initial_lr, lr_step_size, lr_gamma, momentum)
 
     # train
     manager.run_training_loop(criterion, optimizer, scheduler, train_frac, 

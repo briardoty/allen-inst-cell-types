@@ -124,6 +124,7 @@ class NetManager():
         self.pretrained = pretrained
         self.epoch = 0
         self.modified_layers = None
+        self.initial_lr = None
         self.perf_stats = []
 
         if (torch.cuda.is_available()):
@@ -165,11 +166,20 @@ class NetManager():
         self.net.classifier[-1] = nn.Linear(n_features, self.n_classes)
         self.net = self.net.to(self.device)
     
-    def save_net_snapshot(self, epoch=0, val_acc=None):
+    def get_net_filepath(self, epoch=None):
+        if epoch is not None:
+            net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
+        else:
+            net_tag = get_net_tag(self.net_name, self.case_id, self.sample, self.epoch)
         
-        net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
         filename = f"{net_tag}.pt"
         net_filepath = os.path.join(self.net_dir, filename)
+
+        return net_filepath
+
+    def save_net_snapshot(self, epoch=0, val_acc=None):
+        
+        net_filepath = self.get_net_filepath(epoch)
         
         snapshot_state = {
             "dataset": self.dataset,
@@ -181,9 +191,10 @@ class NetManager():
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
             "modified_layers": self.modified_layers,
+            "initial_lr": self.initial_lr
         }
 
-        print(f"Saving network snapshot {filename}")
+        print(f"Saving network snapshot {net_filepath}")
         torch.save(snapshot_state, net_filepath)
     
     def save_arr(self, name, np_arr):
@@ -251,6 +262,7 @@ class NetManager():
         self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
         self.modified_layers = snapshot_state.get("modified_layers")        
         self.epoch = snapshot_state.get("epoch")
+        self.initial_lr = snapshot_state.get("initial_lr")
         
         # load net state
         self.init_net(self.case_id, self.sample)
@@ -284,7 +296,7 @@ class NetManager():
             "val_acc": snapshot_state.get("val_acc")
         }
     
-    def load_dataset(self, batch_size):
+    def load_dataset(self, batch_size=128):
 
         (self.train_set, 
          self.val_set, 
@@ -512,8 +524,8 @@ class NetManager():
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
         # these arrays track loss and corresponding LR
-        lr_find_loss = []
-        lr_find_lr = []
+        loss_arr = []
+        lr_arr = []
 
         iter = 0
 
@@ -544,29 +556,29 @@ class NetManager():
 
                 # Update LR
                 scheduler.step()
-                lr_step = optimizer.state_dict()["param_groups"][0]["lr"]
-                lr_find_lr.append(lr_step)
+                lr_curr = optimizer.state_dict()["param_groups"][0]["lr"]
+                lr_arr.append(lr_curr)
 
                 # smooth the loss
                 if iter == 0:
-                    lr_find_loss.append(loss)
+                    loss_arr.append(loss)
                 else:
-                    loss = smoothing * loss + (1 - smoothing) * lr_find_loss[-1]
-                    lr_find_loss.append(loss)
+                    loss = smoothing * loss + (1 - smoothing) * loss_arr[-1]
+                    loss_arr.append(loss)
                 
                 iter += 1
 
         # plot loss vs lr
         fig, ax = plt.subplots(figsize=(12,12))
-        ax.plot(lr_find_lr, lr_find_loss)
+        ax.plot(lr_arr, loss_arr)
         ax.set_xscale("log")
         plt.tight_layout()
         plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
         plt.savefig(plot_filepath)
 
         # find best LR
-        i_best_loss = np.argmin(lr_find_loss)
-        best_lr = lr_find_lr[i_best_loss]
+        i_best_loss = np.argmin(loss_arr)
+        best_lr = lr_arr[i_best_loss] / 10
 
         print(f"Computed best starting LR of {best_lr}")
 
@@ -641,7 +653,9 @@ if __name__=="__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)
 
-    x = mgr.find_lr_range(criterion, optimizer)
+    lr_low = 1e-7
+    lr_high = 0.1
+    x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     

@@ -1,6 +1,9 @@
 import torch
 import torchvision
 from torchvision import datasets, models, transforms
+import torch.nn as nn
+import torch.optim as optim
+from torch.optim import lr_scheduler
 import os
 import sys
 
@@ -68,7 +71,7 @@ normalize = transforms.Normalize(
     [0.485, 0.456, 0.406], 
     [0.229, 0.224, 0.225])
 
-def load_dataset(data_dir, name, batch_size=4):
+def load_dataset(data_dir, name, batch_size):
 
     dataset_dir = os.path.join(data_dir, name)
     n_workers = 4
@@ -81,7 +84,7 @@ def load_dataset(data_dir, name, batch_size=4):
         print(f"Unrecognized dataset name {name}")
         sys.exit(-1)
 
-def load_imagenette(dataset_dir, batch_size, n_workers):
+def load_imagenette(dataset_dir, batch_size=4, n_workers=4):
 
     # standard transforms
     img_xy = 227
@@ -112,7 +115,7 @@ def load_imagenette(dataset_dir, batch_size, n_workers):
     
     return (train_set, val_set, train_loader, val_loader)
 
-def load_cifar10(dataset_dir, batch_size, n_workers):
+def load_cifar10(dataset_dir, batch_size=128, n_workers=4):
 
     # standard transforms
     train_xform = transforms.Compose([
@@ -141,3 +144,25 @@ def load_cifar10(dataset_dir, batch_size, n_workers):
         batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
     return (train_set, val_set, train_loader, val_loader)
+
+def create_optimizer(name, manager, lr, momentum):
+
+    if name == "sgd":
+        return optim.SGD(manager.net.parameters(), lr=lr, momentum=momentum)
+    elif name == "adam" and lr is not None:
+        return optim.Adam(manager.net.parameters(), lr=lr)
+    elif name == "adam":
+        return optim.Adam(manager.net.parameters())
+    else:
+        print(f"Unknown optimizer configured: {name}")
+        sys.exit(1)
+
+def get_training_vars(name, manager, lr, lr_step_size=30, lr_gamma=0.5, momentum=0.9):
+    
+    criterion = nn.CrossEntropyLoss()
+    optimizer = create_optimizer(name, manager, lr, momentum)
+
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=lr_step_size, 
+        gamma=lr_gamma)
+
+    return (criterion, optimizer, scheduler)
