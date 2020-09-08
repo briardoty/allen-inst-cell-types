@@ -55,6 +55,10 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         if (act_fns is not None and len(act_fns) > 0):
             manager.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
         
+        # save
+        manager.save_net_snapshot()
+        net_filepaths.append(manager.get_net_filepath())
+
         # find initial learning rate
         lr_low = 1e-7
         lr_high = 0.005
@@ -63,9 +67,6 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
         lr_arr.append(found_lr)
 
-        # save
-        manager.save_net_snapshot()
-        net_filepaths.append(manager.get_net_filepath())
 
     # determine mean starting lr, add it to network snapshots
     mean_lr = np.mean(lr_arr)
