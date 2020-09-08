@@ -580,8 +580,6 @@ class NetManager():
         i_best_loss = np.argmin(loss_arr)
         best_lr = lr_arr[i_best_loss] / 10
 
-        print(f"Computed best starting LR of {best_lr}")
-
         return best_lr
 
 
@@ -590,9 +588,8 @@ class NetManager():
         """
         Run end_epoch of training and validation
         """
+
         since = time.time()
-        
-        best_net_state = copy.deepcopy(self.net.state_dict())
         best_acc = -1
         best_epoch = -1
     
@@ -624,12 +621,6 @@ class NetManager():
             
             # track stats
             self.perf_stats[epoch] = [val_acc, val_loss, train_acc, train_loss]
-    
-            # copy net if best yet
-            if val_acc > best_acc:
-                best_acc = val_acc
-                best_epoch = epoch
-                best_net_state = copy.deepcopy(self.net.state_dict())
 
             print()
     
@@ -647,7 +638,7 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/tanh5/sample-5/vgg11_case-tanh5_sample-5_epoch-0.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/test/sample-9/vgg11_case-test_sample-9_epoch-0.pt")
     mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()
