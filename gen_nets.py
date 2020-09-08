@@ -57,7 +57,7 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         
         # find initial learning rate
         lr_low = 1e-7
-        lr_high = 0.1
+        lr_high = 0.01
         (criterion, optimizer, _) = get_training_vars(scheme, manager, 
             lr_low)
         found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
