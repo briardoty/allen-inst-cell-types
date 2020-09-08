@@ -69,6 +69,8 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
 
     # determine mean starting lr, add it to network snapshots
     mean_lr = np.mean(lr_arr)
+    std_dev_lr = np.std(lr_arr)
+    print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
     for net_filepath in net_filepaths:
         
         # load snapshot
