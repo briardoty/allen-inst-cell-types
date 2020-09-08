@@ -86,8 +86,6 @@ class MixedActivationLayer(nn.Module):
         
         self.n_features = n_features
         self.act_fns = get_activation_fns(act_fn_names, act_fn_params)
-        print("Initialized MixedActivationLayer with the following activation"
-              + f"functions: {self.act_fns}")
         self.masks = generate_masks(n_features, len(self.act_fns), n_repeat)
         
         self.spatial = spatial
