@@ -6,6 +6,7 @@ Created on Thu Jun 25 14:19:48 2020
 @author: briardoty
 """
 import torch
+import gc
 import torch.nn as nn
 from torchvision import datasets, models, transforms
 import os
@@ -587,6 +588,7 @@ class NetManager():
 
         # gc?
         torch.cuda.empty_cache()
+        gc.collect()
 
         return best_lr
 
