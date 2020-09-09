@@ -299,6 +299,83 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")  
         plt.savefig(f"{filename}.png", dpi=300)  
 
+    def plot_single_accuracy(self, dataset, net_name, scheme, case, sample=0):
+        """
+        Plot single net accuracy trajectory with windowed z score
+
+        Args:
+            dataset
+            net_name
+            scheme
+            case
+            sample
+        """
+
+        # pull data
+        acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
+            [case], [scheme], self.refresh)
+
+        # filter more
+        acc_df = acc_df.query(f"sample == {sample}")
+
+        # windowed z score at each epoch
+        window = 10
+        acc_df["z"] = 0.
+        for idx in acc_df.index.values:
+
+            # decompose
+            row = acc_df.loc[idx]
+            d, n, sch, c, s, e, acc, z = row
+
+            # get window
+            w_start = max(0, e - window + 1)
+            w_idx = acc_df.epoch[w_start:e + 1].index
+
+            # compute window stats
+            w_mean = np.mean(acc_df.loc[w_idx, "acc"])
+            w_std = np.std(acc_df.loc[w_idx, "acc"])
+
+            z_score = (acc - w_mean) / w_std if w_std != 0 else 0
+
+            # update df
+            acc_df.at[idx, "z"] = z_score
+
+        # plot...
+        fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14,8), sharex=True)
+        fig.subplots_adjust(hspace=0)
+        clrs = sns.color_palette("hls", 2)
+
+        # plot acc
+        yvals = acc_df["acc"].values
+        axes[0].plot(range(len(yvals)), yvals, c=clrs[0])
+
+        # plot z score
+        yvals = acc_df["z"].values
+        axes[1].plot(range(len(yvals)), yvals, c=clrs[1])
+        
+        fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
+        # ax.set_xlabel("Epoch", fontsize=16)
+        # ax.set_ylabel("Validation accuracy (%)", fontsize=16)
+        # ax.set_ylim([10, 100])
+        # ax.legend(fontsize=14)
+        
+        plt.tight_layout()
+        
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+        
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
+        case_names = ", ".join(cases)
+        schemes = ", ".join(schemes)
+        filename = f"{dataset}_{net_name}_{schemes}_{case_names} accuracy"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(f"{filename}.svg")
+        plt.savefig(f"{filename}.png", dpi=300)
+
     def plot_accuracy(self, dataset, net_name, schemes, cases, inset=True):
         """
         Plots accuracy over training for different experimental cases.
@@ -314,11 +391,16 @@ class AccuracyVisualizer():
 
         """
         # pull data
-        acc_df, index_cols = self.stats_processor.load_accuracy_df(dataset, net_name, 
+        acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
             cases, schemes, self.refresh)
 
+        # process a bit
+        index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
+        acc_df.set_index(index_cols, inplace=True)
+        df_stats = acc_df.groupby(index_cols).agg({ "acc": [np.mean, np.std] })
+
         # group
-        df_groups = acc_df.groupby(index_cols[:-1])
+        df_groups = df_stats.groupby(index_cols[:-1])
         
         # plot
         fig, ax = plt.subplots(figsize=(14,8))
@@ -384,7 +466,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=False, refresh=False)
     
     # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
 
@@ -398,13 +480,16 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testswish10", "testswish1", "testtanh0.1", "testtanh2"], inset=False)
 
-    visualizer.plot_predictions("cifar10",
-        ["vgg11", "sticknet8"],
-        ["adam"], 
-        excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-        pred_type="max",
-        cross_family=True)
+    visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
+
+    # visualizer.plot_predictions("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"], 
+    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+    #     pred_type="max",
+    #     cross_family=True)
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],

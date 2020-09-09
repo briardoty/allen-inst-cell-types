@@ -436,7 +436,7 @@ class StatsProcessor():
             refresh
 
         Returns:
-            df_stats (dataframe): Dataframe containing max accuracy.
+            df (dataframe): Dataframe containing accuracy trajectories
         """
         # optional refresh
         if refresh:
@@ -446,19 +446,14 @@ class StatsProcessor():
         sub_dir = os.path.join(self.data_dir, "dataframes/")
         df = pd.read_csv(os.path.join(sub_dir, "acc_df.csv"))
 
-        # filter and process a bit
+        # filter
         df.drop(columns="Unnamed: 0", inplace=True)
         df = df.query(f"dataset == '{dataset}'") 
         df = df.query(f"net_name == '{net_name}'")
         df = df.query(f"train_scheme in {schemes}")
         df = df.query(f"case in {cases}")
 
-        index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
-        df.set_index(index_cols, inplace=True)
-        df_groups = df.groupby(index_cols)
-        df_stats = df_groups.agg({ "acc": [np.mean, np.std] })
-
-        return df_stats, index_cols
+        return df
 
     def reduce_snapshots(self):
 
