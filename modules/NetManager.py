@@ -585,6 +585,9 @@ class NetManager():
         i_best_loss = np.argmin(loss_arr)
         best_lr = lr_arr[i_best_loss] / 10
 
+        # gc?
+        torch.cuda.empty_cache()
+
         return best_lr
 
 
@@ -627,10 +630,13 @@ class NetManager():
             # track stats
             self.perf_stats[epoch] = [val_acc, val_loss, train_acc, train_loss]
 
-            # copy net if best yet
+            # update best stats
             if val_acc > best_acc:
                 best_acc = val_acc
                 best_epoch = epoch
+
+            # track z-score of currect stat w.r.t. last 10 epochs
+            
 
             print()
     
