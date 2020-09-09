@@ -290,10 +290,15 @@ class NetManager():
             return snapshot_state
         
         return {
+            "dataset": snapshot_state.get("dataset"),
+            "net_name": snapshot_state.get("net_name"),
             "epoch": snapshot_state.get("epoch"),
+            "train_scheme": snapshot_state.get("train_scheme"),
             "case": snapshot_state.get("case"),
             "sample": snapshot_state.get("sample"),
-            "val_acc": snapshot_state.get("val_acc")
+            "val_acc": snapshot_state.get("val_acc"),
+            "modified_layers": snapshot_state.get("modified_layers"),
+            "initial_lr": snapshot_state.get("initial_lr")
         }
     
     def load_dataset(self, batch_size=128):
@@ -621,6 +626,11 @@ class NetManager():
             
             # track stats
             self.perf_stats[epoch] = [val_acc, val_loss, train_acc, train_loss]
+
+            # copy net if best yet
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_epoch = epoch
 
             print()
     
