@@ -566,10 +566,10 @@ class NetManager():
 
                 # smooth the loss
                 if iter == 0:
-                    loss_arr.append(loss)
+                    loss_arr.append(float(loss))
                 else:
                     loss = smoothing * loss + (1 - smoothing) * loss_arr[-1]
-                    loss_arr.append(loss)
+                    loss_arr.append(float(loss))
                 
                 iter += 1
 
