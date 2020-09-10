@@ -81,12 +81,14 @@ def main(dataset, net_names, schemes, config_groups):
                     pretrained = config["pretrained"]
                     if pretrained:
                         params_list.append("--pretrained")
-                    else:
-                        params_list.append("--untrained")
 
                     spatial = config.get("spatial")
                     if spatial:
                         params_list.append("--spatial")
+
+                    find_lr = config.get("find_lr")
+                    if find_lr:
+                        params_list.append("--find_lr")
 
                     params_string = " ".join(params_list)
                     

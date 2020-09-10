@@ -25,18 +25,19 @@ parser.add_argument("--n_repeat", type=int)
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
 parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
+
 parser.add_argument("--spatial", dest="spatial", action="store_true")
 parser.set_defaults(spatial=False)
 
-# pretrained is a PITA since it's a bool
-pretrained_parser = parser.add_mutually_exclusive_group(required=False)
-pretrained_parser.add_argument('--pretrained', dest='pretrained', action='store_true')
-pretrained_parser.add_argument('--untrained', dest='pretrained', action='store_false')
+parser.add_argument("--find_lr", dest="find_lr", action="store_true")
+parser.set_defaults(find_lr=False)
+
+parser.add_argument("--pretrained", dest="pretrained", action="store_true")
 parser.set_defaults(pretrained=False)
 
 def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained, scheme, dataset,
-         spatial):
+         spatial, find_lr):
     
     # init net manager
     manager = NetManager(dataset, net_name, n_classes, data_dir, scheme, 
@@ -60,28 +61,32 @@ def main(case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         net_filepaths.append(manager.get_net_filepath())
 
         # find initial learning rate
-        lr_low = 1e-7
-        lr_high = 0.005
-        (criterion, optimizer, _) = get_training_vars(scheme, manager, 
-            lr_low)
-        found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
-        lr_arr.append(found_lr)
+        if find_lr:
+            if scheme == "sgd":
+                lr_low, lr_high = 1e-7, 0.1
+            elif scheme == "adam":
+                lr_low, lr_high = 1e-7, 0.005
+            
+            (criterion, optimizer, _) = get_training_vars(scheme, manager, 
+                lr_low)
+            found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+            lr_arr.append(found_lr)
 
+    if find_lr:
+        # determine mean starting lr, add it to network snapshots
+        mean_lr = np.mean(lr_arr)
+        std_dev_lr = np.std(lr_arr)
+        print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
+        for net_filepath in net_filepaths:
+            
+            # load snapshot
+            manager.load_net_snapshot_from_path(net_filepath)
 
-    # determine mean starting lr, add it to network snapshots
-    mean_lr = np.mean(lr_arr)
-    std_dev_lr = np.std(lr_arr)
-    print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
-    for net_filepath in net_filepaths:
-        
-        # load snapshot
-        manager.load_net_snapshot_from_path(net_filepath)
+            # append lr
+            manager.initial_lr = mean_lr
 
-        # append lr
-        manager.initial_lr = mean_lr
-
-        # re-save snapshot
-        manager.save_net_snapshot()
+            # re-save snapshot
+            manager.save_net_snapshot()
 
     print(f"gen_nets.py completed case {case}")
     return   
