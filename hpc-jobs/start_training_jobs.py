@@ -36,11 +36,6 @@ parser.set_defaults(resume=False)
 
 def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma, 
     batch_size, dataset):
-    
-    # check
-    if scheme == "sgd" and lr is None:
-        print("Specify a learning rate for SGD!")
-        sys.exit(-1)
 
     job_title = "train_net"
 
