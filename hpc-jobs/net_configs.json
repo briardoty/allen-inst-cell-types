@@ -8,6 +8,51 @@
         }
     },
 
+    "test": {
+        "testrelu": {
+            "n_repeat": 1,
+            "act_fns": ["relu"],
+            "act_fn_params": [null],
+            "find_lr": true
+        },
+        "testswish10": {
+            "n_repeat": 1,
+            "act_fns": ["swish"],
+            "act_fn_params": [10],
+            "find_lr": true
+        },
+        "testswish1": {
+            "n_repeat": 1,
+            "act_fns": ["swish"],
+            "act_fn_params": [1],
+            "find_lr": true
+        },
+        "testtanh2": {
+            "n_repeat": 1,
+            "act_fns": ["tanh"],
+            "act_fn_params": [2],
+            "find_lr": true
+        },
+        "testtanh0.1": {
+            "n_repeat": 1,
+            "act_fns": ["tanh"],
+            "act_fn_params": [0.1],
+            "find_lr": true
+        },
+        "testswish0.1-10": {
+            "n_repeat": 1,
+            "act_fns": ["swish", "swish"],
+            "act_fn_params": [0.1, 10],
+            "find_lr": true
+        },
+        "testswish10-tanh0.1": {
+            "n_repeat": 1,
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.1],
+            "find_lr": true
+        }
+    },
+
     "component-swish": {
         "swish0.1": {
             "n_repeat": 1,
@@ -499,6 +544,15 @@
             "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [10, 2],
+            "pretrained": false
+        }
+    },
+
+    "biodistr1": {
+        "relu-tanh1": {
+            "n_repeat": 1,
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1],
             "pretrained": false
         }
     },
