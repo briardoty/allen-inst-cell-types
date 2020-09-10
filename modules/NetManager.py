@@ -584,7 +584,7 @@ class NetManager():
 
         # find best LR
         i_best_loss = np.argmin(loss_arr)
-        best_lr = lr_arr[i_best_loss] / 10
+        best_lr = lr_arr[i_best_loss]
 
         # gc?
         torch.cuda.empty_cache()
@@ -656,7 +656,7 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/test/sample-9/vgg11_case-test_sample-9_epoch-0.pt")
+    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/testrelu/sample-9/vgg11_case-testrelu_sample-9_epoch-0.pt")
     mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()
