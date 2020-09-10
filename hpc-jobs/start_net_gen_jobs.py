@@ -26,8 +26,10 @@ parser.add_argument("--net_names", type=str, nargs="+", required=True, help="Set
 parser.add_argument("--schemes", type=str, nargs="+", required=True, help="Set schemes")
 parser.add_argument("--config_groups", type=str, nargs="+", required=True, help="Set config_groups")
 
+parser.add_argument("--find_lr", dest="find_lr", action="store_true")
+parser.set_defaults(find_lr=False)
 
-def main(dataset, net_names, schemes, config_groups):
+def main(dataset, net_names, schemes, config_groups, find_lr):
     
     job_title = "gen_nets"
     
@@ -65,7 +67,7 @@ def main(dataset, net_names, schemes, config_groups):
                     run_params["case"] = case
 
                     if config.get("n_repeat") is not None:
-                        run_params["n_repeat"] = config.get("n_repeat")
+                        run_params["n_repeat"] = param_arr_helper(config.get("n_repeat"))
                     
                     if config.get("layer_names") is not None:
                         run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
@@ -86,8 +88,8 @@ def main(dataset, net_names, schemes, config_groups):
                     if spatial:
                         params_list.append("--spatial")
 
-                    find_lr = config.get("find_lr")
-                    if find_lr:
+                    cfg_find_lr = config.get("find_lr")
+                    if cfg_find_lr or find_lr:
                         params_list.append("--find_lr")
 
                     params_string = " ".join(params_list)
