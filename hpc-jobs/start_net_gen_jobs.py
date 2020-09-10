@@ -78,7 +78,7 @@ def main(dataset, net_names, schemes, config_groups):
                     
                     # prepare args
                     params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
-                    pretrained = config["pretrained"]
+                    pretrained = config.get("pretrained")
                     if pretrained:
                         params_list.append("--pretrained")
 
