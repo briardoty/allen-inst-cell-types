@@ -46,13 +46,20 @@ def generate_masks(n_features, n_fns, n_repeat):
     """
     masks = [[] for _ in range(n_fns)]
     
+    mask_idx = 0
+    repeat_ctr = 0
     for i in range(n_features):
-        # determine which mask this feature belongs to
-        mask_idx = math.floor(i / n_repeat) % n_fns
-        
+
+        # account for repetition of each fn
+        nr = n_repeat[mask_idx]
+        if repeat_ctr >= nr:
+            mask_idx = (mask_idx + 1) % len(n_repeat)
+            repeat_ctr = 0
+
         # add this feature to that mask
         masks[mask_idx].append(i)
-    
+        repeat_ctr += 1
+
     return masks
 
 def get_activation_fns(act_fn_names, act_fn_params):
@@ -156,7 +163,7 @@ if __name__=="__main__":
             # x[1::n, ((i+1)%n)::n] = i
             # x[2::n, ((i+2)%n)::n] = i
 
-    print(tile2(11,1))
+    print(generate_masks(20, 2, [9, 1]))
 
 
 

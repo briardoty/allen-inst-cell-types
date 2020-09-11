@@ -65,19 +65,23 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     run_params["net_name"] = net_name
                     run_params["scheme"] = scheme
                     run_params["case"] = case
-
-                    if config.get("n_repeat") is not None:
-                        run_params["n_repeat"] = config.get("n_repeat")
                     
                     if config.get("layer_names") is not None:
                         run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
                         
-                    if config.get("act_fns") is not None:
-                        run_params["act_fns"] = param_arr_helper(config.get("act_fns"))
+                    act_fns = config["act_fns"]
+                    run_params["act_fns"] = param_arr_helper(act_fns)
                     
                     if config.get("act_fn_params") is not None:
                         run_params["act_fn_params"] = param_arr_helper(config.get("act_fn_params"))
                     
+                    # default repeating each fn once
+                    if config.get("n_repeat") is None:
+                        n_repeat = [1] * len(act_fns)
+                    else:
+                        n_repeat = config.get("n_repeat")
+                    run_params["n_repeat"] = param_arr_helper(n_repeat)
+
                     # prepare args
                     params_list = list(chain.from_iterable((f"--{k}", str(run_params[k])) for k in run_params))
                     pretrained = config.get("pretrained")

@@ -1,7 +1,6 @@
 {
     "control": {
         "relu": {
-            "n_repeat": 1,
             "act_fns": ["relu"],
             "act_fn_params": [null],
             "pretrained": false
@@ -10,43 +9,36 @@
 
     "test": {
         "testrelu": {
-            "n_repeat": 1,
             "act_fns": ["relu"],
             "act_fn_params": [null],
             "find_lr": true
         },
         "testswish10": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
             "act_fn_params": [10],
             "find_lr": true
         },
         "testswish1": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
             "act_fn_params": [1],
             "find_lr": true
         },
         "testtanh2": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
             "act_fn_params": [2],
             "find_lr": true
         },
         "testtanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
             "act_fn_params": [0.1],
             "find_lr": true
         },
         "testswish0.1-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
             "act_fn_params": [0.1, 10],
             "find_lr": true
         },
         "testswish10-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [10, 0.1],
             "find_lr": true
@@ -55,505 +47,344 @@
 
     "component-swish": {
         "swish0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [0.1],
-            "pretrained": false
+            "act_fn_params": [0.1]
         },
         "swish0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [0.5],
-            "pretrained": false
+            "act_fn_params": [0.5]
         },
         "swish1": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [1],
-            "pretrained": false
+            "act_fn_params": [1]
         },
         "swish2": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [2],
-            "pretrained": false
+            "act_fn_params": [2]
         },
         "swish5": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [5],
-            "pretrained": false
+            "act_fn_params": [5]
         },
         "swish7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [7.5],
-            "pretrained": false
+            "act_fn_params": [7.5]
         },
         "swish10": {
-            "n_repeat": 1,
             "act_fns": ["swish"],
-            "act_fn_params": [10],
-            "pretrained": false
+            "act_fn_params": [10]
         }
     },
 
     "component-tanh": {
         "tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [0.01],
-            "pretrained": false
+            "act_fn_params": [0.01]
         },
         "tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [0.1],
-            "pretrained": false
+            "act_fn_params": [0.1]
         },
         "tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [0.5],
-            "pretrained": false
+            "act_fn_params": [0.5]
         },
         "tanh1": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [1],
-            "pretrained": false
+            "act_fn_params": [1]
         },
         "tanh2": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [2],
-            "pretrained": false
+            "act_fn_params": [2]
         },
         "tanh5": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [5],
-            "pretrained": false
+            "act_fn_params": [5]
         },
         "tanh10": {
-            "n_repeat": 1,
             "act_fns": ["tanh"],
-            "act_fn_params": [10],
-            "pretrained": false
+            "act_fn_params": [10]
         }
     },
 
     "within-swish": {
         "swish0.1-0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 0.5],
-            "pretrained": false
+            "act_fn_params": [0.1, 0.5]
         },
         "swish0.1-1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 1],
-            "pretrained": false
+            "act_fn_params": [0.1, 1]
         },
         "swish0.1-2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 2],
-            "pretrained": false
+            "act_fn_params": [0.1, 2]
         },
         "swish0.1-5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 5],
-            "pretrained": false
+            "act_fn_params": [0.1, 5]
         },
         "swish0.1-7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 7.5],
-            "pretrained": false
+            "act_fn_params": [0.1, 7.5]
         },
         "swish0.1-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 10],
-            "pretrained": false
+            "act_fn_params": [0.1, 10]
         },
         "swish0.5-1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.5, 1],
-            "pretrained": false
+            "act_fn_params": [0.5, 1]
         },
         "swish0.5-2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.5, 2],
-            "pretrained": false
+            "act_fn_params": [0.5, 2]
         },
         "swish0.5-5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.5, 5],
-            "pretrained": false
+            "act_fn_params": [0.5, 5]
         },
         "swish0.5-7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.5, 7.5],
-            "pretrained": false
+            "act_fn_params": [0.5, 7.5]
         },
         "swish0.5-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.5, 10],
-            "pretrained": false
+            "act_fn_params": [0.5, 10]
         },
         "swish1-2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [1, 2],
-            "pretrained": false
+            "act_fn_params": [1, 2]
         },
         "swish1-5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [1, 5],
-            "pretrained": false
+            "act_fn_params": [1, 5]
         },
         "swish1-7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [1, 7.5],
-            "pretrained": false
+            "act_fn_params": [1, 7.5]
         },
         "swish1-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [1, 10],
-            "pretrained": false
+            "act_fn_params": [1, 10]
         },
         "swish2-5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [2, 5],
-            "pretrained": false
+            "act_fn_params": [2, 5]
         },
         "swish2-7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [2, 7.5],
-            "pretrained": false
+            "act_fn_params": [2, 7.5]
         },
         "swish2-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [2, 10],
-            "pretrained": false
+            "act_fn_params": [2, 10]
         },
         "swish5-7.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [5, 7.5],
-            "pretrained": false
+            "act_fn_params": [5, 7.5]
         },
         "swish5-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [5, 10],
-            "pretrained": false
+            "act_fn_params": [5, 10]
         },
         "swish7.5-10": {
-            "n_repeat": 1,
             "act_fns": ["swish", "swish"],
-            "act_fn_params": [7.5, 10],
-            "pretrained": false
+            "act_fn_params": [7.5, 10]
         }
     },
 
     "within-tanh": {
         "tanh0.01-0.1": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.01, 0.1],
-            "pretrained": false
+            "act_fn_params": [0.01, 0.1]
         },
         "tanh0.01-0.5": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.01, 0.5],
-            "pretrained": false
+            "act_fn_params": [0.01, 0.5]
         },
         "tanh0.01-1": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.01, 1],
-            "pretrained": false
+            "act_fn_params": [0.01, 1]
         },
         "tanh0.01-2": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.01, 2],
-            "pretrained": false
+            "act_fn_params": [0.01, 2]
         },
         "tanh0.1-0.5": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.1, 0.5],
-            "pretrained": false
+            "act_fn_params": [0.1, 0.5]
         },
         "tanh0.1-1": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.1, 1],
-            "pretrained": false
+            "act_fn_params": [0.1, 1]
         },
         "tanh0.1-2": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.1, 2],
-            "pretrained": false
+            "act_fn_params": [0.1, 2]
         },
         "tanh0.5-1": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.5, 1],
-            "pretrained": false
+            "act_fn_params": [0.5, 1]
         },
         "tanh0.5-2": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [0.5, 2],
-            "pretrained": false
+            "act_fn_params": [0.5, 2]
         },
         "tanh1-2": {
-            "n_repeat": 1,
             "act_fns": ["tanh", "tanh"],
-            "act_fn_params": [1, 2],
-            "pretrained": false
+            "act_fn_params": [1, 2]
         }
     },
     
     "cross-swish-tanh": {
         "swish0.1-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.1, 0.01],
-            "pretrained": false
+            "act_fn_params": [0.1, 0.01]
         },
         "swish0.1-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.1, 0.1],
-            "pretrained": false
+            "act_fn_params": [0.1, 0.1]
         },
         "swish0.1-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.1, 0.5],
-            "pretrained": false
+            "act_fn_params": [0.1, 0.5]
         },
         "swish0.1-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.1, 1],
-            "pretrained": false
+            "act_fn_params": [0.1, 1]
         },
         "swish0.1-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.1, 2],
-            "pretrained": false
+            "act_fn_params": [0.1, 2]
         },
         "swish0.5-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.5, 0.01],
-            "pretrained": false
+            "act_fn_params": [0.5, 0.01]
         },
         "swish0.5-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.5, 0.1],
-            "pretrained": false
+            "act_fn_params": [0.5, 0.1]
         },
         "swish0.5-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.5, 0.5],
-            "pretrained": false
+            "act_fn_params": [0.5, 0.5]
         },
         "swish0.5-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.5, 1],
-            "pretrained": false
+            "act_fn_params": [0.5, 1]
         },
         "swish0.5-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [0.5, 2],
-            "pretrained": false
+            "act_fn_params": [0.5, 2]
         },
         "swish1-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [1, 0.01],
-            "pretrained": false
+            "act_fn_params": [1, 0.01]
         },
         "swish1-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [1, 0.1],
-            "pretrained": false
+            "act_fn_params": [1, 0.1]
         },
         "swish1-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [1, 0.5],
-            "pretrained": false
+            "act_fn_params": [1, 0.5]
         },
         "swish1-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [1, 1],
-            "pretrained": false
+            "act_fn_params": [1, 1]
         },
         "swish1-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [1, 2],
-            "pretrained": false
+            "act_fn_params": [1, 2]
         },
         "swish2-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [2, 0.01],
-            "pretrained": false
+            "act_fn_params": [2, 0.01]
         },
         "swish2-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [2, 0.1],
-            "pretrained": false
+            "act_fn_params": [2, 0.1]
         },
         "swish2-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [2, 0.5],
-            "pretrained": false
+            "act_fn_params": [2, 0.5]
         },
         "swish2-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [2, 1],
-            "pretrained": false
+            "act_fn_params": [2, 1]
         },
         "swish2-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [2, 2],
-            "pretrained": false
+            "act_fn_params": [2, 2]
         },
         "swish5-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 0.01],
-            "pretrained": false
+            "act_fn_params": [5, 0.01]
         },
         "swish5-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 0.1],
-            "pretrained": false
+            "act_fn_params": [5, 0.1]
         },
         "swish5-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 0.5],
-            "pretrained": false
+            "act_fn_params": [5, 0.5]
         },
         "swish5-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 1],
-            "pretrained": false
+            "act_fn_params": [5, 1]
         },
         "swish5-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 2],
-            "pretrained": false
+            "act_fn_params": [5, 2]
         },
         "swish7.5-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [7.5, 0.01],
-            "pretrained": false
+            "act_fn_params": [7.5, 0.01]
         },
         "swish7.5-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [7.5, 0.1],
-            "pretrained": false
+            "act_fn_params": [7.5, 0.1]
         },
         "swish7.5-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [7.5, 0.5],
-            "pretrained": false
+            "act_fn_params": [7.5, 0.5]
         },
         "swish7.5-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [7.5, 1],
-            "pretrained": false
+            "act_fn_params": [7.5, 1]
         },
         "swish7.5-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [7.5, 2],
-            "pretrained": false
+            "act_fn_params": [7.5, 2]
         },
         "swish10-tanh0.01": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 0.01],
-            "pretrained": false
+            "act_fn_params": [10, 0.01]
         },
         "swish10-tanh0.1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 0.1],
-            "pretrained": false
+            "act_fn_params": [10, 0.1]
         },
         "swish10-tanh0.5": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 0.5],
-            "pretrained": false
+            "act_fn_params": [10, 0.5]
         },
         "swish10-tanh1": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 1],
-            "pretrained": false
+            "act_fn_params": [10, 1]
         },
         "swish10-tanh2": {
-            "n_repeat": 1,
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 2],
-            "pretrained": false
+            "act_fn_params": [10, 2]
         }
     },
 
     "biodistr1": {
         "relu-tanh1": {
-            "n_repeat": 1,
+            "n_repeat": [9, 1],
             "act_fns": ["relu", "tanh"],
-            "act_fn_params": [null, 1],
-            "pretrained": false
+            "act_fn_params": [null, 1]
         }
     },
 
