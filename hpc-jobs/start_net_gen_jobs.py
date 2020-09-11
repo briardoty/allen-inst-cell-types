@@ -67,7 +67,7 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     run_params["case"] = case
 
                     if config.get("n_repeat") is not None:
-                        run_params["n_repeat"] = param_arr_helper(config.get("n_repeat"))
+                        run_params["n_repeat"] = config.get("n_repeat")
                     
                     if config.get("layer_names") is not None:
                         run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
