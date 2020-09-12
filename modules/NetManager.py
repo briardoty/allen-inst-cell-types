@@ -190,6 +190,7 @@ class NetManager():
             "epoch": epoch,
             "train_scheme": self.train_scheme,
             "case": self.case,
+            "group": self.group,
             "sample": self.sample,
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
@@ -230,6 +231,7 @@ class NetManager():
         # extract state
         state_dict = snapshot_state.get("state_dict")
         self.case = snapshot_state.get("case")
+        self.group = snapshot_state.get("group")
         self.sample = snapshot_state.get("sample")
         
         self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
