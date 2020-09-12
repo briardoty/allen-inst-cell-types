@@ -35,7 +35,8 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
          lr, lr_step_size, lr_gamma, batch_size, scheme, dataset, momentum):
     
     # init net manager
-    manager = NetManager(dataset, net_name, n_classes, data_dir, scheme)
+    manager = NetManager(dataset, net_name, None, None, n_classes, data_dir, 
+        scheme)
     manager.load_dataset(batch_size)
     
     # load the proper net

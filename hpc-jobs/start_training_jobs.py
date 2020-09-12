@@ -38,9 +38,6 @@ def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma,
     batch_size, dataset):
 
     job_title = "train_net"
-
-    # get cases
-    cases = get_cases_in_groups(config_groups)
     
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
@@ -83,8 +80,8 @@ def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma,
         if not scheme in slugs:
             continue
 
-        # only interested in the given case
-        if not any(c in slugs for c in cases):
+        # only interested in the given groups
+        if not any(g in slugs for g in config_groups):
             continue
         
         # start from first or last epoch
@@ -152,18 +149,6 @@ def get_last_epoch(net_filenames):
             last_net_filename = filename
 
     return last_net_filename
-
-def get_cases_in_groups(config_groups):
-
-    cases = set()
-    with open("net_configs.json", "r") as json_file:
-        net_configs = json.load(json_file)
-
-    for group in config_groups:
-        configs = net_configs[group]
-        cases.update(configs.keys())
-
-    return list(cases)
 
 if __name__=="__main__":
     args = parser.parse_args()
