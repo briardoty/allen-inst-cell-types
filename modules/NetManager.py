@@ -111,14 +111,16 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
 
 class NetManager():
     
-    def __init__(self, dataset, net_name, n_classes, data_dir, train_scheme, 
-        pretrained=False, seed=None):
+    def __init__(self, dataset, net_name, group, case, n_classes, data_dir, 
+        train_scheme, pretrained=False, seed=None):
 
         # SEED!
         self.seed_everything(seed)
 
         self.dataset = dataset
         self.net_name = net_name
+        self.group = group
+        self.case = case
         self.n_classes = n_classes
         self.data_dir = os.path.expanduser(data_dir)
         self.train_scheme = train_scheme
@@ -143,11 +145,11 @@ class NetManager():
         random.seed()
         torch.manual_seed(seed)
 
-    def init_net(self, case_id, sample):
-        self.case_id = case_id
+    def init_net(self, sample):
+
         self.sample = sample
         self.net_dir = get_net_dir(self.data_dir, self.dataset, self.net_name, 
-            self.train_scheme, self.case_id, self.sample)
+            self.train_scheme, self.group, self.case, self.sample)
 
         if self.pretrained:
             print("Initializing pretrained net!")
@@ -169,9 +171,9 @@ class NetManager():
     
     def get_net_filepath(self, epoch=None):
         if epoch is not None:
-            net_tag = get_net_tag(self.net_name, self.case_id, self.sample, epoch)
+            net_tag = get_net_tag(self.net_name, self.case, self.sample, epoch)
         else:
-            net_tag = get_net_tag(self.net_name, self.case_id, self.sample, self.epoch)
+            net_tag = get_net_tag(self.net_name, self.case, self.sample, self.epoch)
         
         filename = f"{net_tag}.pt"
         net_filepath = os.path.join(self.net_dir, filename)
@@ -187,7 +189,7 @@ class NetManager():
             "net_name": self.net_name,
             "epoch": epoch,
             "train_scheme": self.train_scheme,
-            "case": self.case_id,
+            "case": self.case,
             "sample": self.sample,
             "val_acc": val_acc,
             "state_dict": self.net.state_dict(),
@@ -213,43 +215,13 @@ class NetManager():
             "net_name": self.net_name,
             "dataset": self.dataset,
             "train_scheme": self.train_scheme,
-            "case": self.case_id,
+            "case": self.case,
             "sample": self.sample,
             "modified_layers": self.modified_layers,
         }
 
         # save
         np.save(filepath, data)
-
-    def load_net_state(self, case_id, sample, epoch, state_dict):
-        """
-        Load a network snapshot based on the given params.
-
-        Args:
-            case_id (str): DESCRIPTION.
-            sample (int): DESCRIPTION.
-            epoch (int): Training epoch for the snapshot to load.
-            state_dict (TYPE): Net state if not loading from disk.
-
-        Returns:
-            TYPE: DESCRIPTION.
-
-        """
-        
-        self.epoch = epoch
-        self.init_net(case_id, sample)
-        self.net.load_state_dict(state_dict)
-        self.net.eval()
-        
-        # make any modifications
-        if self.modified_layers is not None:
-            n_repeat = self.modified_layers["n_repeat"]
-            act_fns = self.modified_layers["act_fns"]
-            act_fn_params = self.modified_layers["act_fn_params"]
-            spatial = self.modified_layers.get("spatial")
-            self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
-
-        return self.net
         
     def load_net_snapshot_from_path(self, net_filepath):
         # load snapshot
@@ -257,7 +229,7 @@ class NetManager():
         
         # extract state
         state_dict = snapshot_state.get("state_dict")
-        self.case_id = snapshot_state.get("case")
+        self.case = snapshot_state.get("case")
         self.sample = snapshot_state.get("sample")
         
         self.dataset = snapshot_state.get("dataset") if snapshot_state.get("dataset") is not None else "imagenette2"
@@ -266,7 +238,7 @@ class NetManager():
         self.initial_lr = snapshot_state.get("initial_lr")
         
         # load net state
-        self.init_net(self.case_id, self.sample)
+        self.init_net(self.sample)
         self.net.load_state_dict(state_dict)
         self.net.eval()
         
@@ -320,7 +292,7 @@ class NetManager():
         output_filename = f"output_{net_tag}.pt"
         input_filename = f"input_{net_tag}.pt"
         resp_dir = os.path.join(self.data_dir, 
-            f"responses/{self.dataset}/{self.net_name}/{self.train_scheme}/{self.case_id}/sample-{self.sample}/")
+            f"responses/{self.dataset}/{self.net_name}/{self.train_scheme}/{self.case}/sample-{self.sample}/")
         
         print(f"Saving network responses to {resp_dir}")
 
@@ -656,7 +628,12 @@ class NetManager():
 if __name__=="__main__":
     mgr = NetManager("cifar10", "vgg11", 10, 
         "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    mgr.load_net_snapshot_from_path("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/vgg11/adam/testrelu/sample-9/vgg11_case-testrelu_sample-9_epoch-0.pt")
+    net = "vgg11"
+    scheme = "sgd"
+    case = "tanh1"
+    sample = 0
+    epoch = 0
+    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/{net}/{scheme}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
     mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()

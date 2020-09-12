@@ -64,6 +64,7 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     # update params for this net config
                     run_params["net_name"] = net_name
                     run_params["scheme"] = scheme
+                    run_params["group"] = group
                     run_params["case"] = case
                     
                     if config.get("layer_names") is not None:
