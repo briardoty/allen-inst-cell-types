@@ -6,6 +6,7 @@ import re
 import numpy as np
 import json
 from scipy.stats import ttest_ind
+import math
 from statsmodels.stats.multitest import multipletests
 
 try:
@@ -93,6 +94,7 @@ class StatsProcessor():
         
         self.data_dir = data_dir
         self.n_classes = n_classes
+        self.exclude_slug = "(exclude)"
     
     def load_weight_df(self, net_name, case, train_schemes):
         """
@@ -310,6 +312,12 @@ class StatsProcessor():
             if len(files) <= 0:
                 continue
             
+            slugs = root.split("/")
+
+            # exclude some dirs...
+            if any(self.exclude_slug in slug for slug in slugs):
+                continue
+
             # consider all files...
             for filename in files:
 
@@ -367,7 +375,7 @@ class StatsProcessor():
             d, n, sch, c, s = midx
             
             # skip if already predicted
-            if acc_df.at[midx, "max_pred"] > -1:
+            if not math.isnan(acc_df.at[midx, "max_pred"]):
                 continue
 
             # get rows in this mixed case
@@ -393,23 +401,38 @@ class StatsProcessor():
                 for cc in component_cases:
                     c_row = component_rows \
                         .query(f"case == '{cc}'") \
-                        .query(f"used == False") \
-                        .sample()
+                        .query(f"used == False")
+                    
+                    if len(c_row) == 0:
+                        break
+                    c_row = c_row.sample()
                     c_accs.append(c_row.max_val_acc.values[0])
 
                     # mark component row as used in prediction
                     component_rows.at[c_row.index.values[0], "used"] = True
+
+                if len(c_accs) == 0:
+                    break
 
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
 
             # significance
             t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
+            if t < 0:
+                p = 1. - p / 2.
+            else:
+                p = p / 2.
             acc_df.loc[(d, n, sch, c), "max_pred_p_val"] = p
 
             t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "linear_pred"])
+            if t < 0:
+                p = 1. - p / 2.
+            else:
+                p = p / 2.
             acc_df.loc[(d, n, sch, c), "linear_pred_p_val"] = p
 
+        # save things
         self.save_df("max_acc_df.csv", acc_df)
         self.save_json("case_dict.json", case_dict)
 
@@ -512,6 +535,10 @@ class StatsProcessor():
                 continue
             
             slugs = root.split("/")
+
+            # exclude some dirs...
+            if any(self.exclude_slug in slug for slug in slugs):
+                continue
             
             # consider all files...
             for filename in files:
