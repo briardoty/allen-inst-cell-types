@@ -15,9 +15,9 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 try:
-    from .StatsProcessor import StatsProcessor
+    from .StatsProcessor import StatsProcessor, get_component_cases
 except:
-    from StatsProcessor import StatsProcessor
+    from StatsProcessor import StatsProcessor, get_component_cases
 
 try:
     from .util import ensure_sub_dir
@@ -38,6 +38,93 @@ class AccuracyVisualizer():
         self.refresh = refresh
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
+
+    def plot_final_accuracy(self, dataset, net_name, scheme, mixed_case, pred_type="max"):
+        """
+        Plot accuracy at the end of training for given control cases
+        and mixed case, including predicted mixed case accuracy based
+        on linear combination of control cases
+        """
+
+        # pull data
+        df, case_dict, _ = self.stats_processor.load_max_acc_df(self.refresh)
+
+        # filter dataframe
+        df = df.query(f"dataset == '{dataset}'") \
+            .query(f"net_name == '{net_name}'") \
+            .query(f"train_scheme == '{scheme}'")
+
+        component_cases = get_component_cases(case_dict, mixed_case)
+
+        # plot...
+        handles = []
+        labels = []
+
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
+        fig.subplots_adjust(wspace=0)
+        clrs = sns.color_palette("hls", len(component_cases) + 2)
+        
+        for i in range(len(component_cases)):
+
+            cc = component_cases[i]
+            c_row = df.loc[(dataset, net_name, scheme, cc)]
+
+            p = float(case_dict[cc]["act_fn_params"][0])
+            yval = c_row["max_val_acc", "mean"].values[0] * 100
+            yerr = c_row["max_val_acc", "std"].values[0] * 1.98 * 100
+            h = axes[0].errorbar(p, yval, yerr=yerr, label=cc,
+                capsize=3, elinewidth=1, c=clrs[i], fmt=".")
+            
+            handles.append(h)
+            labels.append(cc)
+            
+        # plot mixed case
+        # actual
+        row = df.loc[(dataset, net_name, scheme, mixed_case)]
+        yact = row["max_val_acc"]["mean"].values[0] * 100
+        yerr = row["max_val_acc"]["std"].values[0] * 1.98 * 100
+        l = f"{mixed_case} actual"
+        h = axes[1].errorbar(1, yact, yerr=yerr, label=l,
+            capsize=3, elinewidth=1, c=clrs[len(component_cases)], fmt=".")
+        
+        labels.append(l)
+        handles.append(h)
+
+        # predicted
+        ps = [p for p in case_dict[mixed_case]]
+        ypred = df.loc[(dataset, net_name, scheme, mixed_case)][f"{pred_type}_pred", "mean"].values[0] * 100
+        l = f"{mixed_case} {pred_type} prediction"
+        h = axes[1].plot(1, ypred, "x", label=l,
+            c=clrs[len(component_cases) + 1])
+
+        labels.append(l)
+        handles.append(h[0])
+
+        fig.suptitle("Final accuracy")
+        axes[0].set_xlabel("Activation function parameter value")
+        axes[1].set_xlabel("Mixed cases")
+        axes[0].set_ylabel("Final validation accuracy (%)")
+        axes[1].xaxis.set_ticks([])
+
+        # shrink second axis by 20%
+        box = axes[1].get_position()
+        axes[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        # append legend to second axis
+        axes[1].legend(handles, labels, loc="center left", bbox_to_anchor=(1, 0.5))
+         
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/final accuracy/")
+        cases = " & ".join(mixed_cases)
+        filename = f"{cases} final acc.svg"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(filename, dpi=300)
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -85,10 +172,6 @@ class AccuracyVisualizer():
             # dataset, net, scheme, case, mixed, cross-family
             d, n, s, c, m, cf = midx
             clr = clrs[net_names.index(n)]
-
-            # prettify
-            if np.mod(i, 2) == 0:
-                plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
             
             # stats
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
@@ -328,8 +411,8 @@ class AccuracyVisualizer():
             d, n, sch, c, s, e, acc, z = row
 
             # get window
-            w_start = max(0, e - window + 1)
-            w_idx = acc_df.epoch[w_start:e + 1].index
+            w_start = max(0, e - window)
+            w_idx = acc_df.epoch[w_start:e].index
 
             # compute window stats
             w_mean = np.mean(acc_df.loc[w_idx, "acc"])
@@ -352,6 +435,8 @@ class AccuracyVisualizer():
         # plot z score
         yvals = acc_df["z"].values
         axes[1].plot(range(len(yvals)), yvals, c=clrs[1])
+        axes[1].axhline(0, color="k", linestyle="--", alpha=0.5)
+        
         
         fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
         # ax.set_xlabel("Epoch", fontsize=16)
@@ -468,10 +553,10 @@ if __name__=="__main__":
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=False, refresh=False)
     
-    # visualizer.plot_max_accuracy(["swish_0.5", "swish_1", "swish_3", "swish_5", "swish_10"], ["swish_1-3", "swish_5-10"])
+    visualizer.plot_final_accuracy("cifar10", "vgg11", "adam", "swish7.5-tanh0.5", pred_type="max")
 
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"])
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanhe1", "swish1-tanhe1"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
     # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
@@ -479,17 +564,17 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "tanhe0.5", "swish10-tanhe0.5"], inset=True)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testswish10", "testswish1", "testtanh0.1", "testtanh2"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.5", "swish7.5-tanh0.5"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testrelu2", "testswish10", "testswish1", "testtanh2", "testtanh0.1", "testswish0.1-10", "testswish10-tanh0.1"], inset=False)
 
-    visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
+    # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
     # visualizer.plot_predictions("cifar10",
-    #     ["vgg11", "sticknet8"],
+    #     ["vgg11"],
     #     ["adam"], 
     #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
     #     pred_type="max",
-    #     cross_family=True)
+    #     cross_family=None)
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],
@@ -497,3 +582,6 @@ if __name__=="__main__":
     #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
     #     pred_type="max",
     #     cross_family=True)
+
+
+
