@@ -39,11 +39,11 @@ class AccuracyVisualizer():
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
 
-    def plot_final_accuracy(self, dataset, net_name, scheme, mixed_case, pred_type="max"):
+    def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case, pred_type="max"):
         """
-        Plot accuracy at the end of training for given control cases
-        and mixed case, including predicted mixed case accuracy based
-        on linear combination of control cases
+        Plot accuracy at the end of training for mixed case, 
+        including predicted mixed case accuracy based
+        on combination of component cases
         """
 
         # pull data
@@ -57,26 +57,24 @@ class AccuracyVisualizer():
         component_cases = get_component_cases(case_dict, mixed_case)
 
         # plot...
-        handles = []
-        labels = []
-
+        c_labels = dict()
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
         fig.subplots_adjust(wspace=0)
         clrs = sns.color_palette("hls", len(component_cases) + 2)
         
+        # plot component nets
         for i in range(len(component_cases)):
 
             cc = component_cases[i]
             c_row = df.loc[(dataset, net_name, scheme, cc)]
 
-            p = float(case_dict[cc]["act_fn_params"][0])
+            # p = float(case_dict[cc]["act_fn_params"][0])
             yval = c_row["max_val_acc", "mean"].values[0] * 100
             yerr = c_row["max_val_acc", "std"].values[0] * 1.98 * 100
-            h = axes[0].errorbar(p, yval, yerr=yerr, label=cc,
+            axes[0].errorbar(i, yval, yerr=yerr, label=cc,
                 capsize=3, elinewidth=1, c=clrs[i], fmt=".")
             
-            handles.append(h)
-            labels.append(cc)
+            c_labels[i] = cc
             
         # plot mixed case
         # actual
@@ -84,34 +82,45 @@ class AccuracyVisualizer():
         yact = row["max_val_acc"]["mean"].values[0] * 100
         yerr = row["max_val_acc"]["std"].values[0] * 1.98 * 100
         l = f"{mixed_case} actual"
-        h = axes[1].errorbar(1, yact, yerr=yerr, label=l,
+        axes[1].errorbar(0, yact, yerr=yerr, label=l,
             capsize=3, elinewidth=1, c=clrs[len(component_cases)], fmt=".")
-        
-        labels.append(l)
-        handles.append(h)
 
         # predicted
         ps = [p for p in case_dict[mixed_case]]
         ypred = df.loc[(dataset, net_name, scheme, mixed_case)][f"{pred_type}_pred", "mean"].values[0] * 100
         l = f"{mixed_case} {pred_type} prediction"
-        h = axes[1].plot(1, ypred, "x", label=l,
+        h = axes[1].plot(0, ypred, "x", label=l,
             c=clrs[len(component_cases) + 1])
 
-        labels.append(l)
-        handles.append(h[0])
+        # legend
+        handles = dict()
+        handles[f"{pred_type} prediction"] = h[0]
+        handles["actual accuracy"] = axes[0].errorbar(-100, yact, yerr=yerr, label=l,
+            capsize=3, elinewidth=1, c="k", alpha=0.5, fmt=".")
 
-        fig.suptitle("Final accuracy")
-        axes[0].set_xlabel("Activation function parameter value")
-        axes[1].set_xlabel("Mixed cases")
-        axes[0].set_ylabel("Final validation accuracy (%)")
-        axes[1].xaxis.set_ticks([])
+        # set figure text
+        fig.suptitle("Component and mixed network performance comparison",
+            fontsize=20)
+        axes[0].set_xlabel("Component networks", fontsize=16, 
+            labelpad=10)
+        axes[1].set_xlabel("Mixed network", fontsize=16, labelpad=10)
+        axes[0].set_ylabel("Final validation accuracy (%)", 
+            fontsize=16, labelpad=10)
+        axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
+        axes[0].set_xticks(list(c_labels.keys()))
+        axes[0].set_xticklabels(list(c_labels.values()))
+        axes[1].xaxis.set_ticks([0])
+        axes[1].xaxis.set_ticklabels([mixed_case])
+        plt.tight_layout(rect=[0, 0, 1, 0.95])
 
-        # shrink second axis by 20%
+        # shrink second axis by x%
+        x = 0.37
         box = axes[1].get_position()
-        axes[1].set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        axes[1].set_position([box.x0, box.y0, box.width * (1-x), box.height])
 
         # append legend to second axis
-        axes[1].legend(handles, labels, loc="center left", bbox_to_anchor=(1, 0.5))
+        axes[1].legend(handles.values(), handles.keys(), 
+            fontsize=14, loc="center left", bbox_to_anchor=(1, 0.5))
          
         # optional saving
         if not self.save_fig:
@@ -119,12 +128,12 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{net_name}/final accuracy/")
-        cases = " & ".join(mixed_cases)
-        filename = f"{cases} final acc.svg"
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/{scheme}/final acc comparison/")
+        filename = f"{mixed_case} comparison"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
-        plt.savefig(filename, dpi=300)
+        plt.savefig(f"{filename}.svg")
+        plt.savefig(f"{filename}.png", dpi=300)
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -551,9 +560,9 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
-    visualizer.plot_final_accuracy("cifar10", "vgg11", "adam", "swish7.5-tanh0.5", pred_type="max")
+    visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish7.5-tanh0.5", pred_type="max")
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
