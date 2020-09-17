@@ -564,7 +564,7 @@ class NetManager():
         torch.cuda.empty_cache()
         gc.collect()
 
-        return best_lr
+        return best_lr / 2.0
 
 
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
