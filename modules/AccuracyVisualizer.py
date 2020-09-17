@@ -25,8 +25,10 @@ except:
     from util import ensure_sub_dir
 
 import matplotlib
-matplotlib.rc("xtick", labelsize=14) 
-matplotlib.rc("ytick", labelsize=14) 
+large_font_size = 16
+small_font_size = 14
+matplotlib.rc("xtick", labelsize=small_font_size) 
+matplotlib.rc("ytick", labelsize=small_font_size) 
 
 
 class AccuracyVisualizer():
@@ -39,7 +41,7 @@ class AccuracyVisualizer():
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
 
-    def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case, pred_type="max"):
+    def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
         Plot accuracy at the end of training for mixed case, 
         including predicted mixed case accuracy based
@@ -47,80 +49,96 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        df, case_dict, _ = self.stats_processor.load_max_acc_df(self.refresh)
+        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df_ungrouped(self.refresh)
+        component_cases = get_component_cases(case_dict, mixed_case)
 
         # filter dataframe
         df = df.query(f"dataset == '{dataset}'") \
             .query(f"net_name == '{net_name}'") \
             .query(f"train_scheme == '{scheme}'")
 
-        component_cases = get_component_cases(case_dict, mixed_case)
-
         # plot...
+        markersize = 18
         c_labels = dict()
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14,8), sharey=True)
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5,5), sharey=True)
         fig.subplots_adjust(wspace=0)
-        clrs = sns.color_palette("hls", len(component_cases) + 2)
+        c_clrs = sns.color_palette("hls", len(component_cases))
+        c_clrs.reverse()
         
         # plot component nets
+        x = [-2]
+        width = 0.35
+        lw = 4
         for i in range(len(component_cases)):
 
             cc = component_cases[i]
-            c_row = df.loc[(dataset, net_name, scheme, cc)]
+            cc_rows = df.loc[(dataset, net_name, scheme, cc)]
+            yvals = cc_rows["max_val_acc"].values * 100
+            start = x[-1] + 2
+            x = [i for i in range(start, start + len(yvals))]
 
-            # p = float(case_dict[cc]["act_fn_params"][0])
-            yval = c_row["max_val_acc", "mean"].values[0] * 100
-            yerr = c_row["max_val_acc", "std"].values[0] * 1.98 * 100
-            axes[0].errorbar(i, yval, yerr=yerr, label=cc,
-                capsize=3, elinewidth=1, c=clrs[i], fmt=".")
+            ax.plot([i] * len(yvals), yvals, ".", label=cc,
+                c=c_clrs[i], markersize=markersize, alpha=0.6)
+            ax.plot([i-width, i+width], [np.mean(yvals), np.mean(yvals)], 
+                linestyle=":", label=cc, c=c_clrs[i], linewidth=lw)
             
             c_labels[i] = cc
             
         # plot mixed case
         # actual
-        row = df.loc[(dataset, net_name, scheme, mixed_case)]
-        yact = row["max_val_acc"]["mean"].values[0] * 100
-        yerr = row["max_val_acc"]["std"].values[0] * 1.98 * 100
-        l = f"{mixed_case} actual"
-        axes[1].errorbar(0, yact, yerr=yerr, label=l,
-            capsize=3, elinewidth=1, c=clrs[len(component_cases)], fmt=".")
+        m_clrs = sns.color_palette("hls", len(component_cases) + 3)
+        m_rows = df.loc[(dataset, net_name, scheme, mixed_case)]
+        yact = m_rows["max_val_acc"].values * 100
+        axes[1].plot([0] * len(yact), yact, ".", label=cc,
+            c=m_clrs[len(component_cases)], markersize=markersize, alpha=0.6)
 
         # predicted
-        ps = [p for p in case_dict[mixed_case]]
-        ypred = df.loc[(dataset, net_name, scheme, mixed_case)][f"{pred_type}_pred", "mean"].values[0] * 100
-        l = f"{mixed_case} {pred_type} prediction"
-        h = axes[1].plot(0, ypred, "x", label=l,
-            c=clrs[len(component_cases) + 1])
-
-        # legend
+        pred_types = ["max", "linear"]
         handles = dict()
-        handles[f"{pred_type} prediction"] = h[0]
-        handles["actual accuracy"] = axes[0].errorbar(-100, yact, yerr=yerr, label=l,
-            capsize=3, elinewidth=1, c="k", alpha=0.5, fmt=".")
+        for pred_type, clr in zip(pred_types, m_clrs[-2:]):
+            ypred = df.loc[(dataset, net_name, scheme, mixed_case)][f"{pred_type}_pred"].mean() * 100
+            h = axes[1].plot([-width, width], [ypred, ypred], 
+                label=cc, c=clr, linewidth=lw)
+
+            # legend stuff
+            handles[pred_type] = h[0]
+
+        # legend stuff
+        handles["actual"] = ax.plot(-100, ypred, "k.", 
+            markersize=markersize, alpha=0.5)[0]
+        handles["mean"] = ax.plot(-100, ypred, "k:", 
+            linewidth=lw, alpha=0.5)[0]
 
         # set figure text
-        fig.suptitle("Component and mixed network performance comparison",
-            fontsize=20)
-        axes[0].set_xlabel("Component networks", fontsize=16, 
+        # fig.suptitle(f"Component and mixed network performance comparison\n {net_name} on {dataset}",
+        #     fontsize=20)
+        matplotlib.rc("xtick", labelsize=small_font_size)
+        matplotlib.rc("ytick", labelsize=small_font_size)
+        ax.set_xlabel("Component", fontsize=16, 
             labelpad=10)
-        axes[1].set_xlabel("Mixed network", fontsize=16, labelpad=10)
-        axes[0].set_ylabel("Final validation accuracy (%)", 
-            fontsize=16, labelpad=10)
-        axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
-        axes[0].set_xticks(list(c_labels.keys()))
-        axes[0].set_xticklabels(list(c_labels.values()))
-        axes[1].xaxis.set_ticks([0])
-        axes[1].xaxis.set_ticklabels([mixed_case])
-        plt.tight_layout(rect=[0, 0, 1, 0.95])
+        axes[1].set_xlabel("Mixed", fontsize=large_font_size, 
+            labelpad=10)
+        ax.set_ylabel("Final validation accuracy (%)", 
+            fontsize=large_font_size, labelpad=10)
+        ax.set_xlim([-0.5, len(component_cases) - 0.5])
+        axes[1].set_xlim([-0.5, 0.5])
+        ax.set_xticks(list(c_labels.keys()))
+        ax.set_yticklabels(list(ax.get_yticks()), fontsize=small_font_size)
+        ax.set_xticklabels(list(c_labels.values()), fontsize=small_font_size)
+        axes[1].set_xticks([0])
+        axes[1].set_xticklabels([mixed_case], fontsize=small_font_size)
+        plt.tight_layout()
+        # plt.tight_layout(rect=[0, 0, 1, 0.92])
 
-        # shrink second axis by x%
-        x = 0.37
-        box = axes[1].get_position()
-        axes[1].set_position([box.x0, box.y0, box.width * (1-x), box.height])
+        # shrink axes...
+        box1 = ax.get_position()
+        ax.set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
+        box2 = axes[1].get_position()
+        axes[1].set_position([box1.x0 + box1.width, box2.y0, box2.width * 0.4, box2.height])
 
         # append legend to second axis
         axes[1].legend(handles.values(), handles.keys(), 
-            fontsize=14, loc="center left", bbox_to_anchor=(1, 0.5))
+            fontsize=small_font_size, loc="center left", bbox_to_anchor=(1, 0.5))
          
         # optional saving
         if not self.save_fig:
@@ -182,6 +200,10 @@ class AccuracyVisualizer():
             d, n, s, c, m, cf = midx
             clr = clrs[net_names.index(n)]
             
+            # prettify	
+            if np.mod(i, 2) == 0:	
+                plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
+
             # stats
             perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
             err = sort_df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
@@ -391,6 +413,55 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")  
         plt.savefig(f"{filename}.png", dpi=300)  
 
+    def plot_all_samples_accuracy(self, dataset, net_name, scheme, case, acc_type="val"):
+
+        # pull data
+        acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
+            [scheme], [case], self.refresh)
+
+        # process a bit
+        index_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
+        acc_df.set_index(index_cols, inplace=True)
+
+
+        # plot...
+        fig, ax = plt.subplots(figsize=(8,5))
+        idxs = acc_df.index.unique()
+        clrs = sns.color_palette("hls", len(idxs))
+
+        # plot acc
+        for i in range(len(idxs)):
+
+            idx = idxs[i]
+            epochs = acc_df.loc[idx]
+            
+            yvals = epochs[f"{acc_type}_acc"].values * 100
+            ax.plot(range(len(yvals)), yvals, c=clrs[i], label=i)
+        
+        # figure text
+        # fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=large_font_size)
+        ax.set_xlabel("Epoch", fontsize=large_font_size)
+        ax.set_ylabel(f"{acc_type} accuracy (%)", fontsize=large_font_size)
+        ax.set_ylim([10, 100])
+        ax.legend(fontsize=small_font_size)
+        
+        plt.tight_layout()
+        
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+        
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
+        filename = f"{dataset}_{net_name}_{scheme}_{case} accuracy"
+        filename = os.path.join(sub_dir, filename)
+        print(f"Saving... {filename}")
+        plt.savefig(f"{filename}.svg")
+        plt.savefig(f"{filename}.png", dpi=300)
+
+
+
     def plot_single_accuracy(self, dataset, net_name, scheme, case, sample=0):
         """
         Plot single net accuracy trajectory with windowed z score
@@ -405,7 +476,7 @@ class AccuracyVisualizer():
 
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            [case], [scheme], self.refresh)
+            [scheme], [case], self.refresh)
 
         # filter more
         acc_df = acc_df.query(f"sample == {sample}")
@@ -424,8 +495,8 @@ class AccuracyVisualizer():
             w_idx = acc_df.epoch[w_start:e].index
 
             # compute window stats
-            w_mean = np.mean(acc_df.loc[w_idx, "acc"])
-            w_std = np.std(acc_df.loc[w_idx, "acc"])
+            w_mean = np.mean(acc_df.loc[w_idx, "val_acc"])
+            w_std = np.std(acc_df.loc[w_idx, "val_acc"])
 
             z_score = (acc - w_mean) / w_std if w_std != 0 else 0
 
@@ -438,8 +509,8 @@ class AccuracyVisualizer():
         clrs = sns.color_palette("hls", 2)
 
         # plot acc
-        yvals = acc_df["acc"].values
-        axes[0].plot(range(len(yvals)), yvals, c=clrs[0])
+        yvals = acc_df["val_acc"].values
+        ax.plot(range(len(yvals)), yvals, c=clrs[0])
 
         # plot z score
         yvals = acc_df["z"].values
@@ -486,12 +557,12 @@ class AccuracyVisualizer():
         """
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            cases, schemes, self.refresh)
+            schemes, cases, self.refresh)
 
         # process a bit
         index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
         acc_df.set_index(index_cols, inplace=True)
-        df_stats = acc_df.groupby(index_cols).agg({ "acc": [np.mean, np.std] })
+        df_stats = acc_df.groupby(index_cols).agg({ "val_acc": [np.mean, np.std] })
 
         # group
         df_groups = df_stats.groupby(index_cols[:-1])
@@ -508,8 +579,8 @@ class AccuracyVisualizer():
             group_data = df_groups.get_group(group)
 
             # error bars = 2 standard devs
-            yvals = group_data["acc"]["mean"].values * 100
-            yerr = group_data["acc"]["std"].values * 1.98 * 100
+            yvals = group_data["val_acc"]["mean"].values * 100
+            yerr = group_data["val_acc"]["std"].values * 1.98 * 100
             ax.plot(range(len(yvals)), yvals, label=f"{s} {c}", c=clr)
             ax.fill_between(range(len(yvals)), yvals - yerr, yvals + yerr,
                     alpha=0.1, facecolor=clr)
@@ -560,9 +631,11 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=False, refresh=False)
     
-    visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish7.5-tanh0.5", pred_type="max")
+    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh1")
+
+    visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "swish7.5", acc_type="train")
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
@@ -573,7 +646,8 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.5", "swish7.5-tanh0.5"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.1", "swish7.5-tanh0.1"], inset=True)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish5", "tanh1", "swish5-tanh1"], inset=True)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testrelu2", "testswish10", "testswish1", "testtanh2", "testtanh0.1", "testswish0.1-10", "testswish10-tanh0.1"], inset=False)
 
     # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)

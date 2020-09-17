@@ -246,6 +246,24 @@ class StatsProcessor():
 
         return df_stats
     
+    def load_max_acc_df_ungrouped(self, refresh=True):
+
+        # optional refresh
+        if refresh:
+            self.refresh_max_acc_df()
+
+        # load
+        sub_dir = os.path.join(self.data_dir, "dataframes/")
+        df = pd.read_csv(os.path.join(sub_dir, "max_acc_df.csv"))
+        with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
+            case_dict = json.load(json_file)
+
+        # ??
+        gidx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
+        df.set_index(gidx_cols, inplace=True)
+
+        return df, case_dict, gidx_cols
+
     def load_max_acc_df(self, refresh_df=True):
         """
         Loads dataframe with max validation accuracy for different 
@@ -268,8 +286,6 @@ class StatsProcessor():
         acc_df = pd.read_csv(os.path.join(sub_dir, "max_acc_df.csv"))
         with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
-
-        # acc_df.drop(columns="Unnamed: 0", inplace=True)
 
         # aggregate
         gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
@@ -450,7 +466,7 @@ class StatsProcessor():
         with open(filename, "w") as json_file:
             json_file.write(json_obj)
 
-    def load_accuracy_df(self, dataset, net_name, cases, schemes, refresh):
+    def load_accuracy_df(self, dataset, net_name, schemes, cases, refresh):
         """
         Loads dataframe with validation accuracy for different 
         experimental cases over epochs.
@@ -477,40 +493,6 @@ class StatsProcessor():
         df = df.query(f"case in {cases}")
 
         return df
-
-    def reduce_snapshots(self):
-
-        # walk networks directory
-        net_dir = os.path.join(self.data_dir, f"nets/")
-        for root, _, files in os.walk(net_dir):
-            
-            # only interested in locations files are saved
-            if len(files) <= 0:
-                continue
-            
-            slugs = root.split("/")
-            
-            # consider all files...
-            for filename in files:
-
-                # ...as long as they are snapshots
-                if not filename.endswith(".pt"):
-                    continue
-                
-                epoch = get_epoch_from_filename(filename)
-
-                if epoch is None:
-                    continue
-
-                if epoch % 10 == 0:
-                    continue
-                else:
-                    # delete
-                    filepath = os.path.join(root, filename)
-                    print(f"Deleting {filepath}")
-                    os.remove(filepath)
-
-
 
     def refresh_accuracy_df(self):
         """
@@ -559,13 +541,45 @@ class StatsProcessor():
                 perf_stats = stats_dict.get("perf_stats")
                 for epoch in range(len(perf_stats)):
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
-                    acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc])
+                    acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc, train_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "epoch", "acc"])  
+        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "epoch", "val_acc", "train_acc"])
         
         # save df
         self.save_df("acc_df.csv", acc_df)
+
+    def reduce_snapshots(self):
+
+        # walk networks directory
+        net_dir = os.path.join(self.data_dir, f"nets/")
+        for root, _, files in os.walk(net_dir):
+            
+            # only interested in locations files are saved
+            if len(files) <= 0:
+                continue
+            
+            slugs = root.split("/")
+            
+            # consider all files...
+            for filename in files:
+
+                # ...as long as they are snapshots
+                if not filename.endswith(".pt"):
+                    continue
+                
+                epoch = get_epoch_from_filename(filename)
+
+                if epoch is None:
+                    continue
+
+                if epoch % 10 == 0:
+                    continue
+                else:
+                    # delete
+                    filepath = os.path.join(root, filename)
+                    print(f"Deleting {filepath}")
+                    os.remove(filepath)
 
 if __name__=="__main__":
     

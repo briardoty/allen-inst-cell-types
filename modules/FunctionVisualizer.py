@@ -23,8 +23,10 @@ except:
     from util import ensure_sub_dir
 
 import matplotlib
-matplotlib.rc("xtick", labelsize=14) 
-matplotlib.rc("ytick", labelsize=14) 
+large_font_size = 20
+small_font_size = 16
+matplotlib.rc("xtick", labelsize=small_font_size) 
+matplotlib.rc("ytick", labelsize=small_font_size)
 
 class FunctionVisualizer():
     
@@ -39,27 +41,33 @@ class FunctionVisualizer():
         Plots the given activation functions on the same figure
         """
 
-        x = np.linspace(-2, 2, 1000)
+        x = np.linspace(-100, 100, 10000)
         x = torch.tensor(x)
-        fig, ax = plt.subplots(figsize=(8,6))
+        fig, ax = plt.subplots(figsize=(5,5))
+        clrs = sns.color_palette("husl", len(act_fns))
 
-        for fn in act_fns:
+        for i in range(len(act_fns)):
+            fn = act_fns[i]
             y = fn(x)
-            ax.plot(x, y, label=str(fn))
+            normalized = y / max(y)
+            ax.plot(x, y, label=str(fn), c=clrs[i], linewidth=3)
+            # ax.plot(x, normalized, label=f"{str(fn)} norm")
 
         # axes
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.axvline(x=0, color="k", linestyle="--", alpha=0.2)
 
         ax.set_xticks([-1, 0, 1])
+        ax.set_xticklabels([-1, 0, 1])
         ax.set_yticks([-1, 0, 1])
+        ax.set_yticklabels([-1, 0, 1])
         ax.set_xlim([-2, 2])
-        ax.set_ylim([-1.5, 1.5])
+        ax.set_ylim([-2, 2])
         # ax.axis("equal")
         ax.set_aspect("equal", "box")
-        ax.set_xlabel("Input", fontsize=16)
-        ax.set_ylabel("Activation", fontsize=16)
-        ax.legend(fontsize=14)
+        ax.set_xlabel("Input", fontsize=large_font_size)
+        ax.set_ylabel("Activation", fontsize=large_font_size)
+        ax.legend(fontsize=small_font_size, loc="upper left")
         plt.tight_layout()
 
         # optional saving
@@ -72,8 +80,8 @@ class FunctionVisualizer():
         fn_names = " & ".join([str(fn) for fn in act_fns])
         filename = f"{fn_names}"
         print(f"Saving... {filename}")
-        plt.savefig(os.path.join(sub_dir, f"{filename}.svg"), dpi=500)
-        plt.savefig(os.path.join(sub_dir, f"{filename}.png"), dpi=500)
+        plt.savefig(os.path.join(sub_dir, f"{filename}.svg"))
+        plt.savefig(os.path.join(sub_dir, f"{filename}.png"), dpi=300)
 
     def plot_act_fn_mapping(self, act_fn1, act_fn2):
         """
@@ -128,10 +136,6 @@ if __name__=="__main__":
     visualizer = FunctionVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=True)
 
-    # visualizer.plot_activation_fns([Sigfreud(1), Sigfreud(1.5), Sigfreud(2.), Sigfreud(4.)])
-    # visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
-    visualizer.plot_activation_fns([Tanhe(0.1), Tanhe(1), Tanhe(5)])
-    # visualizer.plot_activation_fns([Renlu(0.5), Renlu(1), Renlu(1.5)])
-    # visualizer.plot_activation_fns([torch.relu, Swish(3), Tanhe(1)])
+    visualizer.plot_activation_fns([Tanh(1), Swish(5)])
 
     # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)
