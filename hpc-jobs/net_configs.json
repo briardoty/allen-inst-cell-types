@@ -8,41 +8,6 @@
     },
 
     "test": {
-        "testrelu": {
-            "act_fns": ["relu"],
-            "act_fn_params": [null],
-            "find_lr": true
-        },
-        "testswish10": {
-            "act_fns": ["swish"],
-            "act_fn_params": [10],
-            "find_lr": true
-        },
-        "testswish1": {
-            "act_fns": ["swish"],
-            "act_fn_params": [1],
-            "find_lr": true
-        },
-        "testtanh2": {
-            "act_fns": ["tanh"],
-            "act_fn_params": [2],
-            "find_lr": true
-        },
-        "testtanh0.1": {
-            "act_fns": ["tanh"],
-            "act_fn_params": [0.1],
-            "find_lr": true
-        },
-        "testswish0.1-10": {
-            "act_fns": ["swish", "swish"],
-            "act_fn_params": [0.1, 10],
-            "find_lr": true
-        },
-        "testswish10-tanh0.1": {
-            "act_fns": ["swish", "tanh"],
-            "act_fn_params": [10, 0.1],
-            "find_lr": true
-        }
     },
 
     "component-swish": {
@@ -81,6 +46,10 @@
             "act_fns": ["tanh"],
             "act_fn_params": [0.01]
         },
+        "tanh0.05": {
+            "act_fns": ["tanh"],
+            "act_fn_params": [0.05]
+        },
         "tanh0.1": {
             "act_fns": ["tanh"],
             "act_fn_params": [0.1]
@@ -96,14 +65,6 @@
         "tanh2": {
             "act_fns": ["tanh"],
             "act_fn_params": [2]
-        },
-        "tanh5": {
-            "act_fns": ["tanh"],
-            "act_fn_params": [5]
-        },
-        "tanh10": {
-            "act_fns": ["tanh"],
-            "act_fn_params": [10]
         }
     },
 
@@ -195,6 +156,10 @@
     },
 
     "within-tanh": {
+        "tanh0.01-0.05": {
+            "act_fns": ["tanh", "tanh"],
+            "act_fn_params": [0.01, 0.05]
+        },
         "tanh0.01-0.1": {
             "act_fns": ["tanh", "tanh"],
             "act_fn_params": [0.01, 0.1]
@@ -210,6 +175,22 @@
         "tanh0.01-2": {
             "act_fns": ["tanh", "tanh"],
             "act_fn_params": [0.01, 2]
+        },
+        "tanh0.05-0.1": {
+            "act_fns": ["tanh", "tanh"],
+            "act_fn_params": [0.05, 0.1]
+        },
+        "tanh0.05-0.5": {
+            "act_fns": ["tanh", "tanh"],
+            "act_fn_params": [0.05, 0.5]
+        },
+        "tanh0.05-1": {
+            "act_fns": ["tanh", "tanh"],
+            "act_fn_params": [0.05, 1]
+        },
+        "tanh0.05-2": {
+            "act_fns": ["tanh", "tanh"],
+            "act_fn_params": [0.05, 2]
         },
         "tanh0.1-0.5": {
             "act_fns": ["tanh", "tanh"],
@@ -237,10 +218,41 @@
         }
     },
     
+    "cross-relu-tanh": {
+        "relu-tanh0.01": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 0.01]
+        },
+        "relu-tanh0.05": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 0.05]
+        },
+        "relu-tanh0.1": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 0.1]
+        },
+        "relu-tanh0.5": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 0.5]
+        },
+        "relu-tanh1": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh2": {
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 2]
+        }
+    },
+
     "cross-swish-tanh": {
         "swish0.1-tanh0.01": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [0.1, 0.01]
+        },
+        "swish0.1-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [0.1, 0.05]
         },
         "swish0.1-tanh0.1": {
             "act_fns": ["swish", "tanh"],
@@ -262,6 +274,10 @@
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [0.5, 0.01]
         },
+        "swish0.5-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [0.5, 0.05]
+        },
         "swish0.5-tanh0.1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [0.5, 0.1]
@@ -281,6 +297,10 @@
         "swish1-tanh0.01": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [1, 0.01]
+        },
+        "swish1-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [1, 0.05]
         },
         "swish1-tanh0.1": {
             "act_fns": ["swish", "tanh"],
@@ -302,6 +322,10 @@
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [2, 0.01]
         },
+        "swish2-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 0.05]
+        },
         "swish2-tanh0.1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [2, 0.1]
@@ -321,6 +345,10 @@
         "swish5-tanh0.01": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.01]
+        },
+        "swish5-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.05]
         },
         "swish5-tanh0.1": {
             "act_fns": ["swish", "tanh"],
@@ -342,6 +370,10 @@
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [7.5, 0.01]
         },
+        "swish7.5-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.05]
+        },
         "swish7.5-tanh0.1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [7.5, 0.1]
@@ -362,6 +394,10 @@
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [10, 0.01]
         },
+        "swish10-tanh0.05": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.05]
+        },
         "swish10-tanh0.1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [10, 0.1]
@@ -380,7 +416,7 @@
         }
     },
 
-    "biodistr1": {
+    "biodistr-": {
         "relu-tanh1": {
             "n_repeat": [9, 1],
             "act_fns": ["relu", "tanh"],
