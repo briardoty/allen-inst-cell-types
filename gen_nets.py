@@ -78,13 +78,13 @@ def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         mean_lr = np.mean(lr_arr)
         std_dev_lr = np.std(lr_arr)
         print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
-        for net_filepath in net_filepaths:
+        for net_filepath, sample_lr in zip(net_filepaths, lr_arr):
             
             # load snapshot
             manager.load_net_snapshot_from_path(net_filepath)
 
             # append lr
-            manager.initial_lr = mean_lr
+            manager.initial_lr = sample_lr
 
             # re-save snapshot
             manager.save_net_snapshot()
