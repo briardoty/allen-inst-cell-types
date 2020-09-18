@@ -291,8 +291,8 @@ class StatsProcessor():
         gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
-              "max_pred": [np.mean],
-              "linear_pred": [np.mean],
+              "max_pred": [np.mean, np.std],
+              "linear_pred": [np.mean, np.std],
               "max_pred_p_val": np.mean,
               "linear_pred_p_val": np.mean })
 

@@ -77,9 +77,9 @@ class AccuracyVisualizer():
             start = x[-1] + 2
             x = [i for i in range(start, start + len(yvals))]
 
-            ax.plot([i] * len(yvals), yvals, ".", label=cc,
+            axes[0].plot([i] * len(yvals), yvals, ".", label=cc,
                 c=c_clrs[i], markersize=markersize, alpha=0.6)
-            ax.plot([i-width, i+width], [np.mean(yvals), np.mean(yvals)], 
+            axes[0].plot([i-width, i+width], [np.mean(yvals), np.mean(yvals)], 
                 linestyle=":", label=cc, c=c_clrs[i], linewidth=lw)
             
             c_labels[i] = cc
@@ -104,9 +104,9 @@ class AccuracyVisualizer():
             handles[pred_type] = h[0]
 
         # legend stuff
-        handles["actual"] = ax.plot(-100, ypred, "k.", 
+        handles["actual"] = axes[0].plot(-100, ypred, "k.", 
             markersize=markersize, alpha=0.5)[0]
-        handles["mean"] = ax.plot(-100, ypred, "k:", 
+        handles["mean"] = axes[0].plot(-100, ypred, "k:", 
             linewidth=lw, alpha=0.5)[0]
 
         # set figure text
@@ -114,25 +114,25 @@ class AccuracyVisualizer():
         #     fontsize=20)
         matplotlib.rc("xtick", labelsize=small_font_size)
         matplotlib.rc("ytick", labelsize=small_font_size)
-        ax.set_xlabel("Component", fontsize=16, 
+        axes[0].set_xlabel("Component", fontsize=16, 
             labelpad=10)
         axes[1].set_xlabel("Mixed", fontsize=large_font_size, 
             labelpad=10)
-        ax.set_ylabel("Final validation accuracy (%)", 
+        axes[0].set_ylabel("Final validation accuracy (%)", 
             fontsize=large_font_size, labelpad=10)
-        ax.set_xlim([-0.5, len(component_cases) - 0.5])
+        axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
         axes[1].set_xlim([-0.5, 0.5])
-        ax.set_xticks(list(c_labels.keys()))
-        ax.set_yticklabels(list(ax.get_yticks()), fontsize=small_font_size)
-        ax.set_xticklabels(list(c_labels.values()), fontsize=small_font_size)
+        axes[0].set_xticks(list(c_labels.keys()))
+        axes[0].set_yticklabels(list(axes[0].get_yticks()), fontsize=small_font_size)
+        axes[0].set_xticklabels(list(c_labels.values()), fontsize=small_font_size)
         axes[1].set_xticks([0])
         axes[1].set_xticklabels([mixed_case], fontsize=small_font_size)
         plt.tight_layout()
         # plt.tight_layout(rect=[0, 0, 1, 0.92])
 
         # shrink axes...
-        box1 = ax.get_position()
-        ax.set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
+        box1 = axes[0].get_position()
+        axes[0].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
         box2 = axes[1].get_position()
         axes[1].set_position([box1.x0 + box1.width, box2.y0, box2.width * 0.4, box2.height])
 
@@ -154,7 +154,7 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.png", dpi=300)
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
-        pred_type="max", cross_family=None):
+        pred_type="max", cross_family=None, pred_std=False):
         """
         Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
@@ -180,7 +180,8 @@ class AccuracyVisualizer():
         
         # determine each label length for alignment
         lengths = {}
-        for i in range(4):
+        label_idxs = [1, 3]
+        for i in label_idxs:
             lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
 
         # plot
@@ -226,22 +227,28 @@ class AccuracyVisualizer():
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=6, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                        linewidth=6, c='k', alpha=.1)
+                        linewidth=6, c="k", alpha=.1)
                 else:
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
                         c=clr, linewidth=6, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
-                        linewidth=6, c='k', alpha=.1)
+                        linewidth=6, c="k", alpha=.1)
                 h = plt.plot(perf, i, c=clr, marker="o", alpha=0.5)
                 if handles.get(n) is None:
                     handles[n] = h[0]
+
+            # optionally, plot the 95% ci for the prediction
+            if pred_std:
+                pred_err = sort_df.loc[midx][f"{pred_type}_pred"]["std"] * 1.98 * 100
+                plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
+                        c="k", linewidth=6, alpha=.2)
 
             # BH corrected significance
             sig_arr.append(sort_df.loc[midx, f"{pred_type}_pred_rej_h0"].values[0])
 
             # make an aligned label
-            aligned = d.ljust(lengths[0]) + n.ljust(lengths[1]) +\
-                s.ljust(lengths[2]) + c.ljust(lengths[3])
+            label_arr = [d, n, s, c]
+            aligned = "".join([label_arr[i].ljust(lengths[i]) for i in label_idxs])
             ylabels[i] = aligned
 
             # track vars
@@ -265,8 +272,8 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
-        plt.title("Mixed network performance relative to predicted performance", 
-            fontsize=20, pad=20)
+        # plt.title("Mixed network performance relative to predicted performance", 
+        #     fontsize=20, pad=20)
         plt.xlabel(f"Accuracy relative to {pred_type} prediction (%)", 
             fontsize=16, labelpad=10)
         plt.ylabel("Network configuration", fontsize=16, labelpad=10)
@@ -631,11 +638,11 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
-    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh1")
+    # visualizer.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish5-tanh2")
 
-    visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "swish7.5", acc_type="train")
+    # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "swish2", acc_type="val")
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
@@ -647,17 +654,18 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.1", "swish7.5-tanh0.1"], inset=True)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish5", "tanh1", "swish5-tanh1"], inset=True)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "swish10"], inset=True)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testrelu2", "testswish10", "testswish1", "testtanh2", "testtanh0.1", "testswish0.1-10", "testswish10-tanh0.1"], inset=False)
 
     # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
-    # visualizer.plot_predictions("cifar10",
-    #     ["vgg11"],
-    #     ["adam"], 
-    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
-    #     pred_type="max",
-    #     cross_family=None)
+    visualizer.plot_predictions("cifar10",
+        ["vgg11", "sticknet8"],
+        ["adam"], 
+        excl_arr=["spatial", "tanhe5", "tanhe0.1-5", "test", "tanh2"],
+        pred_type="linear",
+        cross_family=True,
+        pred_std=False)
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],
