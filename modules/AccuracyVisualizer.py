@@ -15,9 +15,9 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 try:
-    from .StatsProcessor import StatsProcessor, get_component_cases
+    from .AccStatProcessor import AccStatProcessor, get_component_cases
 except:
-    from StatsProcessor import StatsProcessor, get_component_cases
+    from AccStatProcessor import AccStatProcessor, get_component_cases
 
 try:
     from .util import ensure_sub_dir
@@ -39,7 +39,7 @@ class AccuracyVisualizer():
         self.save_fig = save_fig
         self.refresh = refresh
         
-        self.stats_processor = StatsProcessor(data_dir, n_classes)
+        self.stats_processor = AccStatProcessor(data_dir, n_classes)
 
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
@@ -146,7 +146,7 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/{scheme}/final acc comparison/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/final acc comparison/")
         filename = f"{mixed_case} comparison"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
@@ -180,7 +180,7 @@ class AccuracyVisualizer():
         
         # determine each label length for alignment
         lengths = {}
-        label_idxs = [1, 3]
+        label_idxs = [3]
         for i in label_idxs:
             lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
 
@@ -291,7 +291,7 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/prediction")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
@@ -407,7 +407,7 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/scatter")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-scatter"
@@ -460,7 +460,7 @@ class AccuracyVisualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/accuracy/")
         filename = f"{dataset}_{net_name}_{scheme}_{case} accuracy"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
@@ -539,10 +539,8 @@ class AccuracyVisualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
-        case_names = ", ".join(cases)
-        schemes = ", ".join(schemes)
-        filename = f"{dataset}_{net_name}_{schemes}_{case_names} accuracy"
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/accuracy/")
+        filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample} accuracy"
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(f"{filename}.svg")
@@ -625,7 +623,7 @@ class AccuracyVisualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{dataset}/{net_name}/accuracy/")
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/accuracy/")
         case_names = ", ".join(cases)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_name}_{schemes}_{case_names} accuracy"
@@ -640,17 +638,13 @@ if __name__=="__main__":
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=True, refresh=False)
     
-    # visualizer.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish5-tanh2")
+    # visualizer.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.5")
 
-    # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "swish2", acc_type="val")
+    # visualizer.plot_all_samples_accuracy("cifar10", "sticknet8", "adam", "swish7.5", acc_type="val")
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanhe1", "swish1-tanhe1"])
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish5", "tanhe0.5", "swish5-tanhe0.5"])
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish0.1", "tanhe5", "swish0.1-tanhe5"])
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["relu", "swish1", "tanhe1", "swish1-tanhe1"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish10-tanhe1", "relu-spatial", "swish10-tanhe1-spatial"])
+    visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["swish5", "tanh0.01", "swish5-tanh0.01"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.1", "swish7.5-tanh0.1"], inset=True)
@@ -659,13 +653,13 @@ if __name__=="__main__":
 
     # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
-    visualizer.plot_predictions("cifar10",
-        ["vgg11", "sticknet8"],
-        ["adam"], 
-        excl_arr=["spatial", "tanhe5", "tanhe0.1-5", "test", "tanh2"],
-        pred_type="linear",
-        cross_family=True,
-        pred_std=False)
+    # visualizer.plot_predictions("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"],
+    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5", "test"],
+    #     pred_type="max",
+    #     cross_family=True,
+    #     pred_std=True)
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],
