@@ -642,6 +642,8 @@ if __name__=="__main__":
 
     # visualizer.plot_all_samples_accuracy("cifar10", "sticknet8", "adam", "swish7.5", acc_type="val")
 
+    # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
+
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
     visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["swish5", "tanh0.01", "swish5-tanh0.01"])
@@ -650,8 +652,6 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.1", "swish7.5-tanh0.1"], inset=True)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "swish10"], inset=True)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["testrelu", "testrelu2", "testswish10", "testswish1", "testtanh2", "testtanh0.1", "testswish0.1-10", "testswish10-tanh0.1"], inset=False)
-
-    # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
     # visualizer.plot_predictions("cifar10",
     #     ["vgg11", "sticknet8"],

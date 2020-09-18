@@ -96,6 +96,60 @@ class AccStatProcessor():
         self.n_classes = n_classes
         self.exclude_slug = "(exclude)"
     
+    def load_learning_df(self, pct, refresh=True):
+        """
+
+        """
+        # optional refresh
+        if refresh:
+            self.refresh_accuracy_df()
+
+        # load
+        sub_dir = os.path.join(self.data_dir, "dataframes/")
+        acc_df = pd.read_csv(os.path.join(sub_dir, "acc_df.csv"))
+        acc_df.drop(columns="Unnamed: 0", inplace=True)
+
+        # TODO: separate the refresh code for this from max_acc_df???
+        with open(os.path.join(sub_dir, "case_dict.json"), "r") as json_file:
+            case_dict = json.load(json_file)
+
+        # optional refresh
+        if refresh:
+            self.refresh_learning_df(acc_df, pct)
+
+        # load
+        learning_df = pd.read_csv(os.path.join(sub_dir, "learning_df.csv"))
+        learning_df.drop(columns="Unnamed: 0", inplace=True)
+
+        # TODO: process? aggregate? etc.
+
+        return learning_df, case_dict
+        
+    def refresh_learning_df(self, acc_df, pct):
+
+        learning_arr = []
+
+        index_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
+        acc_df.set_index(index_cols, inplace=True)
+
+        for idx in acc_df.index.unique():
+
+            # identify first epoch to surpass pct% of peak acc
+            epochs = acc_df.loc[idx]
+            peak_acc = max(epochs["val_acc"])
+            pct_acc = (pct / 100.) * peak_acc
+            
+            # find that epoch
+            i_first = next(x for x, val in enumerate(epochs["val_acc"]) if val > pct_acc)
+
+            # append to df array
+            learning_arr.append(idx + (peak_acc, i_first))
+
+        # make and save df
+        learning_df = pd.DataFrame(learning_arr, 
+            columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc", "epoch_past_pct"])
+        self.save_df("learning_df.csv", learning_df)
+
     def load_max_acc_df_ungrouped(self, refresh=True):
 
         # optional refresh

@@ -41,7 +41,7 @@ class LearningVisualizer():
         """
 
         # pull data
-        df, case_dict = self.stats_processor.load_learning_df(self.refresh)
+        df, case_dict = self.stats_processor.load_learning_df(pct, self.refresh)
 
         # plot
 
@@ -312,8 +312,8 @@ class LearningVisualizer():
 
 if __name__=="__main__":
     
-    visualizer = LearningVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
+    vis = LearningVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=True, refresh=False)
 
-
+    vis.plot_learning_speed("cifar10", "sticknet8", "adam", "swish7.5-tanh0.5", pct=90)
 
