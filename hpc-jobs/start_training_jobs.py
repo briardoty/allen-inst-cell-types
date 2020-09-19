@@ -42,7 +42,17 @@ def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma,
     # script, run_params and job_settings
     with open("job_params.json", "r") as json_file:
         job_params = json.load(json_file)
+
+    with open("net_configs.json", "r") as json_file:
+        net_configs = json.load(json_file)
     
+    # get cases in current groups
+    cases = set()
+    for group in config_groups:
+        configs = net_configs[group]
+        for case in configs.keys():
+            cases.add(case)
+
     job_params = job_params[job_title]
     script = job_params["script"]
 
@@ -80,10 +90,14 @@ def main(net_name, config_groups, scheme, resume, lr, lr_step_size, lr_gamma,
         if not scheme in slugs:
             continue
 
-        # only interested in the given groups
+        # only interested in the given groups...
         if not any(g in slugs for g in config_groups):
             continue
         
+        # ...and their cases
+        if not any(c in slugs for c in cases):
+            continue
+
         # start from first or last epoch
         if resume:
             net_filename = get_last_epoch(files)
