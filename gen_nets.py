@@ -84,7 +84,7 @@ def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
             manager.load_net_snapshot_from_path(net_filepath)
 
             # append lr
-            manager.initial_lr = sample_lr
+            manager.initial_lr = mean_lr
 
             # re-save snapshot
             manager.save_net_snapshot()
