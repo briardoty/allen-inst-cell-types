@@ -95,6 +95,7 @@ class AccStatProcessor():
         self.data_dir = data_dir
         self.n_classes = n_classes
         self.exclude_slug = "(exclude)"
+        self.pct = 90
     
     def load_learning_df(self, pct, refresh=True):
         """
@@ -198,21 +199,25 @@ class AccStatProcessor():
               "max_pred": [np.mean, np.std],
               "linear_pred": [np.mean, np.std],
               "max_pred_p_val": np.mean,
-              "linear_pred_p_val": np.mean })
+              "linear_pred_p_val": np.mean,
+
+              "epochs_past": [np.mean, np.std],
+              "max_pred_epochs_past": [np.mean, np.std],
+              "linear_pred_epochs_past": [np.mean, np.std],
+              "max_pred_epochs_past_p_val": np.mean,
+              "linear_pred_epochs_past_p_val": np.mean })
 
         # benjamini-hochberg correction
+        to_correct_arr = ["max_pred", "linear_pred", "max_pred_epochs_past", "linear_pred_epochs_past"]
         mixed_idx = df_stats.query("is_mixed == True").index
-        pvals = df_stats.loc[mixed_idx]["max_pred_p_val","mean"].values
-        rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
-        df_stats.loc[mixed_idx, "max_pred_p_val_corr"] = pval_corr
-        df_stats.loc[mixed_idx, "max_pred_rej_h0"] = rej_h0
+        for to_correct in to_correct_arr:
 
-        pvals = df_stats.loc[mixed_idx]["linear_pred_p_val","mean"].values
-        rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
-        df_stats.loc[mixed_idx, "linear_pred_p_val_corr"] = pval_corr
-        df_stats.loc[mixed_idx, "linear_pred_rej_h0"] = rej_h0
+            pvals = df_stats.loc[mixed_idx][f"{to_correct}_p_val","mean"].values
+            rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
+            df_stats.loc[mixed_idx, f"{to_correct}_p_val_corr"] = pval_corr
+            df_stats.loc[mixed_idx, f"{to_correct}_rej_h0"] = rej_h0
 
-        df_stats.drop(columns=["max_pred_p_val", "linear_pred_p_val"], inplace=True)
+        df_stats.drop(columns=[f"{to_correct}_p_val" for to_correct in to_correct_arr], inplace=True)
 
         return df_stats, case_dict, gidx_cols
 
@@ -261,17 +266,25 @@ class AccStatProcessor():
                         "act_fn_params": modified_layers.get("act_fn_params")
                     }
 
+                # array containing acc/loss
                 perf_stats = stats_dict.get("perf_stats")
+
+                # find peak accuracy
                 try:
                     i_max = np.argmax(perf_stats[:,0])
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_max]
-                    acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc])
+
+                    # for learning speed
+                    pct_acc = (self.pct / 100.) * val_acc
+                    i_first = next(x for x, val in enumerate(perf_stats[:,0]) if val > pct_acc)
+
+                    acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc, i_first])
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc", "epochs_past"])
 
         # process
         # 1. mark mixed nets
@@ -283,6 +296,8 @@ class AccStatProcessor():
         acc_df["linear_pred"] = np.nan
         acc_df["max_pred_p_val"] = np.nan
         acc_df["linear_pred_p_val"] = np.nan
+        acc_df["max_pred_epochs_past_p_val"] = np.nan
+        acc_df["linear_pred_epochs_past_p_val"] = np.nan
 
         # 2.9. multi-index
         midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
@@ -316,8 +331,9 @@ class AccStatProcessor():
             for i in range(len(mixed_case_rows)):
                 mixed_case_row = mixed_case_rows.iloc[i]
 
-                # choose component row accs
+                # choose component row accs/learning epochs
                 c_accs = []
+                c_epochs = []
                 for cc in component_cases:
                     c_row = component_rows \
                         .query(f"case == '{cc}'") \
@@ -327,6 +343,7 @@ class AccStatProcessor():
                         break
                     c_row = c_row.sample()
                     c_accs.append(c_row.max_val_acc.values[0])
+                    c_epochs.append(c_row.epochs_past.values[0])
 
                     # mark component row as used in prediction
                     component_rows.at[c_row.index.values[0], "used"] = True
@@ -336,21 +353,21 @@ class AccStatProcessor():
 
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
+                
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred_epochs_past"] = np.max(c_epochs)
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
 
             # significance
-            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "max_pred"])
-            if t < 0:
-                p = 1. - p / 2.
-            else:
-                p = p / 2.
-            acc_df.loc[(d, n, sch, c), "max_pred_p_val"] = p
+            metrics = ["max_val_acc", "max_val_acc", "epochs_past", "epochs_past"]
+            pred_cols = ["max_pred", "linear_pred", "max_pred_epochs_past", "linear_pred_epochs_past"]
+            for metric, col in zip(metrics, pred_cols):
 
-            t, p = ttest_ind(acc_df.at[(d, n, sch, c), "max_val_acc"], acc_df.at[(d, n, sch, c), "linear_pred"])
-            if t < 0:
-                p = 1. - p / 2.
-            else:
-                p = p / 2.
-            acc_df.loc[(d, n, sch, c), "linear_pred_p_val"] = p
+                t, p = ttest_ind(acc_df.at[(d, n, sch, c), metric], acc_df.at[(d, n, sch, c), col])
+                if t < 0:
+                    p = 1. - p / 2.
+                else:
+                    p = p / 2.
+                acc_df.loc[(d, n, sch, c), f"{col}_p_val"] = p
 
         # save things
         self.save_df("max_acc_df.csv", acc_df)

@@ -41,9 +41,10 @@ class LearningVisualizer():
         """
 
         # pull data
-        df, case_dict = self.stats_processor.load_learning_df(pct, self.refresh)
+        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df(self.refresh)
 
         # plot
+        x = 1
 
 
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
