@@ -66,7 +66,7 @@ def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
             if scheme == "sgd":
                 lr_low, lr_high = 1e-7, 0.1
             elif scheme == "adam":
-                if net_name == "vgg11"
+                if net_name == "vgg11":
                     lr_low, lr_high = 1e-7, 0.005
                 elif net_name == "sticknet8":
                     lr_low, lr_high = 1e-7, 0.05
