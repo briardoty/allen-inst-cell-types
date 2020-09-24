@@ -512,6 +512,56 @@
         }
     },
 
+
+
+    "ratios-swish2-tanh2": {
+        "swish2-tanh2-ratio91": {
+            "n_repeat": [9, 1],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio82": {
+            "n_repeat": [8, 2],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio73": {
+            "n_repeat": [7, 3],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio64": {
+            "n_repeat": [6, 4],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio55": {
+            "n_repeat": [5, 5],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio46": {
+            "n_repeat": [4, 6],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio37": {
+            "n_repeat": [3, 7],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio28": {
+            "n_repeat": [2, 8],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        },
+        "swish2-tanh2-ratio19": {
+            "n_repeat": [1, 9],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [2, 2]
+        }
+    },
+
     
 
 
