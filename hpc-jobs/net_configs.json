@@ -416,11 +416,99 @@
         }
     },
 
-    "biodistr-": {
-        "relu-tanh1": {
+    "ratios-relu-tanh1": {
+        "relu-tanh1-ratio91": {
             "n_repeat": [9, 1],
             "act_fns": ["relu", "tanh"],
             "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio82": {
+            "n_repeat": [8, 2],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio73": {
+            "n_repeat": [7, 3],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio64": {
+            "n_repeat": [6, 4],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio55": {
+            "n_repeat": [5, 5],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio46": {
+            "n_repeat": [4, 6],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio37": {
+            "n_repeat": [3, 7],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio28": {
+            "n_repeat": [2, 8],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        },
+        "relu-tanh1-ratio19": {
+            "n_repeat": [1, 9],
+            "act_fns": ["relu", "tanh"],
+            "act_fn_params": [null, 1]
+        }
+    },
+
+    "ratios-swish5-tanh0.5": {
+        "swish5-tanh0.5-ratio91": {
+            "n_repeat": [9, 1],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio82": {
+            "n_repeat": [8, 2],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio73": {
+            "n_repeat": [7, 3],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio64": {
+            "n_repeat": [6, 4],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio55": {
+            "n_repeat": [5, 5],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio46": {
+            "n_repeat": [4, 6],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio37": {
+            "n_repeat": [3, 7],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio28": {
+            "n_repeat": [2, 8],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-ratio19": {
+            "n_repeat": [1, 9],
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
         }
     },
 
