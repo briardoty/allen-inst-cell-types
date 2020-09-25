@@ -153,15 +153,11 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")
         plt.savefig(f"{filename}.png", dpi=300)
 
-    def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
-        pred_type="max", cross_family=None, pred_std=False):
-        """
-        Plot a single axis figure of offset from predicted max accuracy for
-        the given mixed cases.
-        """
+    def get_prediction_df(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None):
 
         # pull data
-        df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
+        df, case_dict, _ = self.stats_processor.load_max_acc_df(self.refresh)
 
         # performance relative to predictions
         df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]["mean"]
@@ -176,7 +172,25 @@ class AccuracyVisualizer():
             df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
+
+        # filter vgg tanh2 because it's terrible
+        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+            engine="python")
+
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
+
+        return sort_df, case_dict
+
+    def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None, pred_std=False):
+        """
+        Plot a single axis figure of offset from predicted max accuracy for
+        the given mixed cases.
+        """
+
+        # pull data
+        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, excl_arr, 
+            pred_type, cross_family)
         
         # determine each label length for alignment
         lengths = {}
@@ -195,7 +209,14 @@ class AccuracyVisualizer():
         i = 0
         xmax = 0
         xmin = 0
-        for midx in sort_df.index.values:
+        for midx, row in sort_df.iterrows():
+
+            # stats
+            perf = row[f"acc_vs_{pred_type}"].values[0] * 100
+            err = row["max_val_acc"]["std"] * 1.98 * 100
+
+            xmin = min(xmin, perf - err)
+            xmax = max(xmax, perf + err)
 
             # dataset, net, scheme, case, mixed, cross-family
             d, n, s, c, m, cf = midx
@@ -205,46 +226,40 @@ class AccuracyVisualizer():
             if np.mod(i, 2) == 0:	
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
 
-            # stats
-            perf = sort_df.loc[midx][f"acc_vs_{pred_type}"].values[0] * 100
-            err = sort_df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
-
-            xmin = min(xmin, perf - err)
-            xmax = max(xmax, perf + err)
-
             # plot "good" and "bad"
+            lw = 6
             if perf - err > 0:
                 if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                        c=clr, linewidth=6, alpha=.8)
+                        c=clr, linewidth=lw, alpha=.8)
                 else:
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
-                        c=clr, linewidth=6, alpha=.8)
+                        c=clr, linewidth=lw, alpha=.8)
                 h = plt.plot(perf, i, c=clr, marker="o")
                 handles[n] = h[0]
             else:
                 if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                        c=clr, linewidth=6, alpha=.2)
+                        c=clr, linewidth=lw, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
-                        linewidth=6, c="k", alpha=.1)
+                        linewidth=lw, c="k", alpha=.1)
                 else:
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
-                        c=clr, linewidth=6, alpha=.2)
+                        c=clr, linewidth=lw, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
-                        linewidth=6, c="k", alpha=.1)
+                        linewidth=lw, c="k", alpha=.1)
                 h = plt.plot(perf, i, c=clr, marker="o", alpha=0.5)
                 if handles.get(n) is None:
                     handles[n] = h[0]
 
             # optionally, plot the 95% ci for the prediction
             if pred_std:
-                pred_err = sort_df.loc[midx][f"{pred_type}_pred"]["std"] * 1.98 * 100
+                pred_err = row[f"{pred_type}_pred"]["std"] * 1.98 * 100
                 plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
                         c="k", linewidth=6, alpha=.2)
 
             # BH corrected significance
-            sig_arr.append(sort_df.loc[midx, f"{pred_type}_pred_rej_h0"].values[0])
+            sig_arr.append(row[f"{pred_type}_pred_rej_h0"].values[0])
 
             # make an aligned label
             label_arr = [d, n, s, c]
@@ -272,17 +287,16 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
-        # plt.title("Mixed network performance relative to predicted performance", 
-        #     fontsize=20, pad=20)
         plt.xlabel(f"Accuracy relative to {pred_type} prediction (%)", 
-            fontsize=16, labelpad=10)
-        plt.ylabel("Network configuration", fontsize=16, labelpad=10)
+            fontsize=28, labelpad=10)
+        plt.ylabel("Network configuration", fontsize=28, labelpad=10)
         plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
-        plt.ylim(-0.5, i - 0.5)
-        plt.legend(handles.values(), handles.keys(), fontsize=14, loc="upper left")
-        plt.xlim([xmin - xmax/10., xmax + xmax/10.])
         yax = plt.gca().get_yaxis()
         yax.set_tick_params(pad=max_length*7)
+        plt.ylim(-0.5, i + 0.5)
+        plt.legend(handles.values(), handles.keys(), fontsize=24, loc="upper left")
+        plt.xlim([xmin - xmax/10., xmax + xmax/10.])
+        
         plt.tight_layout()
 
         # optional saving
@@ -302,7 +316,79 @@ class AccuracyVisualizer():
         filename = os.path.join(sub_dir, filename)
         print(f"Saving... {filename}")
         plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)  
+        plt.savefig(f"{filename}.png", dpi=300)
+
+    def plot_prediction_supplements(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None):
+
+        # pull data
+        df, _ = self.get_prediction_df(dataset, net_names, schemes, excl_arr, 
+            pred_type, cross_family)
+
+        # filter to just p-val < 0.05
+        df = df[df.max_pred_rej_h0 == True]
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction")
+
+        # one for within/cross family
+        fig, ax = plt.subplots(figsize=(5,5))
+        x = 0
+        cf_vals = df.index.unique(level=5)
+        clrs = sns.color_palette("Set2", len(cf_vals))
+        labels = []
+        ticks = []
+        for i in range(len(cf_vals)):
+
+            cf = cf_vals[i]
+            yvals = df.query(f"cross_fam == {cf}")[f"acc_vs_{pred_type}"]
+            ymean = np.mean(yvals)
+            label = "Cross-family" if cf else "Within-family"
+            labels.append(label)
+            ticks.append(x)
+            ax.bar(x, ymean, 1/len(cf_vals), label=label, color=clrs[i])
+            x += 0.5
+
+        ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
+        ax.set_xlabel("Mixed net type", fontsize=large_font_size)
+        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(labels)
+        plt.tight_layout()
+
+        filename = os.path.join(sub_dir, "supp1")
+        print(f"Saving... {filename}")
+        plt.savefig(f"{filename}.svg")  
+        plt.savefig(f"{filename}.png", dpi=300)
+
+        # one for network
+        fig, ax = plt.subplots(figsize=(5,5))
+        x = 0
+        net_vals = list(df.index.unique(level=1))
+        net_vals.reverse()
+        clrs = sns.color_palette("husl", len(net_vals))
+        labels = []
+        ticks = []
+        for i in range(len(net_vals)):
+
+            net = net_vals[i]
+            yvals = df.query(f"net_name == '{net}'")[f"acc_vs_{pred_type}"]
+            ymean = np.mean(yvals)
+            labels.append(net)
+            ticks.append(x)
+            ax.bar(x, ymean, 1/len(net_vals), label=net, color=clrs[i])
+            x += 0.5
+
+        ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
+        ax.set_xlabel("Network", fontsize=large_font_size)
+        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(labels)
+        plt.tight_layout()
+
+        filename = os.path.join(sub_dir, "supp2")
+        print(f"Saving... {filename}")
+        plt.savefig(f"{filename}.svg")  
+        plt.savefig(f"{filename}.png", dpi=300)
 
     def scatter_acc(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -349,8 +435,8 @@ class AccuracyVisualizer():
             y_err = df.loc[midx]["max_val_acc"]["std"] * 1.98 * 100
 
             # prediction
-            x_pred = df.loc[midx][f"{pred_type}_pred"].values[0] * 100
-            x_err = df.loc[midx][f"{pred_type}_std"].values[0] * 1.98 * 100
+            x_pred = df.loc[midx][f"{pred_type}_pred"]["mean"] * 100
+            x_err = df.loc[midx][f"{pred_type}_pred"]["std"] * 100 * 1.98
             
             # plot
             h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=10,
@@ -389,36 +475,81 @@ class AccuracyVisualizer():
             handles["within-family"] = h2[0]
 
         # set figure text
-        ax.set_title(f"{pred_type.capitalize()} prediction vs actual mixed network accuracy", 
-            fontsize=20, pad=20)
-        ax.set_xlabel(f"{pred_type.capitalize()} predicted accuracy (%)", fontsize=16)
-        ax.set_ylabel("Actual accuracy (%)", fontsize=16)
+        ax.set_xlabel(f"{pred_type.capitalize()} predicted accuracy (%)", fontsize=20)
+        ax.set_ylabel("Actual accuracy (%)", fontsize=20)
         
         ax.set_xlim([xmin - 1, xmax + 1])
         ax.set_ylim([ymin - 1, ymax + 1])
         ax.set_aspect("equal", "box")
-        ax.legend(handles.values(), handles.keys(), fontsize=14)
+        ax.legend(handles.values(), handles.keys(), fontsize=18)
 
         plt.tight_layout()
          
         # optional saving
         if not self.save_fig:
-            print("Not saving.")
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/scatter")
         net_names = ", ".join(net_names)
         schemes = ", ".join(schemes)
         filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-scatter"
-        if cross_family == True:
-            filename += "_xfam"
-        elif cross_family == False:
-            filename += "_infam"
+        self.save("scatter", filename)
+
+    def save(self, sub_dir_name, filename):
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"figures/{sub_dir_name}")
         filename = os.path.join(sub_dir, filename)
+
         print(f"Saving... {filename}")
+
         plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)  
+        plt.savefig(f"{filename}.png", dpi=300)
+
+    def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", pred_type="max", 
+        cross_family=None):
+
+        # pull data
+        df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], list(), 
+            pred_type, cross_family)
+        
+        # build parameter matrices
+        p_dict = dict()
+        for k, v in case_dict.items():
+            for fn, p in zip(v["act_fns"], v["act_fn_params"]):
+                if p == "None": continue
+                if p_dict.get(fn) is None:
+                    p_dict[fn] = set()
+                p_dict[fn].add(float(p))
+        p_dict = { k: sorted(v) for k, v in p_dict.items() }
+
+        within_mats, cross_mats = dict(), dict()
+        fn_keys = list(p_dict.keys())
+        for k1, v1 in p_dict.items():
+            within_mats[k1] = np.zeros((len(v1), len(v1)))
+            fn_keys.remove(k1)
+            for k2 in fn_keys:
+                multikey = sorted([k1, k2])
+                cross_mats[tuple(multikey)] = np.zeros((len(p_dict[multikey[0]]), len(p_dict[multikey[1]])))
+
+        for midx, row in df.iterrows():
+            d, n, sch, c, m, xf = midx
+            cc_arr = get_component_cases(case_dict, c)
+            cc_fns = tuple([case_dict[cc]["act_fns"][0] for cc in cc_arr])
+
+            if xf:
+                multikey = tuple(sorted(cc_fns))
+                i = p_dict[multikey[0]].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
+                j = p_dict[multikey[1]].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
+                cross_mats[multikey][i, j] = row[metric]
+            else:
+                key = cc_fns[0]
+                i = p_dict[key].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
+                j = p_dict[key].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
+                within_mats[key][i, j] = row[metric]
+
+        # plots
+        
+        x = 1
 
     def plot_all_samples_accuracy(self, dataset, net_name, scheme, case, acc_type="val"):
 
@@ -636,37 +767,49 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=False, refresh=False)
+        10, save_fig=True, refresh=False)
     
     # visualizer.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.5")
 
-    visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
+    # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
     # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "tanh0.01", "tanh0.1", "tanh0.5", "tanh1", "tanh2", "tanh5", "tanh10"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu", "swish0.1", "swish0.5", "swish1", "swish2", "swish5", "swish7.5", "swish10"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "sticknet8", ["adam"], ["swish5", "tanh0.01", "swish5-tanh0.01"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "swish2", "swish5", "swish7.5", "swish10", "swish1-2", "swish5-7.5", "swish5-10", "swish1-10"])
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam", "sgd"], ["relu"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "tanh0.1", "swish7.5-tanh0.1"], inset=True)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish7.5", "swish10"], inset=True)
-    visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish10", "testswish10", "testswish10b", "testswish10c", "testswish10d"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.05", "tanh0.1", "tanh0.5", "tanh1", "tanh2"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanh2", "swish1-tanh2"], inset=False)
+    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
 
     # visualizer.plot_predictions("cifar10",
     #     ["vgg11", "sticknet8"],
     #     ["adam"],
-    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5", "test"],
+    #     excl_arr=["spatial", "test", "ratio"],
     #     pred_type="max",
     #     cross_family=True,
-    #     pred_std=True)
+    #     pred_std=False
+    #     )
+
+    # visualizer.plot_prediction_supplements("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"],
+    #     excl_arr=["spatial", "test", "ratio"],
+    #     pred_type="max",
+    #     cross_family=None
+    #     )
+
+    visualizer.heatmap_acc("cifar10", 
+        "vgg11", 
+        "adam", 
+        metric="acc_vs_max", 
+        pred_type="max", 
+        cross_family=None
+        )
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],
     #     ["adam"], 
-    #     excl_arr=["spatial", "tanhe5", "tanhe0.1-5"],
+    #     excl_arr=["spatial", "test", "ratio"],
     #     pred_type="max",
-    #     cross_family=True)
+    #     cross_family=None)
 
 
 

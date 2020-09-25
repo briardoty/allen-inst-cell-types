@@ -202,13 +202,13 @@ class AccStatProcessor():
               "linear_pred_p_val": np.mean,
 
               "epochs_past": [np.mean, np.std],
-              "max_pred_epochs_past": [np.mean, np.std],
+              "min_pred_epochs_past": [np.mean, np.std],
               "linear_pred_epochs_past": [np.mean, np.std],
-              "max_pred_epochs_past_p_val": np.mean,
+              "min_pred_epochs_past_p_val": np.mean,
               "linear_pred_epochs_past_p_val": np.mean })
 
         # benjamini-hochberg correction
-        to_correct_arr = ["max_pred", "linear_pred", "max_pred_epochs_past", "linear_pred_epochs_past"]
+        to_correct_arr = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
         mixed_idx = df_stats.query("is_mixed == True").index
         for to_correct in to_correct_arr:
 
@@ -296,7 +296,7 @@ class AccStatProcessor():
         acc_df["linear_pred"] = np.nan
         acc_df["max_pred_p_val"] = np.nan
         acc_df["linear_pred_p_val"] = np.nan
-        acc_df["max_pred_epochs_past_p_val"] = np.nan
+        acc_df["min_pred_epochs_past_p_val"] = np.nan
         acc_df["linear_pred_epochs_past_p_val"] = np.nan
 
         # 2.9. multi-index
@@ -354,15 +354,16 @@ class AccStatProcessor():
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
                 
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred_epochs_past"] = np.max(c_epochs)
+                acc_df.at[(d, n, sch, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
                 acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
 
             # significance
-            metrics = ["max_val_acc", "max_val_acc", "epochs_past", "epochs_past"]
-            pred_cols = ["max_pred", "linear_pred", "max_pred_epochs_past", "linear_pred_epochs_past"]
-            for metric, col in zip(metrics, pred_cols):
+            upper_dists = ["max_val_acc", "max_val_acc", "min_pred_epochs_past", "linear_pred_epochs_past"]
+            lower_dists = ["max_pred", "linear_pred", "epochs_past", "epochs_past"]
+            cols = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
+            for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
-                t, p = ttest_ind(acc_df.at[(d, n, sch, c), metric], acc_df.at[(d, n, sch, c), col])
+                t, p = ttest_ind(acc_df.at[(d, n, sch, c), upper], acc_df.at[(d, n, sch, c), lower])
                 if t < 0:
                     p = 1. - p / 2.
                 else:
