@@ -129,5 +129,4 @@ dmypy.json
 .pyre/
 
 # data directory contains large output files, figures, etc.
-data/
-data_mountpoint/
+data*/
