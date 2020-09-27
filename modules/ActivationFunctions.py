@@ -140,6 +140,20 @@ class Renlu(nn.Module):
         
         return Renluf.apply(input_tensor, self.alpha)
 
+class Relu(nn.Module):
+    
+    def __init__(self):
+        
+        super(Relu, self).__init__()
+    
+    def __repr__(self):
+        
+        return f"Relu"
+    
+    def forward(self, input_tensor):
+        
+        return torch.relu(input_tensor)
+
 class Sigfreud(nn.Module):
     """
     Pytorch nn module implementation of "Sigfreud" activation function

@@ -27,8 +27,8 @@ except:
 import matplotlib
 large_font_size = 16
 small_font_size = 14
-matplotlib.rc("xtick", labelsize=small_font_size) 
-matplotlib.rc("ytick", labelsize=small_font_size) 
+matplotlib.rc("xtick", labelsize=16) 
+matplotlib.rc("ytick", labelsize=16) 
 
 
 class AccuracyVisualizer():
@@ -60,7 +60,7 @@ class AccuracyVisualizer():
         # plot...
         markersize = 18
         c_labels = dict()
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5,5), sharey=True)
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5,4), sharey=True)
         fig.subplots_adjust(wspace=0)
         c_clrs = sns.color_palette("hls", len(component_cases))
         c_clrs.reverse()
@@ -112,8 +112,6 @@ class AccuracyVisualizer():
         # set figure text
         # fig.suptitle(f"Component and mixed network performance comparison\n {net_name} on {dataset}",
         #     fontsize=20)
-        matplotlib.rc("xtick", labelsize=small_font_size)
-        matplotlib.rc("ytick", labelsize=small_font_size)
         axes[0].set_xlabel("Component", fontsize=16, 
             labelpad=10)
         axes[1].set_xlabel("Mixed", fontsize=large_font_size, 
@@ -123,10 +121,10 @@ class AccuracyVisualizer():
         axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
         axes[1].set_xlim([-0.5, 0.5])
         axes[0].set_xticks(list(c_labels.keys()))
-        axes[0].set_yticklabels(list(axes[0].get_yticks()), fontsize=small_font_size)
-        axes[0].set_xticklabels(list(c_labels.values()), fontsize=small_font_size)
+        axes[0].set_yticklabels(list(axes[0].get_yticks()), fontsize=12)
+        axes[0].set_xticklabels(list(c_labels.values()), fontsize=12)
         axes[1].set_xticks([0])
-        axes[1].set_xticklabels([mixed_case], fontsize=small_font_size)
+        axes[1].set_xticklabels([mixed_case], fontsize=12)
         plt.tight_layout()
         # plt.tight_layout(rect=[0, 0, 1, 0.92])
 
@@ -134,11 +132,11 @@ class AccuracyVisualizer():
         box1 = axes[0].get_position()
         axes[0].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
         box2 = axes[1].get_position()
-        axes[1].set_position([box1.x0 + box1.width, box2.y0, box2.width * 0.4, box2.height])
+        axes[1].set_position([box1.x0 + box1.width * 1.2, box2.y0, box2.width * 0.3, box2.height])
 
         # append legend to second axis
         axes[1].legend(handles.values(), handles.keys(), 
-            fontsize=small_font_size, loc="center left", bbox_to_anchor=(1, 0.5))
+            fontsize=12, loc="center left", bbox_to_anchor=(1, 0.5))
          
         # optional saving
         if not self.save_fig:
@@ -199,7 +197,7 @@ class AccuracyVisualizer():
             lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
 
         # plot
-        plt.figure(figsize=(16,16))
+        plt.figure(figsize=(10,16))
         plt.gca().axvline(0, color='k', linestyle='--')
         clrs = sns.color_palette("husl", len(net_names))
 
@@ -274,7 +272,7 @@ class AccuracyVisualizer():
         handles["p < 0.05"] = h[0]
         for i in range(len(sig_arr)):
             if sig_arr[i]:
-                plt.plot(xmax + xmax/12., i, "k*", alpha=0.5)
+                plt.plot(xmax + xmax/20., i, "k*", alpha=0.5)
 
         # determine padding for labels
         max_length = np.max([len(l) for l in ylabels.values()])
@@ -287,14 +285,14 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
-        plt.xlabel(f"Accuracy relative to {pred_type} prediction (%)", 
+        plt.xlabel(f"Acc relative to {pred_type} prediction (%)", 
             fontsize=28, labelpad=10)
         plt.ylabel("Network configuration", fontsize=28, labelpad=10)
         plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
         yax = plt.gca().get_yaxis()
-        yax.set_tick_params(pad=max_length*7)
+        yax.set_tick_params(pad=max_length*8)
         plt.ylim(-0.5, i + 0.5)
-        plt.legend(handles.values(), handles.keys(), fontsize=24, loc="upper left")
+        plt.legend(handles.values(), handles.keys(), fontsize=22, loc="upper left")
         plt.xlim([xmin - xmax/10., xmax + xmax/10.])
         
         plt.tight_layout()
@@ -328,8 +326,6 @@ class AccuracyVisualizer():
         # filter to just p-val < 0.05
         df = df[df.max_pred_rej_h0 == True]
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction")
-
         # one for within/cross family
         fig, ax = plt.subplots(figsize=(5,5))
         x = 0
@@ -341,7 +337,7 @@ class AccuracyVisualizer():
 
             cf = cf_vals[i]
             yvals = df.query(f"cross_fam == {cf}")[f"acc_vs_{pred_type}"]
-            ymean = np.mean(yvals)
+            ymean = np.mean(yvals) * 100
             label = "Cross-family" if cf else "Within-family"
             labels.append(label)
             ticks.append(x)
@@ -349,16 +345,13 @@ class AccuracyVisualizer():
             x += 0.5
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
-        ax.set_xlabel("Mixed net type", fontsize=large_font_size)
-        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size)
+        ax.set_xlabel("Mixed net type", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels)
         plt.tight_layout()
 
-        filename = os.path.join(sub_dir, "supp1")
-        print(f"Saving... {filename}")
-        plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)
+        self.save("supplementary", "family")
 
         # one for network
         fig, ax = plt.subplots(figsize=(5,5))
@@ -372,23 +365,21 @@ class AccuracyVisualizer():
 
             net = net_vals[i]
             yvals = df.query(f"net_name == '{net}'")[f"acc_vs_{pred_type}"]
-            ymean = np.mean(yvals)
+            ymean = np.mean(yvals) * 100
             labels.append(net)
             ticks.append(x)
             ax.bar(x, ymean, 1/len(net_vals), label=net, color=clrs[i])
             x += 0.5
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
-        ax.set_xlabel("Network", fontsize=large_font_size)
-        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size)
+        ax.set_xlabel("Network", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels)
         plt.tight_layout()
 
-        filename = os.path.join(sub_dir, "supp2")
-        print(f"Saving... {filename}")
-        plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)
+        self.save("supplementary", "network")
+
 
     def scatter_acc(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -503,18 +494,19 @@ class AccuracyVisualizer():
         print(f"Saving... {filename}")
 
         plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)
+        # plt.savefig(f"{filename}.png", dpi=300)
 
-    def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", pred_type="max", 
-        cross_family=None):
+    def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", 
+        cmap="bwr"):
 
         # pull data
         df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], list(), 
-            pred_type, cross_family)
+            "max", None)
         
         # build parameter matrices
         p_dict = dict()
-        for k, v in case_dict.items():
+        for k in df.index.unique(level=df.index.names.index("case")):
+            v = case_dict[k]
             for fn, p in zip(v["act_fns"], v["act_fn_params"]):
                 if p == "None": continue
                 if p_dict.get(fn) is None:
@@ -531,25 +523,86 @@ class AccuracyVisualizer():
                 multikey = sorted([k1, k2])
                 cross_mats[tuple(multikey)] = np.zeros((len(p_dict[multikey[0]]), len(p_dict[multikey[1]])))
 
+        vmin = 100
+        vmax = -100
         for midx, row in df.iterrows():
             d, n, sch, c, m, xf = midx
             cc_arr = get_component_cases(case_dict, c)
             cc_fns = tuple([case_dict[cc]["act_fns"][0] for cc in cc_arr])
 
+            try:
+                metric_val = float(row[metric]["mean"]) * 100
+            except:
+                metric_val = float(row[metric]) * 100
+
+            vmin = min(metric_val, vmin)
+            vmax = max(metric_val, vmax)
+
             if xf:
                 multikey = tuple(sorted(cc_fns))
                 i = p_dict[multikey[0]].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
                 j = p_dict[multikey[1]].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
-                cross_mats[multikey][i, j] = row[metric]
+                
+                cross_mats[multikey][i, j] = metric_val
             else:
                 key = cc_fns[0]
                 i = p_dict[key].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
                 j = p_dict[key].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
-                within_mats[key][i, j] = row[metric]
+
+                within_mats[key][min(i, j), max(i, j)] = metric_val
 
         # plots
+        if metric == "acc_vs_max":
+            metric = "Relative accuracy (%)"
+            vabs = max(abs(vmin), abs(vmax))
+            vmin, vmax = -vabs, vabs
+        else:
+            metric = "Peak accuracy (%)"
+        for k, v in within_mats.items():
+            plt.figure()
+            im = plt.imshow(np.flip(v, axis=1), cmap=cmap, vmin=vmin, vmax=vmax)
+            cbar = plt.gcf().colorbar(im, ax=plt.gca())
+            cbar.ax.set_ylabel(metric, fontsize=large_font_size)
+
+            plt.ylabel(rf"{k} $\beta$", fontsize=large_font_size)
+            plt.xlabel(rf"{k} $\beta$", fontsize=large_font_size)
+            tlabels = p_dict[k]
+            tticks = [i for i in range(len(tlabels))]
+            plt.xticks(tticks, labels=tlabels, fontsize=small_font_size)
+            plt.yticks(tticks, labels=list(reversed(tlabels)), fontsize=small_font_size)
+            title = f"Within-family {net_name}"
+            plt.title(title, fontsize=large_font_size)
+            plt.tight_layout()
+
+            if self.save_fig:
+                filename = f"Within-family {net_name} {metric} {k}"
+                self.save("heatmaps", filename)
+            else:
+                plt.show()
         
-        x = 1
+        for k, v in cross_mats.items():
+            plt.figure()
+            im = plt.imshow(np.flip(v, axis=0), cmap=cmap, vmin=vmin, vmax=vmax)
+            cbar = plt.gcf().colorbar(im, ax=plt.gca())
+            cbar.ax.set_ylabel(metric, fontsize=large_font_size)
+
+            plt.xlabel(rf"{k[1]} $\beta$", fontsize=large_font_size)
+            plt.ylabel(rf"{k[0]} $\beta$", fontsize=large_font_size)
+            xtlabels = p_dict[k[1]]
+            xticks = [i for i in range(len(xtlabels))]
+            ytlabels = p_dict[k[0]]
+            yticks = [i for i in range(len(ytlabels))]
+            plt.xticks(xticks, labels=xtlabels, fontsize=small_font_size)
+            plt.yticks(yticks, labels=list(reversed(ytlabels)), fontsize=small_font_size)
+            title = f"Cross-family {net_name}"
+            plt.title(title, fontsize=large_font_size)
+            plt.tight_layout()
+
+            if self.save_fig:
+                filename = f"Cross-family {net_name} {metric} {k}"
+                self.save("heatmaps", filename)
+            else:
+                plt.show()
 
     def plot_all_samples_accuracy(self, dataset, net_name, scheme, case, acc_type="val"):
 
@@ -597,8 +650,6 @@ class AccuracyVisualizer():
         print(f"Saving... {filename}")
         plt.savefig(f"{filename}.svg")
         plt.savefig(f"{filename}.png", dpi=300)
-
-
 
     def plot_single_accuracy(self, dataset, net_name, scheme, case, sample=0):
         """
@@ -769,7 +820,7 @@ if __name__=="__main__":
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=True, refresh=False)
     
-    # visualizer.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.5")
+    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
     # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
@@ -788,19 +839,11 @@ if __name__=="__main__":
     #     pred_std=False
     #     )
 
-    # visualizer.plot_prediction_supplements("cifar10",
-    #     ["vgg11", "sticknet8"],
-    #     ["adam"],
-    #     excl_arr=["spatial", "test", "ratio"],
-    #     pred_type="max",
-    #     cross_family=None
-    #     )
-
-    visualizer.heatmap_acc("cifar10", 
-        "vgg11", 
-        "adam", 
-        metric="acc_vs_max", 
-        pred_type="max", 
+    visualizer.plot_prediction_supplements("cifar10",
+        ["vgg11", "sticknet8"],
+        ["adam"],
+        excl_arr=["spatial", "test", "ratio"],
+        pred_type="max",
         cross_family=None
         )
 

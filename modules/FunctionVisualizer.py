@@ -44,7 +44,7 @@ class FunctionVisualizer():
         x = np.linspace(-100, 100, 10000)
         x = torch.tensor(x)
         fig, ax = plt.subplots(figsize=(5,5))
-        clrs = sns.color_palette("husl", len(act_fns))
+        clrs = sns.color_palette("Set2", len(act_fns))
 
         for i in range(len(act_fns)):
             fn = act_fns[i]
@@ -62,7 +62,7 @@ class FunctionVisualizer():
         ax.set_yticks([-1, 0, 1])
         ax.set_yticklabels([-1, 0, 1])
         ax.set_xlim([-2, 2])
-        ax.set_ylim([-2, 2])
+        ax.set_ylim([-1, 2])
         # ax.axis("equal")
         ax.set_aspect("equal", "box")
         ax.set_xlabel("Input", fontsize=large_font_size)
@@ -136,6 +136,7 @@ if __name__=="__main__":
     visualizer = FunctionVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         10, save_fig=True)
 
-    visualizer.plot_activation_fns([Tanh(1), Swish(5)])
+    # visualizer.plot_activation_fns([Tanh(1), Swish(1), Relu()])
+    visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
 
     # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)
