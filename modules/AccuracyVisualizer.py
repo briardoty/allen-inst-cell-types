@@ -33,13 +33,12 @@ matplotlib.rc("ytick", labelsize=16)
 
 class AccuracyVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False, refresh=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
-        self.refresh = refresh
         
-        self.stats_processor = AccuracyLoader(data_dir, n_classes)
+        self.stats_processor = AccuracyLoader(data_dir)
 
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
@@ -49,7 +48,7 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df_ungrouped(self.refresh)
+        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df_ungrouped()
         component_cases = get_component_cases(case_dict, mixed_case)
 
         # filter dataframe
@@ -155,7 +154,7 @@ class AccuracyVisualizer():
         pred_type="max", cross_family=None):
 
         # pull data
-        df, case_dict, _ = self.stats_processor.load_max_acc_df(self.refresh)
+        df, case_dict, _ = self.stats_processor.load_max_acc_df()
 
         # performance relative to predictions
         df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]["mean"]
@@ -392,7 +391,7 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        df, _, _ = self.stats_processor.load_max_acc_df(self.refresh)
+        df, _, _ = self.stats_processor.load_max_acc_df()
 
         # filter dataframe
         df = df.query(f"is_mixed")
@@ -611,7 +610,7 @@ class AccuracyVisualizer():
 
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            [scheme], [case], self.refresh)
+            [scheme], [case])
 
         # process a bit
         index_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
@@ -668,7 +667,7 @@ class AccuracyVisualizer():
 
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            [scheme], [case], self.refresh)
+            [scheme], [case])
 
         # filter more
         acc_df = acc_df.query(f"sample == {sample}")
@@ -747,7 +746,7 @@ class AccuracyVisualizer():
         """
         # pull data
         acc_df = self.stats_processor.load_accuracy_df(dataset, net_name, 
-            schemes, cases, self.refresh)
+            schemes, cases)
 
         # process a bit
         index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
@@ -821,7 +820,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=True)
+        10, save_fig=True)
     
     # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 

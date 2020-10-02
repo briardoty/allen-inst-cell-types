@@ -30,11 +30,10 @@ matplotlib.rc("ytick", labelsize=small_font_size)
 
 class FunctionVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False, refresh=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
-        self.refresh = refresh
         
     def plot_activation_fns(self, act_fns):
         """

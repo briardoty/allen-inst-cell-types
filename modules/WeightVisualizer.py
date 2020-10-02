@@ -37,11 +37,10 @@ matplotlib.rc("ytick", labelsize=14)
 
 class WeightVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False, refresh=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
-        self.refresh = refresh
         
         self.stats_processor = StatsProcessor(data_dir, n_classes)
         
@@ -166,7 +165,7 @@ class WeightVisualizer():
 if __name__=="__main__":
     
     visualizer = WeightVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=True)
     
     # visualizer.plot_type_specific_weights("swish10-tanhe1-relu")
 

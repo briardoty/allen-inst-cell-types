@@ -26,11 +26,10 @@ matplotlib.rc("ytick", labelsize=small_font_size)
 
 class LearningVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False, refresh=False):
+    def __init__(self, data_dir, n_classes=10, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
-        self.refresh = refresh
         
         self.stats_processor = AccuracyLoader(data_dir, n_classes)
 
@@ -51,7 +50,7 @@ class LearningVisualizer():
         """
 
         # pull data
-        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df(self.refresh)
+        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df()
 
         # performance relative to predictions
         vs = "epochs_past_vs"
@@ -197,7 +196,7 @@ class LearningVisualizer():
 if __name__=="__main__":
     
     vis = LearningVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=True)
 
     # vis.plot_learning_speed("cifar10", "sticknet8", "adam", "swish7.5-tanh0.5", pct=90)
 
