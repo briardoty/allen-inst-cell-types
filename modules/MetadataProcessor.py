@@ -58,18 +58,18 @@ class MetadataProcessor():
             if last_net_filename is None:
                 continue
 
-            last_net_path = os.path.join(root, last_net_filename)
-            last_net = mgr.load_net_snapshot_from_path(last_net_path)
-            last_epoch = mgr.epoch
-
-            # get its group
-            group = mgr.epoch
-            if group is None:
-                continue
-
-            # load perf_stats
             try:
-                mgr.update_resume_state(None, last_epoch)
+                last_net_path = os.path.join(root, last_net_filename)
+                last_net = mgr.load_net_snapshot_from_path(last_net_path)
+                last_epoch = mgr.epoch
+
+                # get its group
+                group = mgr.epoch
+                if group is None:
+                    continue
+
+                # load perf_stats
+                    mgr.update_resume_state(None, last_epoch)
             except:
                 continue
 
