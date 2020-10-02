@@ -15,14 +15,14 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 try:
-    from .AccStatProcessor import AccStatProcessor, get_component_cases
+    from .AccuracyLoader import AccuracyLoader
 except:
-    from AccStatProcessor import AccStatProcessor, get_component_cases
+    from AccuracyLoader import AccuracyLoader
 
 try:
-    from .util import ensure_sub_dir
+    from .util import ensure_sub_dir, get_component_cases
 except:
-    from util import ensure_sub_dir
+    from util import ensure_sub_dir, get_component_cases
 
 import matplotlib
 large_font_size = 16
@@ -39,7 +39,7 @@ class AccuracyVisualizer():
         self.save_fig = save_fig
         self.refresh = refresh
         
-        self.stats_processor = AccStatProcessor(data_dir, n_classes)
+        self.stats_processor = AccuracyLoader(data_dir, n_classes)
 
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
