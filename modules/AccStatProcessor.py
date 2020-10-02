@@ -63,6 +63,8 @@ class AccStatProcessor():
         self.n_classes = n_classes
         self.exclude_slug = "(exclude)"
         self.pct = 90
+
+        self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "sample"]
     
     def load_learning_df(self, pct, refresh=True):
         """
@@ -96,9 +98,7 @@ class AccStatProcessor():
     def refresh_learning_df(self, acc_df, pct):
 
         learning_arr = []
-
-        index_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
-        acc_df.set_index(index_cols, inplace=True)
+        acc_df.set_index(self.net_idx_cols, inplace=True)
 
         for idx in acc_df.index.unique():
 
@@ -115,7 +115,7 @@ class AccStatProcessor():
 
         # make and save df
         learning_df = pd.DataFrame(learning_arr, 
-            columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc", "epoch_past_pct"])
+            columns=self.net_idx_cols+["max_val_acc", "epoch_past_pct"])
         self.save_df("learning_df.csv", learning_df)
 
     def load_max_acc_df_ungrouped(self, refresh=True):
@@ -131,10 +131,9 @@ class AccStatProcessor():
             case_dict = json.load(json_file)
 
         # index
-        idx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
-        df.set_index(idx_cols, inplace=True)
+        df.set_index(self.net_idx_cols + , inplace=True)
 
-        return df, case_dict, idx_cols
+        return df, case_dict, self.net_idx_cols + 
 
     def load_max_acc_df(self, refresh_df=True):
         """
@@ -160,7 +159,7 @@ class AccStatProcessor():
             case_dict = json.load(json_file)
 
         # aggregate
-        gidx_cols = ["dataset", "net_name", "train_scheme", "case", "is_mixed", "cross_fam"]
+        gidx_cols = self.net_idx_cols + ["is_mixed", "cross_fam"]
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
               "max_pred": [np.mean, np.std],
@@ -226,6 +225,7 @@ class AccStatProcessor():
                 train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
+                group = stats_dict.get("group")
                 modified_layers = stats_dict.get("modified_layers")
                 if modified_layers is not None:
                     case_dict[case] = {
@@ -245,13 +245,13 @@ class AccStatProcessor():
                     pct_acc = (self.pct / 100.) * val_acc
                     i_first = next(x for x, val in enumerate(perf_stats[:,0]) if val > pct_acc)
 
-                    acc_arr.append([dataset, net_name, train_scheme, case, sample, val_acc, i_first])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, i_first])
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "max_val_acc", "epochs_past"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["max_val_acc", "epochs_past"])
 
         # process
         # 1. mark mixed nets
@@ -267,21 +267,20 @@ class AccStatProcessor():
         acc_df["linear_pred_epochs_past_p_val"] = np.nan
 
         # 2.9. multi-index
-        midx_cols = ["dataset", "net_name", "train_scheme", "case", "sample"]
-        acc_df.set_index(midx_cols, inplace=True)
+        acc_df.set_index(self.net_idx_cols, inplace=True)
 
         # 3. predictions for mixed cases
         for midx in acc_df.query("is_mixed == True").index.values:
 
             # break up multi-index
-            d, n, sch, c, s = midx
+            d, n, sch, g, c, s = midx
             
             # skip if already predicted
             if not math.isnan(acc_df.at[midx, "max_pred"]):
                 continue
 
             # get rows in this mixed case
-            mixed_case_rows = acc_df.loc[(d, n, sch, c)]
+            mixed_case_rows = acc_df.loc[(d, n, sch, g, c)]
             
             # get component case rows
             component_cases = get_component_cases(case_dict, c)
@@ -433,7 +432,7 @@ class AccStatProcessor():
                     acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc, train_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=["dataset", "net_name", "train_scheme", "case", "sample", "epoch", "val_acc", "train_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["epoch", "val_acc", "train_acc"])
         
         # save df
         self.save_df("acc_df.csv", acc_df)
