@@ -24,6 +24,7 @@ act_fn_dict = {
     "sigmoid": torch.sigmoid,
     "sigfreud": Sigfreud,
     "tanh": Tanh,
+    "tanhe": Tanh,
     "renlu": Renlu,
     "swish": Swish,
     "sanityCheck": SanityCheck,

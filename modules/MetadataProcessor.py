@@ -14,9 +14,14 @@ except:
     from util import ensure_sub_dir
 
 try:
-    from .WeightStatProcessor import *
+    from .WeightStatProcessor import get_last_epoch
 except:
-    from WeightStatProcessor import *
+    from WeightStatProcessor import get_last_epoch
+
+try:
+    from .NetManager import NetManager
+except:
+    from NetManager import NetManager
 
 
 class MetadataProcessor():
@@ -39,7 +44,7 @@ class MetadataProcessor():
         mgr = NetManager("", "", "", "", 10, self.data_dir, None)
 
         # walk dir for final snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/")
+        net_dir = os.path.join(self.data_dir, f"nets/cifar10")
         for root, dirs, files in os.walk(net_dir):
         
             # only interested in locations files (nets) are saved
