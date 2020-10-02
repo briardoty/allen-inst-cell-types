@@ -68,7 +68,10 @@ class MetadataProcessor():
                 continue
 
             # load perf_stats
-            mgr.update_resume_state(None, last_epoch)
+            try:
+                mgr.update_resume_state(None, last_epoch)
+            except:
+                continue
 
             # save again with group
             mgr.save_arr("perf_stats", np.array(mgr.perf_stats))
