@@ -180,7 +180,7 @@ class AccuracyVisualizer():
         return sort_df, case_dict
 
     def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
-        pred_type="max", cross_family=None, pred_std=False):
+        pred_type="max", cross_family=None, pred_std=False, small=False):
         """
         Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
@@ -197,7 +197,10 @@ class AccuracyVisualizer():
             lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
 
         # plot
-        plt.figure(figsize=(10,16))
+        if small:
+            plt.figure(figsize=(10,16))
+        else:
+            plt.figure(figsize=(16,16))
         plt.gca().axvline(0, color='k', linestyle='--')
         clrs = sns.color_palette("husl", len(net_names))
 
@@ -818,7 +821,7 @@ class AccuracyVisualizer():
 if __name__=="__main__":
     
     visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True, refresh=False)
+        10, save_fig=True, refresh=True)
     
     # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
@@ -830,22 +833,23 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanh2", "swish1-tanh2"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
 
-    # visualizer.plot_predictions("cifar10",
-    #     ["vgg11", "sticknet8"],
+    visualizer.plot_predictions("cifar10",
+        ["sticknet8"],
+        ["adam"],
+        excl_arr=["spatial", "test"],
+        pred_type="max",
+        cross_family=None,
+        pred_std=True,
+        small=False
+        )
+
+    # visualizer.plot_prediction_supplements("cifar10",
+    #     ["vgg11"],
     #     ["adam"],
     #     excl_arr=["spatial", "test", "ratio"],
     #     pred_type="max",
-    #     cross_family=True,
-    #     pred_std=False
+    #     cross_family=None
     #     )
-
-    visualizer.plot_prediction_supplements("cifar10",
-        ["vgg11", "sticknet8"],
-        ["adam"],
-        excl_arr=["spatial", "test", "ratio"],
-        pred_type="max",
-        cross_family=None
-        )
 
     # visualizer.scatter_acc("cifar10",
     #     ["vgg11", "sticknet8"],

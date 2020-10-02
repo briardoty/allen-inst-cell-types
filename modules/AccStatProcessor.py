@@ -23,39 +23,6 @@ try:
     from .util import ensure_sub_dir
 except:
     from util import ensure_sub_dir
-
-def get_epoch_from_filename(filename):
-    
-    epoch = re.search(r"\d+\.pt$", filename)
-    epoch = int(epoch.group().split(".")[0]) if epoch else None
-    
-    return epoch
-    
-def get_first_epoch(net_filenames):
-    
-    for filename in net_filenames:
-        
-        epoch = get_epoch_from_filename(filename)
-        if epoch == 0:
-            return filename
-
-def get_last_epoch(net_filenames):
-    
-    max_epoch = -1
-    last_net_filename = None
-    
-    for filename in net_filenames:
-        
-        epoch = get_epoch_from_filename(filename)
-
-        if epoch is None:
-            continue
-
-        if epoch > max_epoch:
-            max_epoch = epoch
-            last_net_filename = filename
-
-    return last_net_filename
     
 def get_component_cases(case_dict, case):
     """
@@ -470,38 +437,6 @@ class AccStatProcessor():
         
         # save df
         self.save_df("acc_df.csv", acc_df)
-
-    def reduce_snapshots(self):
-
-        # walk networks directory
-        net_dir = os.path.join(self.data_dir, f"nets/")
-        for root, _, files in os.walk(net_dir):
-            
-            # only interested in locations files are saved
-            if len(files) <= 0:
-                continue
-            
-            slugs = root.split("/")
-            
-            # consider all files...
-            for filename in files:
-
-                # ...as long as they are snapshots
-                if not filename.endswith(".pt"):
-                    continue
-                
-                epoch = get_epoch_from_filename(filename)
-
-                if epoch is None:
-                    continue
-
-                if epoch % 10 == 0:
-                    continue
-                else:
-                    # delete
-                    filepath = os.path.join(root, filename)
-                    print(f"Deleting {filepath}")
-                    os.remove(filepath)
 
 if __name__=="__main__":
     

@@ -12,6 +12,7 @@ from torchvision import datasets, models, transforms
 import os
 import math
 import time
+import seaborn as sns
 import numpy as np
 import copy
 import torch.optim as optim
@@ -216,6 +217,7 @@ class NetManager():
             "net_name": self.net_name,
             "dataset": self.dataset,
             "train_scheme": self.train_scheme,
+            "group": self.group,
             "case": self.case,
             "sample": self.sample,
             "modified_layers": self.modified_layers,
@@ -230,6 +232,8 @@ class NetManager():
         
         # extract state
         state_dict = snapshot_state.get("state_dict")
+        self.net_name = snapshot_state.get("net_name")
+        self.train_scheme = snapshot_state.get("train_scheme")
         self.case = snapshot_state.get("case")
         self.group = snapshot_state.get("group")
         self.sample = snapshot_state.get("sample")
@@ -269,6 +273,7 @@ class NetManager():
             "net_name": snapshot_state.get("net_name"),
             "epoch": snapshot_state.get("epoch"),
             "train_scheme": snapshot_state.get("train_scheme"),
+            "group": snapshot_state.get("group"), 
             "case": snapshot_state.get("case"),
             "sample": snapshot_state.get("sample"),
             "val_acc": snapshot_state.get("val_acc"),
@@ -480,7 +485,8 @@ class NetManager():
 
         # load perf_stats from before resume
         stats_filepath = os.path.join(self.net_dir, "perf_stats.npy")
-        perf_stats = np.load(stats_filepath, allow_pickle=True).item().get("perf_stats")
+        perf_stats_dict = np.load(stats_filepath, allow_pickle=True).item()
+        perf_stats = perf_stats_dict.get("perf_stats")
         self.perf_stats = perf_stats.tolist()
 
         # on resume, the current state will have already been eval'd
@@ -549,9 +555,12 @@ class NetManager():
                 iter += 1
 
         # plot loss vs lr
-        fig, ax = plt.subplots(figsize=(12,12))
-        ax.plot(lr_arr, loss_arr)
+        fig, ax = plt.subplots(figsize=(5,5))
+        clrs = sns.color_palette("Set2", 2)
+        ax.plot(lr_arr, loss_arr, c=clrs[1], linewidth=2)
         ax.set_xscale("log")
+        ax.set_xlabel("Learning rate", fontsize=16)
+        ax.set_ylabel("Loss", fontsize=16)
         plt.tight_layout()
         plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
         plt.savefig(plot_filepath)
@@ -628,21 +637,22 @@ class NetManager():
 
 
 if __name__=="__main__":
-    mgr = NetManager("cifar10", "vgg11", 10, 
-        "/home/briardoty/Source/allen-inst-cell-types/data/", "adam")
-    net = "vgg11"
-    scheme = "sgd"
-    case = "tanh1"
+    dataset = "cifar10"
+    net = "sticknet8"
+    scheme = "adam"
+    group = "control"
+    case = "relu"
     sample = 0
     epoch = 0
-    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/{net}/{scheme}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
+    mgr = NetManager(dataset, net, group, case, 10,
+        "/home/briardoty/Source/allen-inst-cell-types/data/", scheme)
+    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
     mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)
 
-    lr_low = 1e-7
-    lr_high = 0.1
+    lr_low, lr_high = 1e-7, 0.1
     x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
