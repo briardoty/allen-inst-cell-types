@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import torch
 import os
 import pandas as pd
@@ -7,11 +6,6 @@ import numpy as np
 import json
 from scipy.stats import ttest_ind
 import math
-
-try:
-    from .util import ensure_sub_dir
-except:
-    from util import ensure_sub_dir
 
 try:
     from .WeightStatProcessor import get_last_epoch
@@ -63,13 +57,18 @@ class MetadataProcessor():
                 last_net = mgr.load_net_snapshot_from_path(last_net_path)
                 last_epoch = mgr.epoch
 
+                stats_filepath = os.path.join(mgr.net_dir, "perf_stats.npy")
+                perf_stats_dict = np.load(stats_filepath, allow_pickle=True).item()
+                if perf_stats_dict.get("group") is not None:
+                    continue
+
                 # get its group
                 group = mgr.epoch
                 if group is None:
                     continue
 
                 # load perf_stats
-                    mgr.update_resume_state(None, last_epoch)
+                mgr.update_resume_state(None, last_epoch)
             except:
                 continue
 
