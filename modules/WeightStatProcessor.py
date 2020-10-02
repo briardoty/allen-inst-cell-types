@@ -7,7 +7,6 @@ import numpy as np
 import json
 from scipy.stats import ttest_ind
 import math
-from statsmodels.stats.multitest import multipletests
 
 try:
     from .NetManager import NetManager, nets
