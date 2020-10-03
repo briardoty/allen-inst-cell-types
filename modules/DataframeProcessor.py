@@ -177,13 +177,14 @@ class DataframeProcessor():
         ndf["group"] = curr_df["group"]
 
         # 2.9. index with group
-        ndf.set_index(["group"], inplace=True, append=True)
+        ndf.reset_index(drop=False, inplace=True)
+        ndf.set_index(self.net_idx_cols, inplace=True)
 
         # 3. predictions for mixed cases
         for midx in ndf.query("is_mixed == True").index.values:
 
             # break up multi-index
-            d, n, sch, c, s, g = midx
+            d, n, sch, g, c, s = midx
             
             # skip if already predicted
             if not math.isnan(ndf.at[midx, "max_pred"]):
@@ -227,11 +228,11 @@ class DataframeProcessor():
                 if len(c_accs) == 0:
                     break
 
-                ndf.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
-                ndf.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
                 
-                ndf.at[(d, n, sch, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
-                ndf.at[(d, n, sch, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
 
             # significance
             upper_dists = ["max_val_acc", "max_val_acc", "min_pred_epochs_past", "linear_pred_epochs_past"]
@@ -239,12 +240,12 @@ class DataframeProcessor():
             cols = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
             for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
-                t, p = ttest_ind(ndf.at[(d, n, sch, c), upper], ndf.at[(d, n, sch, c), lower])
+                t, p = ttest_ind(ndf.at[(d, n, sch, g, c), upper], ndf.at[(d, n, sch, g, c), lower])
                 if t < 0:
                     p = 1. - p / 2.
                 else:
                     p = p / 2.
-                ndf.loc[(d, n, sch, c), f"{col}_p_val"] = p
+                ndf.loc[(d, n, sch, g, c), f"{col}_p_val"] = p
 
         # save things
         self.save_df(df_name, ndf)
