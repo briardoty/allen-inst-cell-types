@@ -30,52 +30,6 @@ class MetadataProcessor():
         self.exclude_slug = "(exclude)"
         self.pct = 90
     
-    def port_group(self):
-        """
-        Load a snapshot for every net config available and port its group
-        to its perf_stats file
-        """
-        mgr = NetManager("", "", "", "", 10, self.data_dir, None)
-
-        # walk dir for final snapshots
-        net_dir = os.path.join(self.data_dir, f"nets/cifar10")
-        for root, dirs, files in os.walk(net_dir):
-        
-            # only interested in locations files (nets) are saved
-            if len(files) <= 0:
-                continue
-
-            slugs = root.split("/")
-            
-            # get final snapshot
-            last_net_filename = get_last_epoch(files)
-            if last_net_filename is None:
-                continue
-
-            try:
-                last_net_path = os.path.join(root, last_net_filename)
-                last_net = mgr.load_net_snapshot_from_path(last_net_path)
-                last_epoch = mgr.epoch
-
-                stats_filepath = os.path.join(mgr.net_dir, "perf_stats.npy")
-                perf_stats_dict = np.load(stats_filepath, allow_pickle=True).item()
-                if perf_stats_dict.get("group") is not None:
-                    continue
-
-                # get its group
-                group = mgr.epoch
-                if group is None:
-                    continue
-
-                # load perf_stats
-                mgr.update_resume_state(None, last_epoch)
-            except:
-                continue
-
-            # save again with group
-            mgr.save_arr("perf_stats", np.array(mgr.perf_stats))
-
-
     def reduce_snapshots(self):
 
         # walk networks directory

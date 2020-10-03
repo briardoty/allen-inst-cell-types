@@ -491,7 +491,8 @@ class NetManager():
 
         # on resume, the current state will have already been eval'd
         addnl_epochs = end_epoch - len(self.perf_stats) + 1
-        self.perf_stats.extend([None] * addnl_epochs)
+        if addnl_epochs > 0:
+            self.perf_stats.extend([None] * addnl_epochs)
 
         # step lr schedule forward
         if scheduler is not None:

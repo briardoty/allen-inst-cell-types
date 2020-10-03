@@ -8,9 +8,9 @@ from scipy.stats import ttest_ind
 import math
 
 try:
-    from .util import ensure_sub_dir
+    from .util import ensure_sub_dir, get_component_cases
 except:
-    from util import ensure_sub_dir
+    from util import ensure_sub_dir, get_component_cases
 
 class DataframeProcessor():
     """
@@ -23,6 +23,7 @@ class DataframeProcessor():
         self.exclude_slug = "(exclude)"
         self.pct = 90
 
+        self.df_sub_dir = os.path.join(self.data_dir, "dataframes/")
         self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "sample"]
     
     def refresh_learning_df(self, acc_df, pct):
@@ -48,10 +49,44 @@ class DataframeProcessor():
             columns=self.net_idx_cols+["max_val_acc", "epoch_past_pct"])
         self.save_df("learning_df.csv", learning_df)
 
+    def add_group_to_df(self):
+
+        # build case -> group dict
+        group_dict = dict()
+        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
+            net_configs = json.load(json_file)
+
+        for g in net_configs.keys():
+            cases = net_configs[g]
+            case_names = cases.keys()
+            
+            for c in case_names:
+
+                group_dict[c] = g
+
+        # load current df
+        df_name = "max_acc_df.csv"
+        df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
+        df.drop(columns="Unnamed: 0", inplace=True)
+
+        # update
+        df["group"] = None
+        for idx, row in df.iterrows():
+            group = group_dict.get(row["case"])
+            df.at[idx, "group"] = group
+
+        # save
+        self.save_df(df_name, df)
+
     def refresh_max_acc_df(self):
         """
         Refreshes dataframe with max validation accuracy.
         """
+
+        # load current df if exists
+        df_name = "max_acc_df.csv"
+        curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
+        curr_df.drop(columns="Unnamed: 0", inplace=True)
 
         acc_arr = []
         case_dict = dict()
@@ -96,6 +131,8 @@ class DataframeProcessor():
 
                 # array containing acc/loss
                 perf_stats = stats_dict.get("perf_stats")
+                if len(perf_stats) == 0 or perf_stats[-1] is None:
+                    continue
 
                 # find peak accuracy
                 try:
@@ -127,25 +164,37 @@ class DataframeProcessor():
         acc_df["min_pred_epochs_past_p_val"] = np.nan
         acc_df["linear_pred_epochs_past_p_val"] = np.nan
 
-        # 2.9. multi-index
-        acc_df.set_index(self.net_idx_cols, inplace=True)
+        # index new and old without group
+        idx_no_group = list(self.net_idx_cols)
+        idx_no_group.remove("group")
+        curr_df.set_index(idx_no_group, inplace=True)
+        acc_df.set_index(idx_no_group, inplace=True)
+
+        # merge new and old, preferring new
+        ndf = pd.concat([curr_df[~curr_df.index.isin(acc_df.index)], acc_df])
+
+        # update group based on old
+        ndf["group"] = curr_df["group"]
+
+        # 2.9. index with group
+        ndf.set_index(["group"], inplace=True, append=True)
 
         # 3. predictions for mixed cases
-        for midx in acc_df.query("is_mixed == True").index.values:
+        for midx in ndf.query("is_mixed == True").index.values:
 
             # break up multi-index
-            d, n, sch, g, c, s = midx
+            d, n, sch, c, s, g = midx
             
             # skip if already predicted
-            if not math.isnan(acc_df.at[midx, "max_pred"]):
+            if not math.isnan(ndf.at[midx, "max_pred"]):
                 continue
 
             # get rows in this mixed case
-            mixed_case_rows = acc_df.loc[(d, n, sch, g, c)]
+            mixed_case_rows = ndf.loc[(d, n, sch, g, c)]
             
             # get component case rows
             component_cases = get_component_cases(case_dict, c)
-            component_rows = acc_df.query(f"is_mixed == False") \
+            component_rows = ndf.query(f"is_mixed == False") \
                 .query(f"dataset == '{d}'") \
                 .query(f"net_name == '{n}'") \
                 .query(f"train_scheme == '{sch}'") \
@@ -178,11 +227,11 @@ class DataframeProcessor():
                 if len(c_accs) == 0:
                     break
 
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
+                ndf.at[(d, n, sch, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
+                ndf.at[(d, n, sch, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
                 
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
-                acc_df.at[(d, n, sch, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
+                ndf.at[(d, n, sch, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
+                ndf.at[(d, n, sch, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
 
             # significance
             upper_dists = ["max_val_acc", "max_val_acc", "min_pred_epochs_past", "linear_pred_epochs_past"]
@@ -190,15 +239,15 @@ class DataframeProcessor():
             cols = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
             for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
-                t, p = ttest_ind(acc_df.at[(d, n, sch, c), upper], acc_df.at[(d, n, sch, c), lower])
+                t, p = ttest_ind(ndf.at[(d, n, sch, c), upper], ndf.at[(d, n, sch, c), lower])
                 if t < 0:
                     p = 1. - p / 2.
                 else:
                     p = p / 2.
-                acc_df.loc[(d, n, sch, c), f"{col}_p_val"] = p
+                ndf.loc[(d, n, sch, c), f"{col}_p_val"] = p
 
         # save things
-        self.save_df("max_acc_df.csv", acc_df)
+        self.save_df(df_name, ndf)
 
         # TODO: separate the refresh code for this from max_acc_df???
         self.save_json("case_dict.json", case_dict)
@@ -272,6 +321,11 @@ class DataframeProcessor():
         # save df
         self.save_df("acc_df.csv", acc_df)
   
+if __name__=="__main__":
     
+    proc = DataframeProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint")
+    proc.refresh_max_acc_df()
+    # proc.add_group_to_df()
+
     
     
