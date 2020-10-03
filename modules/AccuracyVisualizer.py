@@ -33,7 +33,7 @@ matplotlib.rc("ytick", labelsize=16)
 
 class AccuracyVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
@@ -150,7 +150,7 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")
         plt.savefig(f"{filename}.png", dpi=300)
 
-    def get_prediction_df(self, dataset, net_names, schemes, excl_arr, 
+    def get_prediction_df(self, dataset, net_names, schemes, groups, excl_arr, 
         pred_type="max", cross_family=None):
 
         # pull data
@@ -165,6 +165,8 @@ class AccuracyVisualizer():
             .query(f"dataset == '{dataset}'") \
             .query(f"net_name in {net_names}") \
             .query(f"train_scheme in {schemes}")
+        if len(groups) > 0:
+            df = df.query(f"group in {groups}")
         if cross_family is not None:
             df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
@@ -178,7 +180,7 @@ class AccuracyVisualizer():
 
         return sort_df, case_dict
 
-    def plot_predictions(self, dataset, net_names, schemes, excl_arr, 
+    def plot_predictions(self, dataset, net_names, schemes, groups=[], excl_arr=[], 
         pred_type="max", cross_family=None, pred_std=False, small=False):
         """
         Plot a single axis figure of offset from predicted max accuracy for
@@ -186,8 +188,8 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, excl_arr, 
-            pred_type, cross_family)
+        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, groups, 
+            excl_arr, pred_type, cross_family)
         
         # determine each label length for alignment
         lengths = {}
@@ -219,7 +221,7 @@ class AccuracyVisualizer():
             xmax = max(xmax, perf + err)
 
             # dataset, net, scheme, case, mixed, cross-family
-            d, n, s, c, m, cf = midx
+            d, n, s, g, c, m, cf = midx
             clr = clrs[net_names.index(n)]
             
             # prettify	
@@ -819,8 +821,10 @@ class AccuracyVisualizer():
 
 if __name__=="__main__":
     
-    visualizer = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True)
+    visualizer = AccuracyVisualizer(
+        "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
+        save_fig=True
+        )
     
     # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
@@ -831,16 +835,6 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.05", "tanh0.1", "tanh0.5", "tanh1", "tanh2"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanh2", "swish1-tanh2"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
-
-    visualizer.plot_predictions("cifar10",
-        ["sticknet8"],
-        ["adam"],
-        excl_arr=["spatial", "test"],
-        pred_type="max",
-        cross_family=None,
-        pred_std=True,
-        small=False
-        )
 
     # visualizer.plot_prediction_supplements("cifar10",
     #     ["vgg11"],

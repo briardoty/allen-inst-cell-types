@@ -68,6 +68,7 @@ class AccuracyLoader():
 
         # aggregate
         gidx_cols = self.net_idx_cols + ["is_mixed", "cross_fam"]
+        gidx_cols.remove("sample")
         df_stats = acc_df.groupby(gidx_cols).agg(
             { "max_val_acc": [np.mean, np.std],
               "max_pred": [np.mean, np.std],
