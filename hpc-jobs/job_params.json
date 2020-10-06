@@ -4,7 +4,7 @@
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
             "n_classes": 10,
-            "epochs": 150,
+            "epochs": 300,
             "train_frac": 1.0,
             "batch_size": 128,
             "lr_step_size": 500,
@@ -40,16 +40,15 @@
             "email_options": "a"
         }
     },
-    "vis_cases": {
-        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/vis_cases.py",
+    "refresh_dataframes": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/refresh_dataframes.py",
         "run_params": {
-            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
-            "n_classes": 10
+            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/"
         },
         "job_settings": {
             "queue": "braintv",
             "mem": "8g",
-            "walltime": "30:00",
+            "walltime": "2:00:00",
             "ppn": 2,
             "nodes": 1,
             "email": "briar.doty@alleninstitute.org",
