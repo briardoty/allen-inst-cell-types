@@ -81,6 +81,8 @@ def load_dataset(data_dir, name, batch_size):
 
     if name == "cifar10":
         return load_cifar10(dataset_dir, batch_size, n_workers)
+    if name == "cifar100":
+        return load_cifar100(dataset_dir, batch_size, n_workers)
     elif name == "imagenette2":
         return load_imagenette(dataset_dir, batch_size, n_workers)
     elif name == "fashionmnist":
@@ -173,6 +175,36 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4):
         download=True, transform=train_xform)
     
     val_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=False,
+        download=True, transform=val_xform)
+
+    # loaders
+    train_loader = torch.utils.data.DataLoader(train_set,
+        batch_size=batch_size, shuffle=True, num_workers=n_workers)
+
+    val_loader = torch.utils.data.DataLoader(val_set, 
+        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+
+    return (train_set, val_set, train_loader, val_loader)
+
+def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
+
+    # standard transforms
+    train_xform = transforms.Compose([
+        transforms.RandomHorizontalFlip(), 
+        transforms.RandomCrop(32, 4),
+        transforms.ToTensor(),
+        normalize
+    ])
+    val_xform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    # datasets
+    train_set = torchvision.datasets.CIFAR100(root=dataset_dir, train=True,
+        download=True, transform=train_xform)
+    
+    val_set = torchvision.datasets.CIFAR100(root=dataset_dir, train=False,
         download=True, transform=val_xform)
 
     # loaders

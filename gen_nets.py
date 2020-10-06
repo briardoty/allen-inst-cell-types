@@ -41,7 +41,7 @@ def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
          spatial, find_lr):
     
     # init net manager
-    manager = NetManager(dataset, net_name, group, case, n_classes, 
+    manager = NetManager(dataset, net_name, group, case, 
         data_dir, scheme, pretrained)
     manager.load_dataset()
     

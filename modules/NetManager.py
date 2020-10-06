@@ -112,7 +112,7 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
 
 class NetManager():
     
-    def __init__(self, dataset, net_name, group, case, n_classes, data_dir, 
+    def __init__(self, dataset, net_name, group, case, data_dir, 
         train_scheme, pretrained=False, seed=None):
 
         # SEED!
@@ -122,7 +122,6 @@ class NetManager():
         self.net_name = net_name
         self.group = group
         self.case = case
-        self.n_classes = n_classes
         self.data_dir = os.path.expanduser(data_dir)
         self.train_scheme = train_scheme
         self.pretrained = pretrained
@@ -166,8 +165,9 @@ class NetManager():
             sys.exit(-1)
             
         # update net's output layer to match n_classes
+        n_classes = 100 if self.dataset == "cifar100" else 10
         n_features = self.net.classifier[-1].in_features
-        self.net.classifier[-1] = nn.Linear(n_features, self.n_classes)
+        self.net.classifier[-1] = nn.Linear(n_features, n_classes)
 
         # update net's input layer to match n_channels in dataset
         if self.dataset == "fashionmnist":
@@ -645,9 +645,9 @@ class NetManager():
 
 
 if __name__=="__main__":
-    dataset = "fashionmnist"
-    n_classes = 10
-    net = "vgg11"
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data/"
+    dataset = "cifar100"
+    net = "sticknet8"
     scheme = "adam"
     group = "control"
     case = "relu"
@@ -655,8 +655,7 @@ if __name__=="__main__":
     epoch = 0
 
     # initialize
-    mgr = NetManager(dataset, net, group, case, n_classes,
-        "/home/briardoty/Source/allen-inst-cell-types/data/", scheme)
+    mgr = NetManager(dataset, net, group, case, data_dir, scheme)
     mgr.load_dataset(128)
     
     # load

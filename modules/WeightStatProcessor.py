@@ -101,7 +101,7 @@ class WeightStatProcessor():
         cell type across layers
         """
         # for loading nets/metadata
-        mgr = NetManager(net_name, self.n_classes, self.data_dir, None)
+        mgr = NetManager(net_name, self.data_dir, None)
 
         weights_arr = []
         state_keys = list(nets["vgg11"]["state_keys"].keys())
@@ -180,7 +180,7 @@ class WeightStatProcessor():
 
         """
         # for loading nets/metadata
-        mgr = NetManager(net_name, self.n_classes, self.data_dir, None)
+        mgr = NetManager(net_name, self.data_dir, None)
 
         weight_change_arr = []
         
