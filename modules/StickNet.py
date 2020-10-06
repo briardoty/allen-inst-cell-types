@@ -2,13 +2,7 @@ import torch
 import torch.nn as nn
 from torchvision import datasets, models, transforms
 import os
-import math
-import time
 import numpy as np
-import copy
-import torch.optim as optim
-from torch.optim import lr_scheduler
-import random
 
 
 class StickNet(nn.Module):

@@ -168,6 +168,13 @@ class NetManager():
         # update net's output layer to match n_classes
         n_features = self.net.classifier[-1].in_features
         self.net.classifier[-1] = nn.Linear(n_features, self.n_classes)
+
+        # update net's input layer to match n_channels in dataset
+        if self.dataset == "fashionmnist":
+            conv1 = self.net.features[0]
+            self.net.features[0] = nn.Conv2d(1, conv1.out_channels, 
+                kernel_size=conv1.kernel_size, 
+                padding=conv1.padding)
         self.net = self.net.to(self.device)
     
     def get_net_filepath(self, epoch=None):
@@ -638,17 +645,23 @@ class NetManager():
 
 
 if __name__=="__main__":
-    dataset = "cifar10"
-    net = "sticknet8"
+    dataset = "fashionmnist"
+    n_classes = 10
+    net = "vgg11"
     scheme = "adam"
     group = "control"
     case = "relu"
     sample = 0
     epoch = 0
-    mgr = NetManager(dataset, net, group, case, 10,
+
+    # initialize
+    mgr = NetManager(dataset, net, group, case, n_classes,
         "/home/briardoty/Source/allen-inst-cell-types/data/", scheme)
-    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
     mgr.load_dataset(128)
+    
+    # load
+    mgr.init_net(sample)
+    # mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)

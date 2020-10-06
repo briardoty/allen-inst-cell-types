@@ -83,6 +83,8 @@ def load_dataset(data_dir, name, batch_size):
         return load_cifar10(dataset_dir, batch_size, n_workers)
     elif name == "imagenette2":
         return load_imagenette(dataset_dir, batch_size, n_workers)
+    elif name == "fashionmnist":
+        return load_fashionMNIST(dataset_dir, batch_size, n_workers)
     else:
         print(f"Unrecognized dataset name {name}")
         sys.exit(-1)
@@ -116,6 +118,40 @@ def load_imagenette(dataset_dir, batch_size=4, n_workers=4):
     val_loader = torch.utils.data.DataLoader(val_set, 
         batch_size=batch_size, shuffle=False, num_workers=n_workers)
     
+    return (train_set, val_set, train_loader, val_loader)
+
+def load_fashionMNIST(dataset_dir, batch_size=128, n_workers=4):
+
+    # standard transforms
+    img_xy = 56
+    mnist_nrmlz = transforms.Normalize([0.5], [0.225])
+    train_xform = transforms.Compose([
+        transforms.Resize(img_xy),
+        transforms.RandomHorizontalFlip(), 
+        transforms.RandomCrop(img_xy, 4),
+        transforms.ToTensor(),
+        mnist_nrmlz
+    ])
+    val_xform = transforms.Compose([
+        transforms.Resize(img_xy),
+        transforms.ToTensor(),
+        mnist_nrmlz
+    ])
+
+    # datasets
+    train_set = torchvision.datasets.FashionMNIST(root=dataset_dir, train=True,
+        download=True, transform=train_xform)
+    
+    val_set = torchvision.datasets.FashionMNIST(root=dataset_dir, train=False,
+        download=True, transform=val_xform)
+
+    # loaders
+    train_loader = torch.utils.data.DataLoader(train_set,
+        batch_size=batch_size, shuffle=True, num_workers=n_workers)
+
+    val_loader = torch.utils.data.DataLoader(val_set, 
+        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+
     return (train_set, val_set, train_loader, val_loader)
 
 def load_cifar10(dataset_dir, batch_size=128, n_workers=4):
