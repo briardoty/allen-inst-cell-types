@@ -33,10 +33,11 @@ matplotlib.rc("ytick", labelsize=16)
 
 class AccuracyVisualizer():
     
-    def __init__(self, data_dir, save_fig=False):
+    def __init__(self, data_dir, save_fig=False, save_png=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
+        self.save_png = save_png
         
         self.stats_processor = AccuracyLoader(data_dir)
 
@@ -150,7 +151,7 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")
         plt.savefig(f"{filename}.png", dpi=300)
 
-    def get_prediction_df(self, dataset, net_names, schemes, groups, excl_arr, 
+    def get_prediction_df(self, dataset, net_names, schemes, cases, excl_arr, 
         pred_type="max", cross_family=None):
 
         # pull data
@@ -165,30 +166,30 @@ class AccuracyVisualizer():
             .query(f"dataset == '{dataset}'") \
             .query(f"net_name in {net_names}") \
             .query(f"train_scheme in {schemes}")
-        if len(groups) > 0:
-            df = df.query(f"group in {groups}")
+        if len(cases) > 0:
+            df = df.query(f"case in {cases}")
         if cross_family is not None:
             df = df.query(f"cross_fam == {cross_family}")
         for excl in excl_arr:
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # filter vgg tanh2 because it's terrible
-        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
-            engine="python")
+        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+        #     engine="python")
 
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
 
         return sort_df, case_dict
 
-    def plot_predictions(self, dataset, net_names, schemes, groups=[], excl_arr=[], 
-        pred_type="max", cross_family=None, pred_std=False, small=False):
+    def plot_predictions(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
+        pred_type="max", cross_family=None, pred_std=False, small=False, filename=None):
         """
         Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
         """
 
         # pull data
-        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, groups, 
+        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, cases, 
             excl_arr, pred_type, cross_family)
         
         # determine each label length for alignment
@@ -211,6 +212,8 @@ class AccuracyVisualizer():
         i = 0
         xmax = 0
         xmin = 0
+        lw = 600 / len(sort_df)
+        ms = lw * 0.5
         for midx, row in sort_df.iterrows():
 
             # stats
@@ -229,7 +232,6 @@ class AccuracyVisualizer():
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
 
             # plot "good" and "bad"
-            lw = 6
             if perf - err > 0:
                 if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
@@ -237,7 +239,7 @@ class AccuracyVisualizer():
                 else:
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
                         c=clr, linewidth=lw, alpha=.8)
-                h = plt.plot(perf, i, c=clr, marker="o")
+                h = plt.plot(perf, i, c=clr, marker="o", ms=ms)
                 handles[n] = h[0]
             else:
                 if cf or cross_family is not None:
@@ -250,7 +252,7 @@ class AccuracyVisualizer():
                         c=clr, linewidth=lw, alpha=.2)
                     plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
                         linewidth=lw, c="k", alpha=.1)
-                h = plt.plot(perf, i, c=clr, marker="o", alpha=0.5)
+                h = plt.plot(perf, i, c=clr, marker="o", ms=ms, alpha=0.5)
                 if handles.get(n) is None:
                     handles[n] = h[0]
 
@@ -258,7 +260,7 @@ class AccuracyVisualizer():
             if pred_std:
                 pred_err = row[f"{pred_type}_pred"]["std"] * 1.98 * 100
                 plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
-                        c="k", linewidth=6, alpha=.2)
+                        c="k", linewidth=lw, alpha=.2)
 
             # BH corrected significance
             sig_arr.append(row[f"{pred_type}_pred_rej_h0"].values[0])
@@ -272,11 +274,11 @@ class AccuracyVisualizer():
             i += 1
 
         # indicate BH corrected significance
-        h = plt.plot(i+100, 0, "k*", alpha=0.5)
+        h = plt.plot(i+100, 0, "k*", alpha=0.5, ms=ms)
         handles["p < 0.05"] = h[0]
         for i in range(len(sig_arr)):
             if sig_arr[i]:
-                plt.plot(xmax + xmax/20., i, "k*", alpha=0.5)
+                plt.plot(xmax + xmax/20., i, "k*", alpha=0.5, ms=ms)
 
         # determine padding for labels
         max_length = np.max([len(l) for l in ylabels.values()])
@@ -307,18 +309,11 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/prediction")
-        net_names = ", ".join(net_names)
-        schemes = ", ".join(schemes)
-        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
-        if cross_family == True:
-            filename += "_xfam"
-        elif cross_family == False:
-            filename += "_infam"
-        filename = os.path.join(sub_dir, filename)
-        print(f"Saving... {filename}")
-        plt.savefig(f"{filename}.svg")  
-        plt.savefig(f"{filename}.png", dpi=300)
+        if filename is None:
+            net_names = ", ".join(net_names)
+            schemes = ", ".join(schemes)
+            filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
+        self.save("prediction", filename)
 
     def plot_prediction_supplements(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -498,7 +493,9 @@ class AccuracyVisualizer():
         print(f"Saving... {filename}")
 
         plt.savefig(f"{filename}.svg")  
-        # plt.savefig(f"{filename}.png", dpi=300)
+
+        if self.save_png:
+            plt.savefig(f"{filename}.png", dpi=300)
 
     def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", 
         cmap="bwr"):
