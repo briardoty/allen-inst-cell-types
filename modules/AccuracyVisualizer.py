@@ -72,7 +72,7 @@ class AccuracyVisualizer():
         for i in range(len(component_cases)):
 
             cc = component_cases[i]
-            cc_rows = df.loc[(dataset, net_name, scheme, cc)]
+            cc_rows = df.query(f"case == '{cc}'")
             yvals = cc_rows["max_val_acc"].values * 100
             start = x[-1] + 2
             x = [i for i in range(start, start + len(yvals))]
@@ -86,17 +86,20 @@ class AccuracyVisualizer():
             
         # plot mixed case
         # actual
+        mwidth = width + 0.09
         m_clrs = sns.color_palette("hls", len(component_cases) + 3)
-        m_rows = df.loc[(dataset, net_name, scheme, mixed_case)]
+        m_rows = df.query(f"case == '{mixed_case}'")
         yact = m_rows["max_val_acc"].values * 100
         axes[1].plot([0] * len(yact), yact, ".", label=cc,
             c=m_clrs[len(component_cases)], markersize=markersize, alpha=0.6)
+        axes[1].plot([-mwidth, mwidth], [np.mean(yact), np.mean(yact)], 
+                linestyle=":", c=m_clrs[len(component_cases)], linewidth=lw)
 
         # predicted
         pred_types = ["max", "linear"]
         handles = dict()
         for pred_type, clr in zip(pred_types, m_clrs[-2:]):
-            ypred = df.loc[(dataset, net_name, scheme, mixed_case)][f"{pred_type}_pred"].mean() * 100
+            ypred = m_rows[f"{pred_type}_pred"].mean() * 100
             h = axes[1].plot([-width, width], [ypred, ypred], 
                 label=cc, c=clr, linewidth=lw)
 
@@ -104,14 +107,10 @@ class AccuracyVisualizer():
             handles[pred_type] = h[0]
 
         # legend stuff
-        handles["actual"] = axes[0].plot(-100, ypred, "k.", 
-            markersize=markersize, alpha=0.5)[0]
         handles["mean"] = axes[0].plot(-100, ypred, "k:", 
             linewidth=lw, alpha=0.5)[0]
 
         # set figure text
-        # fig.suptitle(f"Component and mixed network performance comparison\n {net_name} on {dataset}",
-        #     fontsize=20)
         axes[0].set_xlabel("Component", fontsize=16, 
             labelpad=10)
         axes[1].set_xlabel("Mixed", fontsize=large_font_size, 
@@ -144,12 +143,8 @@ class AccuracyVisualizer():
             plt.show()
             return
 
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/final acc comparison/")
         filename = f"{mixed_case} comparison"
-        filename = os.path.join(sub_dir, filename)
-        print(f"Saving... {filename}")
-        plt.savefig(f"{filename}.svg")
-        plt.savefig(f"{filename}.png", dpi=300)
+        self.save("decomposition", filename)
 
     def get_prediction_df(self, dataset, net_names, schemes, cases, excl_arr, 
         pred_type="max", cross_family=None):
@@ -820,10 +815,11 @@ if __name__=="__main__":
     
     visualizer = AccuracyVisualizer(
         "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        save_fig=True
+        save_fig=True,
+        save_png=True
         )
     
-    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
+    visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
     # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
