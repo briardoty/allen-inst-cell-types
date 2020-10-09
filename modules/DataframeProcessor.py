@@ -92,7 +92,7 @@ class DataframeProcessor():
         case_dict = dict()
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/")
+        net_dir = os.path.join(self.data_dir, f"nets/fashionmnist")
         for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -174,7 +174,7 @@ class DataframeProcessor():
         ndf = pd.concat([curr_df[~curr_df.index.isin(acc_df.index)], acc_df])
 
         # update group based on old
-        ndf["group"] = curr_df["group"]
+        # ndf["group"] = curr_df["group"]
 
         # 2.9. index with group
         ndf.reset_index(drop=False, inplace=True)
