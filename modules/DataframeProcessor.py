@@ -86,7 +86,7 @@ class DataframeProcessor():
         # load current df if exists
         df_name = "max_acc_df.csv"
         curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
-        curr_df.drop(columns="Unnamed: 0", inplace=True)
+        # curr_df.drop(columns="Unnamed: 0", inplace=True)
 
         acc_arr = []
         case_dict = dict()
@@ -324,7 +324,8 @@ class DataframeProcessor():
   
 if __name__=="__main__":
     
-    proc = DataframeProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint")
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
+    proc = DataframeProcessor(data_dir)
     proc.refresh_max_acc_df()
     # proc.add_group_to_df()
 
