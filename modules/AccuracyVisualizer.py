@@ -10,6 +10,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
@@ -120,7 +121,7 @@ class AccuracyVisualizer():
         axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
         axes[1].set_xlim([-0.5, 0.5])
         axes[0].set_xticks(list(c_labels.keys()))
-        axes[0].set_yticklabels(list(axes[0].get_yticks()), fontsize=12)
+        axes[0].tick_params(axis="y", labelsize=12)
         axes[0].set_xticklabels(list(c_labels.values()), fontsize=12)
         axes[1].set_xticks([0])
         axes[1].set_xticklabels([mixed_case], fontsize=12)
@@ -147,7 +148,7 @@ class AccuracyVisualizer():
         self.save("decomposition", filename)
 
     def get_prediction_df(self, dataset, net_names, schemes, cases, excl_arr, 
-        pred_type="max", cross_family=None):
+        pred_type="max", cross_family=None, mixed=True):
 
         # pull data
         df, case_dict, _ = self.stats_processor.load_max_acc_df()
@@ -157,8 +158,9 @@ class AccuracyVisualizer():
         df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]["mean"]
 
         # filter dataframe
-        df = df.query(f"is_mixed") \
-            .query(f"dataset == '{dataset}'") \
+        if mixed:
+            df = df.query(f"is_mixed")
+        df = df.query(f"dataset == '{dataset}'") \
             .query(f"net_name in {net_names}") \
             .query(f"train_scheme in {schemes}")
         if len(cases) > 0:
@@ -175,6 +177,85 @@ class AccuracyVisualizer():
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
 
         return sort_df, case_dict
+
+    def plot_ratio_group(self, dataset, net_name, scheme, ratio_group):
+
+        # build dict for looking up cases in group
+        group_dict = dict()
+        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
+            net_configs = json.load(json_file)
+        ratio_cases = list(net_configs[ratio_group].keys())
+        
+        # pull data
+        sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], ratio_cases, 
+            [], "max", None)
+        
+        # get component cases as either extreme
+        cc_names = get_component_cases(case_dict, ratio_cases[0])
+        cases = [cc_names[0]] + ratio_cases + [cc_names[1]]
+
+        sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], cases, 
+            [], "max", None, mixed=False)
+
+        # plot
+        fig, ax = plt.subplots(figsize=(6,5))
+
+        x = [-2]
+        clrs = sns.color_palette("Set2", 2)
+        lw = 4
+        handles = dict()
+        xlabels = dict()
+        for i in range(len(cases)):
+
+            c = cases[i]
+            yval = sort_df.query(f"case == '{c}'")["max_val_acc"]["mean"][0] * 100
+            yerr = sort_df.query(f"case == '{c}'")["max_val_acc"]["std"][0] * 1.98 * 100
+
+            try:
+                xlabels[i] = ":".join([str(n) for n in net_configs[ratio_group][c]["n_repeat"]])
+                ax.plot([i, i], [yval - yerr, yval + yerr], linestyle="-", 
+                    c=clrs[0], linewidth=lw, alpha=.8)
+                h = ax.plot(i, yval, c=clrs[0], marker="o")
+                handles["mixed"] = h[0]
+            except KeyError:
+                xlabels[i] = c
+                ax.plot([i, i], [yval - yerr, yval + yerr], linestyle="-", 
+                    c=clrs[1], linewidth=lw, alpha=.8)
+                h = ax.plot(i, yval, c=clrs[1], marker="o")
+                handles["component"] = h[0]
+
+        # plot predictions
+        ypred = sort_df.query(f"case == '{ratio_cases[0]}'")["max_pred"]["mean"][0] * 100
+        h = ax.axhline(ypred, color="k", linestyle='--', alpha=0.5)
+        handles["max pred"] = h
+
+        ypred1 = sort_df.query(f"case == '{cases[0]}'")["max_val_acc"]["mean"][0] * 100
+        ypred2 = sort_df.query(f"case == '{cases[-1]}'")["max_val_acc"]["mean"][0] * 100
+        h = ax.plot([0, len(cases) - 1], [ypred1, ypred2], linestyle=":", c="k", 
+            alpha=.5)
+        handles["linear pred"] = h[0]
+
+        # set figure text
+        ax.set_xlabel("Net ratio", fontsize=16, labelpad=-10)
+        ax.set_ylabel("Final validation accuracy (%)", 
+            fontsize=large_font_size, labelpad=10)
+        ax.set_xticks(list(xlabels.keys()))
+        ax.set_xticklabels(list(xlabels.values()), fontsize=12, rotation=45)
+        ax.tick_params(axis="y", labelsize=12)
+        plt.tight_layout()
+
+        # append legend
+        ax.legend(handles.values(), handles.keys(), fontsize=12)
+         
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        filename = f"{ratio_group}"
+        self.save("ratio group", filename)
+        
 
     def plot_predictions(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
         pred_type="max", cross_family=None, pred_std=False, small=False, filename=None):
@@ -819,7 +900,9 @@ if __name__=="__main__":
         save_png=True
         )
     
-    visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
+    visualizer.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
+
+    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
     # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
