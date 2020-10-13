@@ -92,7 +92,7 @@ class DataframeProcessor():
         case_dict = dict()
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/fashionmnist")
+        net_dir = os.path.join(self.data_dir, f"nets")
         for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
