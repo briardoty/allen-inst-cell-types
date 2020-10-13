@@ -83,6 +83,19 @@ class DataframeProcessor():
         Refreshes dataframe with max validation accuracy.
         """
 
+        # build case -> group dict
+        group_dict = dict()
+        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
+            net_configs = json.load(json_file)
+
+        for g in net_configs.keys():
+            cases = net_configs[g]
+            case_names = cases.keys()
+            
+            for c in case_names:
+
+                group_dict[c] = g
+
         # load current df if exists
         df_name = "max_acc_df.csv"
         curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
@@ -122,6 +135,8 @@ class DataframeProcessor():
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
                 group = stats_dict.get("group")
+                if group is None:
+                    group = group_dict.get(case)
                 modified_layers = stats_dict.get("modified_layers")
                 if modified_layers is not None:
                     case_dict[case] = {
@@ -173,8 +188,8 @@ class DataframeProcessor():
         # merge new and old, preferring new
         ndf = pd.concat([curr_df[~curr_df.index.isin(acc_df.index)], acc_df])
 
-        # update group based on old
-        # ndf["group"] = curr_df["group"]
+        # port over group from old df where appropriate
+        # ndf[ndf.index.isin(curr_df.index)]["group"] = curr_df["group"]
 
         # 2.9. index with group
         ndf.reset_index(drop=False, inplace=True)
