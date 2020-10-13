@@ -253,20 +253,6 @@ class DataframeProcessor():
         # TODO: separate the refresh code for this from max_acc_df???
         self.save_json("case_dict.json", case_dict)
 
-    def save_df(self, name, df):
-
-        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
-        filename = os.path.join(sub_dir, name)
-        df.to_csv(filename, header=True, columns=df.columns)
-
-    def save_json(self, name, blob):
-
-        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
-        filename = os.path.join(sub_dir, name)
-        json_obj = json.dumps(blob)
-        with open(filename, "w") as json_file:
-            json_file.write(json_obj)
-
     def refresh_accuracy_df(self):
         """
         Loads dataframe with accuracy over training for different experimental 
@@ -308,6 +294,7 @@ class DataframeProcessor():
                 dataset = stats_dict.get("dataset") if stats_dict.get("dataset") is not None else "imagenette2"
                 net_name = stats_dict.get("net_name")
                 train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
+                group = stats_dict.get("group")
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
 
@@ -318,13 +305,27 @@ class DataframeProcessor():
                     except TypeError:
                         print(f"Entry in perf_stats did not match expectations. Dataset: {dataset}; Scheme: {train_scheme}; Case {case}; Sample: {sample}; Epoch: {epoch}")
                         continue
-                    acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc, train_acc])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, epoch, val_acc, train_acc])
                 
         # make dataframe
         acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["epoch", "val_acc", "train_acc"])
         
         # save df
         self.save_df("acc_df.csv", acc_df)
+
+    def save_df(self, name, df):
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
+        filename = os.path.join(sub_dir, name)
+        df.to_csv(filename, header=True, columns=df.columns)
+
+    def save_json(self, name, blob):
+
+        sub_dir = ensure_sub_dir(self.data_dir, f"dataframes/")
+        filename = os.path.join(sub_dir, name)
+        json_obj = json.dumps(blob)
+        with open(filename, "w") as json_file:
+            json_file.write(json_obj)
   
 if __name__=="__main__":
     
