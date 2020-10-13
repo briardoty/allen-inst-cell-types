@@ -315,7 +315,7 @@ class DataframeProcessor():
                 for epoch in range(len(perf_stats)):
                     try:
                         (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
-                    except ValueError:
+                    except TypeError:
                         print(f"Entry in perf_stats did not match expectations. Dataset: {dataset}; Scheme: {train_scheme}; Case {case}; Sample: {sample}; Epoch: {epoch}")
                         continue
                     acc_arr.append([dataset, net_name, train_scheme, case, sample, epoch, val_acc, train_acc])
