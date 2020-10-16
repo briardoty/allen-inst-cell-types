@@ -585,7 +585,7 @@ class NetManager():
 
 
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-        end_epoch=10, snap_freq=10):
+        end_epoch=10, snap_freq=50):
         """
         Run end_epoch of training and validation
         """
@@ -645,14 +645,14 @@ class NetManager():
 
 
 if __name__=="__main__":
-    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data/"
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar100"
     net = "sticknet8"
     scheme = "adam"
-    group = "control"
-    case = "relu"
-    sample = 0
-    epoch = 0
+    group = "cross-swish-tanh"
+    case = "swish2-tanh0.01"
+    sample = 6
+    epoch = 140
 
     # initialize
     mgr = NetManager(dataset, net, group, case, data_dir, scheme)
@@ -660,16 +660,20 @@ if __name__=="__main__":
     
     # load
     mgr.init_net(sample)
-    # mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
+    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)
 
-    lr_low, lr_high = 1e-7, 0.1
-    x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+    # lr_low, lr_high = 1e-7, 0.1
+    # x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     
     # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
     mgr.train_net(criterion, optimizer, exp_lr_scheduler, 1.0)
+
+    # eval net
+    mgr.evaluate_net(criterion)
+
     x = 1
