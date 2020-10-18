@@ -21,6 +21,23 @@ vis = AccuracyVisualizer(
     save_png=True
     )
 
+# all nets, all datasets
+nets = ["sticknet8", "vgg11"]
+datasets = ["cifar10", "fashionmnist", "cifar100"]
+for n in nets:
+    for d in datasets:
+        vis.plot_predictions(d,
+            [n],
+            ["adam"],
+            cases=[],
+            excl_arr=["spatial", "test", "ratio"],
+            pred_type="max",
+            cross_family=None,
+            pred_std=True,
+            small=False,
+            filename=f"{n} {d} prediction"
+            )
+
 # plot ratio groups
 ratio_groups = ["ratios-swish5-tanh0.5", "ratios-swish2-tanh2", "ratios-relu-tanh1"]
 for rg in ratio_groups:

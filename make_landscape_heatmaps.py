@@ -1,7 +1,12 @@
 from modules.AccuracyVisualizer import AccuracyVisualizer
 
-vis = AccuracyVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-    10, save_fig=True)
+# init visualizer
+data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
+vis = AccuracyVisualizer(
+    data_dir, 
+    save_fig=True,
+    save_png=True
+    )
 
 vis.heatmap_acc("cifar10", 
     "vgg11", 

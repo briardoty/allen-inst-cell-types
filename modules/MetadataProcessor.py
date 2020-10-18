@@ -7,26 +7,20 @@ import json
 from scipy.stats import ttest_ind
 import math
 
-try:
-    from .WeightStatProcessor import get_last_epoch
-except:
-    from WeightStatProcessor import get_last_epoch
 
 try:
-    from .NetManager import NetManager
+    from .util import *
 except:
-    from NetManager import NetManager
-
+    from util import *
 
 class MetadataProcessor():
     """
     Class to handle processing network snapshots into meaningful statistics.
     """
     
-    def __init__(self, data_dir, n_classes):
+    def __init__(self, data_dir):
         
         self.data_dir = data_dir
-        self.n_classes = n_classes
         self.exclude_slug = "(exclude)"
         self.pct = 90
     
@@ -54,7 +48,7 @@ class MetadataProcessor():
                 if epoch is None:
                     continue
 
-                if epoch % 10 == 0:
+                if epoch % 50 == 0:
                     continue
                 else:
                     # delete
@@ -64,11 +58,9 @@ class MetadataProcessor():
 
 if __name__=="__main__":
     
-    processor = MetadataProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 10)
+    processor = MetadataProcessor("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint")
     
-    # processor.reduce_snapshots()
-    processor.port_group()
-
+    processor.reduce_snapshots()
     
     
     

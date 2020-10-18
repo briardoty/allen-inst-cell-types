@@ -30,7 +30,7 @@ matplotlib.rc("ytick", labelsize=small_font_size)
 
 class FunctionVisualizer():
     
-    def __init__(self, data_dir, n_classes=10, save_fig=False):
+    def __init__(self, data_dir, save_fig=False):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
@@ -49,7 +49,8 @@ class FunctionVisualizer():
             fn = act_fns[i]
             y = fn(x)
             normalized = y / max(y)
-            ax.plot(x, y, label=str(fn), c=clrs[i], linewidth=3)
+            label = str(fn)
+            ax.plot(x, y, label=label, c=clrs[i], linewidth=3)
             # ax.plot(x, normalized, label=f"{str(fn)} norm")
 
         # axes
@@ -132,10 +133,13 @@ class FunctionVisualizer():
 
 if __name__=="__main__":
     
-    visualizer = FunctionVisualizer("/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        10, save_fig=True)
+    visualizer = FunctionVisualizer(
+        "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
+        save_fig=True)
 
     # visualizer.plot_activation_fns([Tanh(1), Swish(1), Relu()])
-    visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
+    # visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
+    visualizer.plot_activation_fns([Tanh(0.1), Tanh(0.5), Tanh(1)])
+    # visualizer.plot_activation_fns([Tanh(1), Swish(5)])
 
     # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)

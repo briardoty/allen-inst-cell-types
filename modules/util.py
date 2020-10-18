@@ -263,3 +263,10 @@ def get_component_cases(case_dict, case):
             component_cases.append(k)
 
     return component_cases
+
+def get_epoch_from_filename(filename):
+    
+    epoch = re.search(r"\d+\.pt$", filename)
+    epoch = int(epoch.group().split(".")[0]) if epoch else None
+    
+    return epoch

@@ -456,7 +456,7 @@ class AccuracyVisualizer():
         self.save("supplementary", "network")
 
 
-    def scatter_acc(self, dataset, net_names, schemes, excl_arr, 
+    def scatter_acc(self, datasets, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
         """
         Plot a scatter plot of predicted vs actual max accuracy for the 
@@ -468,7 +468,7 @@ class AccuracyVisualizer():
 
         # filter dataframe
         df = df.query(f"is_mixed")
-        df = df.query(f"dataset == '{dataset}'") 
+        df = df.query(f"dataset in {datasets}") 
         df = df.query(f"net_name in {net_names}")
         df = df.query(f"train_scheme in {schemes}")
         if cross_family is not None:
@@ -481,7 +481,8 @@ class AccuracyVisualizer():
 
         # identifiers
         fmts = [".", "^"]
-        clrs = sns.color_palette("husl", len(net_names))
+        clrs = sns.color_palette("husl", len(datasets))
+        ms = 10
 
         # plot mixed cases
         i = 0
@@ -489,12 +490,13 @@ class AccuracyVisualizer():
         for midx in df.index.values:
 
             # dataset, net, scheme, case, mixed
-            d, n, s, c, m, cf = midx
+            d, n, sch, g, c, m, cf = midx
 
             # pick identifiers
-            clr = clrs[net_names.index(n)] # net
+            clr = clrs[datasets.index(d)] # dataset
             mfc = None if cf else "None" # xfam vs within fam
-            fmt = fmts[0]
+            fmt = fmts[net_names.index(n)] # net
+            alpha = 0.15 if cf else 0.4
 
             # actual
             y_act = df.loc[midx]["max_val_acc"]["mean"] * 100
@@ -505,11 +507,10 @@ class AccuracyVisualizer():
             x_err = df.loc[midx][f"{pred_type}_pred"]["std"] * 100 * 1.98
             
             # plot
-            h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=10,
-                markerfacecolor=mfc)
+            h = ax.plot(x_pred, y_act, c=clr, marker=fmt, markersize=ms,
+                markerfacecolor=mfc, alpha=alpha)
 
             facecolor = clr if cf else "None"
-            alpha = 0.15 if cf else 0.4
             lipse = matplotlib.patches.Ellipse((x_pred, y_act), x_err, y_err, 
                 facecolor=facecolor, edgecolor=clr, alpha=alpha)
             ax.add_patch(lipse)
@@ -528,15 +529,21 @@ class AccuracyVisualizer():
 
         # build legend handles
         handles = dict()
+        gray = (0.5, 0.5, 0.5)
+        ms = ms * 1.5
         for n in net_names:
-            clr = clrs[net_names.index(n)]
-            h = ax.plot(1000, 1000, c=clr, marker=fmt, markersize=20)
+            fmt = fmts[net_names.index(n)] # net
+            h = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=ms)
             handles[n] = h[0]
+        
+        for d in datasets:
+            clr = clrs[datasets.index(d)] # dataset
+            h = ax.plot(1000, 1000, c=clr, marker=".", markersize=ms)
+            handles[d] = h[0]
 
         if cross_family is None:
-            gray = (0.5, 0.5, 0.5)
-            h1 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=20, mfc=None)
-            h2 = ax.plot(1000, 1000, c=gray, marker=fmt, markersize=20, mfc="None")
+            h1 = ax.plot(1000, 1000, c=gray, marker=".", markersize=ms, mfc=None)
+            h2 = ax.plot(1000, 1000, c=gray, marker=".", markersize=ms, mfc="None")
             handles["cross-family"] = h1[0]
             handles["within-family"] = h2[0]
 
@@ -557,8 +564,9 @@ class AccuracyVisualizer():
             return
 
         net_names = ", ".join(net_names)
+        datasets = ", ".join(datasets)
         schemes = ", ".join(schemes)
-        filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-scatter"
+        filename = f"{datasets}_{net_names}_{schemes}_{pred_type}-scatter"
         self.save("scatter", filename)
 
     def save(self, sub_dir_name, filename):
@@ -900,9 +908,11 @@ if __name__=="__main__":
         save_png=True
         )
     
-    visualizer.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
+    # visualizer.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
 
-    # visualizer.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
+    # visualizer.plot_final_acc_decomp("fashionmnist", "vgg11", "adam", "swish10-tanh0.1")
+    # visualizer.plot_final_acc_decomp("fashionmnist", "vgg11", "adam", "swish0.1-0.5")
+    # visualizer.plot_final_acc_decomp("fashionmnist", "sticknet8", "adam", "swish7.5-tanh0.05")
 
     # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
@@ -911,6 +921,9 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.05", "tanh0.1", "tanh0.5", "tanh1", "tanh2"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanh2", "swish1-tanh2"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
+    # visualizer.plot_accuracy("fashionmnist", "sticknet8", ["adam"], ["swish7.5-tanh0.05", "swish7.5", "tanh0.05", "relu"], inset=False)
+    # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["relu"], inset=True)
+    # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["swish10-tanh0.1", "swish10", "tanh0.1", "relu"], inset=False)
 
     # visualizer.plot_prediction_supplements("cifar10",
     #     ["vgg11"],
@@ -920,12 +933,13 @@ if __name__=="__main__":
     #     cross_family=None
     #     )
 
-    # visualizer.scatter_acc("cifar10",
-    #     ["vgg11", "sticknet8"],
-    #     ["adam"], 
-    #     excl_arr=["spatial", "test", "ratio"],
-    #     pred_type="max",
-    #     cross_family=None)
+    visualizer.scatter_acc(
+        ["cifar10", "cifar100", "fashionmnist"],
+        ["vgg11", "sticknet8"],
+        ["adam"], 
+        excl_arr=["spatial", "test", "ratio"],
+        pred_type="max",
+        cross_family=None)
 
 
 

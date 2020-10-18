@@ -21,8 +21,7 @@ class Swish(nn.Module):
         self.beta = float(beta)
 
     def __repr__(self):
-        
-        return f"Swish(beta={self.beta})"
+        return rf"Swish($\beta$={self.beta})"
     
     def forward(self, input_tensor):
         
@@ -186,7 +185,7 @@ class Tanh(nn.Module):
 
     def __repr__(self):
         
-        return f"Tanh(beta={self.beta})"
+        return rf"Tanh($\beta$={self.beta})"
     
     def forward(self, input_tensor):
         
