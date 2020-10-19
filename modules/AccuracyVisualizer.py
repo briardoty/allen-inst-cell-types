@@ -42,6 +42,9 @@ class AccuracyVisualizer():
         
         self.stats_processor = AccuracyLoader(data_dir)
 
+        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
+            self.net_configs = json.load(json_file)
+
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
         Plot accuracy at the end of training for mixed case, 
@@ -181,10 +184,7 @@ class AccuracyVisualizer():
     def plot_ratio_group(self, dataset, net_name, scheme, ratio_group):
 
         # build dict for looking up cases in group
-        group_dict = dict()
-        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
-            net_configs = json.load(json_file)
-        ratio_cases = list(net_configs[ratio_group].keys())
+        ratio_cases = list(self.net_configs[ratio_group].keys())
         
         # pull data
         sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], ratio_cases, 
@@ -212,7 +212,7 @@ class AccuracyVisualizer():
             yerr = sort_df.query(f"case == '{c}'")["max_val_acc"]["std"][0] * 1.98 * 100
 
             try:
-                xlabels[i] = ":".join([str(n) for n in net_configs[ratio_group][c]["n_repeat"]])
+                xlabels[i] = ":".join([str(n) for n in self.net_configs[ratio_group][c]["n_repeat"]])
                 ax.plot([i, i], [yval - yerr, yval + yerr], linestyle="-", 
                     c=clrs[0], linewidth=lw, alpha=.8)
                 h = ax.plot(i, yval, c=clrs[0], marker="o")
@@ -581,6 +581,65 @@ class AccuracyVisualizer():
         if self.save_png:
             plt.savefig(f"{filename}.png", dpi=300)
 
+    def ratio_heatmap(self, dataset, net_name, scheme, metric="acc_vs_max", cmap="Reds"):
+
+        # get all ratio groups
+        ratio_groups = [g for g in self.net_configs.keys() if g.startswith("ratios-")]
+
+        # build ratio matrix
+        ratio_matrix = dict()
+        vmin = 100
+        vmax = -100
+        for rg in ratio_groups:
+
+            # get cases in this rg
+            ratio_cases = list(self.net_configs[rg].keys())
+
+            # pull data
+            sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], ratio_cases, 
+                [], "max", None)
+            
+            # get component cases as either extreme
+            cc_names = get_component_cases(case_dict, ratio_cases[0])
+            cases = [cc_names[0]] + ratio_cases + [cc_names[1]]
+
+            sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], cases, 
+                [], "max", None, mixed=False)
+
+            # build array of relative accuracies for this rg
+            rg_arr = list() 
+            for c in cases:
+                yval = sort_df.query(f"case == '{c}'")["max_val_acc"]["mean"][0] * 100
+                rg_arr.append(yval)
+                vmin = min(yval, vmin)
+                vmax = max(yval, vmax)
+            
+            ratio_matrix[rg] = rg_arr
+
+        # plot
+        M = np.array(list(ratio_matrix.values()))
+        plt.figure()
+        im = plt.imshow(M, cmap=cmap, vmin=vmin, vmax=vmax)
+        cbar = plt.gcf().colorbar(im, ax=plt.gca())
+        cbar.ax.set_ylabel(metric, fontsize=large_font_size)
+
+        plt.xlabel("Net ratio", fontsize=large_font_size)
+        plt.ylabel("Net config", fontsize=large_font_size)
+        xlabels = [f"{i}:{10-i}" for i in range(11)]
+        xticks = [i for i in range(len(xlabels))]
+        plt.xticks(xticks)
+        plt.gca().set_xticklabels(xlabels, fontsize=small_font_size, rotation=45)
+        yticks = [i for i in range(len(ratio_groups))]
+        ylabels = [rg[len("ratios-"):]for rg in ratio_groups]
+        plt.yticks(yticks, labels=ylabels, fontsize=small_font_size)
+        plt.tight_layout()
+
+        if self.save_fig:
+            filename = f"Ratio groups {net_name}"
+            self.save("heatmaps", filename)
+        else:
+            plt.show()
+
     def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", 
         cmap="bwr"):
 
@@ -919,7 +978,7 @@ if __name__=="__main__":
     # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.05", "tanh0.1", "tanh0.5", "tanh1", "tanh2"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["swish1", "tanh2", "swish1-tanh2"], inset=False)
+    visualizer.plot_accuracy("cifar100", "vgg11", ["adam"], ["swish2", "swish5", "swish2-5", "relu"], inset=False)
     # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
     # visualizer.plot_accuracy("fashionmnist", "sticknet8", ["adam"], ["swish7.5-tanh0.05", "swish7.5", "tanh0.05", "relu"], inset=False)
     # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["relu"], inset=True)
@@ -933,13 +992,13 @@ if __name__=="__main__":
     #     cross_family=None
     #     )
 
-    visualizer.scatter_acc(
-        ["cifar10", "cifar100", "fashionmnist"],
-        ["vgg11", "sticknet8"],
-        ["adam"], 
-        excl_arr=["spatial", "test", "ratio"],
-        pred_type="max",
-        cross_family=None)
+    # visualizer.scatter_acc(
+    #     ["cifar10", "cifar100", "fashionmnist"],
+    #     ["vgg11", "sticknet8"],
+    #     ["adam"], 
+    #     excl_arr=["spatial", "test", "ratio"],
+    #     pred_type="max",
+    #     cross_family=None)
 
 
 
