@@ -252,15 +252,15 @@ def get_component_cases(case_dict, case):
     z = list(zip(case_dict[case]["act_fns"], [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
     component_cases = []
 
-    for k, v in case_dict.items():
-
-        if len(component_cases) >= len(z):
-            return component_cases
-        
-        if (len(v["act_fns"]) == 1 
-            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z
-            and "_" not in k): # THIS IS A HACK TO GET RID OF OLD CASES
-            component_cases.append(k)
+    for k1, v1 in z:
+        for k2, v2 in case_dict.items():
+            
+            if (len(v2["act_fns"]) == 1 
+                and v2["act_fns"][0] == k1
+                and param_to_float(v2["act_fn_params"][0]) == v1
+                and "_" not in k2): # THIS IS A HACK TO GET RID OF OLD CASES
+                component_cases.append(k2)
+                break
 
     return component_cases
 
