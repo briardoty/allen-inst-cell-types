@@ -151,7 +151,7 @@ class AccuracyVisualizer():
         filename = f"{mixed_case} comparison"
         self.save("decomposition", filename)
 
-    def get_prediction_df(self, dataset, net_names, schemes, cases, excl_arr, 
+    def get_prediction_df(self, datasets, net_names, schemes, cases, excl_arr, 
         pred_type="max", cross_family=None, mixed=True):
 
         # pull data
@@ -164,7 +164,7 @@ class AccuracyVisualizer():
         # filter dataframe
         if mixed:
             df = df.query(f"is_mixed")
-        df = df.query(f"dataset == '{dataset}'") \
+        df = df.query(f"dataset in {datasets}") \
             .query(f"net_name in {net_names}") \
             .query(f"train_scheme in {schemes}")
         if len(cases) > 0:
@@ -188,14 +188,14 @@ class AccuracyVisualizer():
         ratio_cases = list(self.net_configs[ratio_group].keys())
         
         # pull data
-        sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], ratio_cases, 
+        sort_df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], ratio_cases, 
             [], "max", None)
         
         # get component cases as either extreme
         cc_names = get_component_cases(case_dict, ratio_cases[0])
         cases = [cc_names[0]] + ratio_cases + [cc_names[1]]
 
-        sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], cases, 
+        sort_df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], cases, 
             [], "max", None, mixed=False)
 
         # plot
@@ -266,7 +266,7 @@ class AccuracyVisualizer():
         """
 
         # pull data
-        sort_df, _ = self.get_prediction_df(dataset, net_names, schemes, cases, 
+        sort_df, _ = self.get_prediction_df([dataset], net_names, schemes, cases, 
             excl_arr, pred_type, cross_family)
         
         # determine each label length for alignment
@@ -392,20 +392,20 @@ class AccuracyVisualizer():
             filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
         self.save("prediction", filename)
 
-    def plot_prediction_supplements(self, dataset, net_names, schemes, excl_arr, 
+    def plot_family_supplement(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
 
         # pull data
-        df, _ = self.get_prediction_df(dataset, net_names, schemes, excl_arr, 
+        df, _ = self.get_prediction_df([dataset], net_names, schemes, [], excl_arr, 
             pred_type, cross_family)
 
         # filter to just p-val < 0.05
         df = df[df.max_pred_rej_h0 == True]
 
-        # one for within/cross family
+        # plot
         fig, ax = plt.subplots(figsize=(5,5))
         x = 0
-        cf_vals = df.index.unique(level=5)
+        cf_vals = df.index.unique(level=6)
         clrs = sns.color_palette("Set2", len(cf_vals))
         labels = []
         ticks = []
@@ -429,7 +429,17 @@ class AccuracyVisualizer():
 
         self.save("supplementary", "family")
 
-        # one for network
+    def plot_network_supplement(self, dataset, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None):
+
+        # pull data
+        df, _ = self.get_prediction_df([dataset], net_names, schemes, [], excl_arr, 
+            pred_type, cross_family)
+
+        # filter to just p-val < 0.05
+        df = df[df.max_pred_rej_h0 == True]
+
+        # plot
         fig, ax = plt.subplots(figsize=(5,5))
         x = 0
         net_vals = list(df.index.unique(level=1))
@@ -456,6 +466,41 @@ class AccuracyVisualizer():
 
         self.save("supplementary", "network")
 
+    def plot_dataset_supplement(self, datasets, net_names, schemes, excl_arr, 
+        pred_type="max", cross_family=None):
+
+        # pull data
+        df, _ = self.get_prediction_df(datasets, net_names, schemes, [], excl_arr, 
+            pred_type, cross_family)
+
+        # filter to just p-val < 0.05
+        df = df[df.max_pred_rej_h0 == True]
+
+        # plot
+        fig, ax = plt.subplots(figsize=(5,5))
+        x = 0
+        dataset_vals = list(df.index.unique(level=0))
+        clrs = sns.color_palette("Set1", len(dataset_vals))
+        labels = []
+        ticks = []
+        for i in range(len(dataset_vals)):
+
+            dataset = dataset_vals[i]
+            yvals = df.query(f"dataset == '{dataset}'")[f"acc_vs_{pred_type}"]
+            ymean = np.mean(yvals) * 100
+            labels.append(dataset)
+            ticks.append(x)
+            ax.bar(x, ymean, 1/len(dataset_vals), label=dataset, color=clrs[i])
+            x += 0.5
+
+        ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
+        ax.set_xlabel("Dataset", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
+        ax.set_xticks(ticks)
+        ax.set_xticklabels(labels)
+        plt.tight_layout()
+
+        self.save("supplementary", "dataset")
 
     def scatter_acc(self, datasets, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -597,14 +642,14 @@ class AccuracyVisualizer():
             ratio_cases = list(self.net_configs[rg].keys())
 
             # pull data
-            sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], ratio_cases, 
+            sort_df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], ratio_cases, 
                 [], "max", None)
             
             # get component cases as either extreme
             cc_names = get_component_cases(case_dict, ratio_cases[0])
             cases = [cc_names[0]] + ratio_cases + [cc_names[1]]
 
-            sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], cases, 
+            sort_df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], cases, 
                 [], "max", None, mixed=False)
 
             # update preds on component cases
@@ -679,7 +724,7 @@ class AccuracyVisualizer():
         cmap="RdBu_r"):
 
         # pull data
-        df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], list(), 
+        df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], list(), 
             [], "max", None)
         
         # build parameter matrices
@@ -1032,14 +1077,6 @@ if __name__=="__main__":
     # visualizer.plot_accuracy("fashionmnist", "sticknet8", ["adam"], ["swish7.5-tanh0.05", "swish7.5", "tanh0.05", "relu"], inset=False)
     # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["relu"], inset=True)
     # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["swish10-tanh0.1", "swish10", "tanh0.1", "relu"], inset=False)
-
-    # visualizer.plot_prediction_supplements("cifar10",
-    #     ["vgg11"],
-    #     ["adam"],
-    #     excl_arr=["spatial", "test", "ratio"],
-    #     pred_type="max",
-    #     cross_family=None
-    #     )
 
     # visualizer.scatter_acc(
     #     ["cifar10", "cifar100", "fashionmnist"],
