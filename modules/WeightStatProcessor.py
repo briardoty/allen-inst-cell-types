@@ -55,34 +55,7 @@ def get_last_epoch(net_filenames):
             last_net_filename = filename
 
     return last_net_filename
-    
-def get_component_cases(case_dict, case):
-    """
-    Returns the names of cases that compose the given mixed case
 
-    Args:
-        case_dict (dict)
-        case: the mixed case 
-    """
-
-    # identify "component" cases...
-    def param_to_float(p):
-        return float(p) if p != "None" else p
-
-    z = list(zip(case_dict[case]["act_fns"], [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
-    component_cases = []
-
-    for k, v in case_dict.items():
-
-        if len(component_cases) >= len(z):
-            return component_cases
-        
-        if (len(v["act_fns"]) == 1 
-            and (v["act_fns"][0], param_to_float(v["act_fn_params"][0])) in z
-            and "_" not in k): # THIS IS A HACK TO GET RID OF OLD CASES
-            component_cases.append(k)
-
-    return component_cases
 
 class WeightStatProcessor():
     """

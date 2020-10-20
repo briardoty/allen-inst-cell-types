@@ -174,8 +174,8 @@ class AccuracyVisualizer():
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # filter vgg tanh2 because it's terrible
-        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
-        #     engine="python")
+        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+            engine="python")
 
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
 
@@ -581,7 +581,7 @@ class AccuracyVisualizer():
         if self.save_png:
             plt.savefig(f"{filename}.png", dpi=300)
 
-    def ratio_heatmap(self, dataset, net_name, scheme, metric="acc_vs_max", cmap="Reds"):
+    def ratio_heatmap(self, dataset, net_name, scheme, metric="acc_vs_max", cmap="bwr"):
 
         # get all ratio groups
         ratio_groups = [g for g in self.net_configs.keys() if g.startswith("ratios-")]
@@ -606,18 +606,44 @@ class AccuracyVisualizer():
             sort_df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], cases, 
                 [], "max", None, mixed=False)
 
+            # update preds on component cases
+            if metric == "acc_vs_max":
+                rows = sort_df.query(f"case in {cc_names}")
+                max_pred = max(rows["max_val_acc"]["mean"])
+                for row in rows.iterrows():
+                    acc = sort_df.loc[row[0]]["max_val_acc"]["mean"]
+                    sort_df.loc[row[0], "acc_vs_max"] = acc - max_pred
+
             # build array of relative accuracies for this rg
             rg_arr = list() 
             for c in cases:
-                yval = sort_df.query(f"case == '{c}'")["max_val_acc"]["mean"][0] * 100
+                row = sort_df.query(f"case == '{c}'")
+                if len(row) == 0:
+                    break
+                try:
+                    yval = float(row[metric]["mean"][0]) * 100
+                except:
+                    yval = float(row[metric]) * 100
                 rg_arr.append(yval)
-                vmin = min(yval, vmin)
-                vmax = max(yval, vmax)
+
+                if yval == yval:
+                    vmin = min(yval, vmin)
+                    vmax = max(yval, vmax)
             
-            ratio_matrix[rg] = rg_arr
+            if len(rg_arr) > 1:
+                ratio_matrix[rg] = rg_arr
 
         # plot
-        M = np.array(list(ratio_matrix.values()))
+        if metric == "acc_vs_max":
+            metric = "Relative accuracy (%)"
+            vabs = max(abs(vmin), abs(vmax))
+            vmin, vmax = -vabs, vabs
+        else:
+            metric = "Peak accuracy (%)"
+
+        ratio_matrix = sorted(list(ratio_matrix.items()), key=lambda kvp: max(kvp[1][1:-1]), reverse=True)
+        M = np.array([v for k, v in ratio_matrix])
+
         plt.figure()
         im = plt.imshow(M, cmap=cmap, vmin=vmin, vmax=vmax)
         cbar = plt.gcf().colorbar(im, ax=plt.gca())
@@ -625,17 +651,17 @@ class AccuracyVisualizer():
 
         plt.xlabel("Net ratio", fontsize=large_font_size)
         plt.ylabel("Net config", fontsize=large_font_size)
-        xlabels = [f"{i}:{10-i}" for i in range(11)]
+        xlabels = [f"{10-i}:{i}" for i in range(11)]
         xticks = [i for i in range(len(xlabels))]
         plt.xticks(xticks)
         plt.gca().set_xticklabels(xlabels, fontsize=small_font_size, rotation=45)
-        yticks = [i for i in range(len(ratio_groups))]
-        ylabels = [rg[len("ratios-"):]for rg in ratio_groups]
+        yticks = [i for i in range(len(ratio_matrix))]
+        ylabels = [rg[len("ratios-"):]for rg, v in ratio_matrix]
         plt.yticks(yticks, labels=ylabels, fontsize=small_font_size)
         plt.tight_layout()
 
         if self.save_fig:
-            filename = f"Ratio groups {net_name}"
+            filename = f"Ratio groups {net_name} {metric}"
             self.save("heatmaps", filename)
         else:
             plt.show()
