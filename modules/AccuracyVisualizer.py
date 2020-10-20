@@ -10,6 +10,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import json
 
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
@@ -581,7 +582,7 @@ class AccuracyVisualizer():
         if self.save_png:
             plt.savefig(f"{filename}.png", dpi=300)
 
-    def ratio_heatmap(self, dataset, net_name, scheme, metric="acc_vs_max", cmap="bwr"):
+    def ratio_heatmap(self, dataset, net_name, scheme, metric="acc_vs_max", cmap="RdBu_r"):
 
         # get all ratio groups
         ratio_groups = [g for g in self.net_configs.keys() if g.startswith("ratios-")]
@@ -646,18 +647,26 @@ class AccuracyVisualizer():
 
         plt.figure()
         im = plt.imshow(M, cmap=cmap, vmin=vmin, vmax=vmax)
-        cbar = plt.gcf().colorbar(im, ax=plt.gca())
-        cbar.ax.set_ylabel(metric, fontsize=large_font_size)
+        ax = plt.gca()
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="5%", pad=0.1)
+        cbar = plt.colorbar(im, cax=cax)
 
-        plt.xlabel("Net ratio", fontsize=large_font_size)
-        plt.ylabel("Net config", fontsize=large_font_size)
+        # cbar = plt.gcf().colorbar(im, ax=plt.gca())
+        cbar.ax.set_ylabel(metric, fontsize=large_font_size)
+        cbar.ax.tick_params(labelsize=12)
+
+        ax.set_xlabel("Net ratio", fontsize=large_font_size)
+        ax.set_ylabel("Net config", fontsize=large_font_size)
         xlabels = [f"{10-i}:{i}" for i in range(11)]
         xticks = [i for i in range(len(xlabels))]
-        plt.xticks(xticks)
-        plt.gca().set_xticklabels(xlabels, fontsize=small_font_size, rotation=45)
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(xlabels, fontsize=12, rotation=45)
         yticks = [i for i in range(len(ratio_matrix))]
         ylabels = [rg[len("ratios-"):]for rg, v in ratio_matrix]
-        plt.yticks(yticks, labels=ylabels, fontsize=small_font_size)
+        ax.set_yticks(yticks)
+        ax.set_yticklabels(ylabels, fontsize=12)
+
         plt.tight_layout()
 
         if self.save_fig:
@@ -667,11 +676,11 @@ class AccuracyVisualizer():
             plt.show()
 
     def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", 
-        cmap="bwr"):
+        cmap="RdBu_r"):
 
         # pull data
         df, case_dict = self.get_prediction_df(dataset, [net_name], [scheme], list(), 
-            "max", None)
+            [], "max", None)
         
         # build parameter matrices
         p_dict = dict()
@@ -696,7 +705,7 @@ class AccuracyVisualizer():
         vmin = 100
         vmax = -100
         for midx, row in df.iterrows():
-            d, n, sch, c, m, xf = midx
+            d, n, sch, g, c, m, xf = midx
             cc_arr = get_component_cases(case_dict, c)
             cc_fns = tuple([case_dict[cc]["act_fns"][0] for cc in cc_arr])
 
@@ -710,9 +719,11 @@ class AccuracyVisualizer():
 
             if xf:
                 multikey = tuple(sorted(cc_fns))
-                i = p_dict[multikey[0]].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
-                j = p_dict[multikey[1]].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
-                
+                try:
+                    i = p_dict[multikey[0]].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
+                    j = p_dict[multikey[1]].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
+                except KeyError:
+                    continue
                 cross_mats[multikey][i, j] = metric_val
             else:
                 key = cc_fns[0]
@@ -731,17 +742,24 @@ class AccuracyVisualizer():
         for k, v in within_mats.items():
             plt.figure()
             im = plt.imshow(np.flip(v, axis=1), cmap=cmap, vmin=vmin, vmax=vmax)
-            cbar = plt.gcf().colorbar(im, ax=plt.gca())
+            
+            ax = plt.gca()
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+            cbar = plt.colorbar(im, cax=cax)
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
-            plt.ylabel(rf"{k} $\beta$", fontsize=large_font_size)
-            plt.xlabel(rf"{k} $\beta$", fontsize=large_font_size)
+            ax.set_ylabel(rf"{k} $\beta$", fontsize=large_font_size)
+            ax.set_xlabel(rf"{k} $\beta$", fontsize=large_font_size)
             tlabels = p_dict[k]
             tticks = [i for i in range(len(tlabels))]
-            plt.xticks(tticks, labels=tlabels, fontsize=small_font_size)
-            plt.yticks(tticks, labels=list(reversed(tlabels)), fontsize=small_font_size)
+            ax.set_xticks(tticks)
+            ax.set_xticklabels(tlabels, fontsize=small_font_size)
+            ax.set_yticks(tticks)
+            ax.set_yticklabels(list(reversed(tlabels)), fontsize=small_font_size)
+            
             title = f"Within-family {net_name}"
-            plt.title(title, fontsize=large_font_size)
+            ax.set_title(title, fontsize=large_font_size)
             plt.tight_layout()
 
             if self.save_fig:
@@ -753,19 +771,24 @@ class AccuracyVisualizer():
         for k, v in cross_mats.items():
             plt.figure()
             im = plt.imshow(np.flip(v, axis=0), cmap=cmap, vmin=vmin, vmax=vmax)
-            cbar = plt.gcf().colorbar(im, ax=plt.gca())
+            ax = plt.gca()
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="5%", pad=0.1)
+            cbar = plt.colorbar(im, cax=cax)
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
-            plt.xlabel(rf"{k[1]} $\beta$", fontsize=large_font_size)
-            plt.ylabel(rf"{k[0]} $\beta$", fontsize=large_font_size)
+            ax.set_xlabel(rf"{k[1]} $\beta$", fontsize=large_font_size)
+            ax.set_ylabel(rf"{k[0]} $\beta$", fontsize=large_font_size)
             xtlabels = p_dict[k[1]]
             xticks = [i for i in range(len(xtlabels))]
             ytlabels = p_dict[k[0]]
             yticks = [i for i in range(len(ytlabels))]
-            plt.xticks(xticks, labels=xtlabels, fontsize=small_font_size)
-            plt.yticks(yticks, labels=list(reversed(ytlabels)), fontsize=small_font_size)
+            ax.set_xticks(xticks)
+            ax.set_xticklabels(xtlabels, fontsize=small_font_size)
+            ax.set_yticks(yticks)
+            ax.set_yticklabels(list(reversed(ytlabels)), fontsize=small_font_size)
             title = f"Cross-family {net_name}"
-            plt.title(title, fontsize=large_font_size)
+            ax.set_title(title, fontsize=large_font_size)
             plt.tight_layout()
 
             if self.save_fig:
