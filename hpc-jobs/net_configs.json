@@ -883,7 +883,6 @@
         "swish5-tanh0.5-convall": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
-            "conv_layers": 3,
             "fc_layers": 0
         },
         "swish5-tanh0.5-fc1": {
@@ -902,7 +901,6 @@
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
             "conv_layers": 0,
-            "fc_layers": 3
         }
     },
 
