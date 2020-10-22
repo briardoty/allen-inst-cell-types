@@ -76,36 +76,69 @@ nets = {
     }
 }
 
-def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial):
+from enum import Enum
+class TargetLayers(Enum):
+    NOTHING = 0
+    FIRSTHALF = 1
+    LASTHALF = 2
+    ALL = None
+
+def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
+    conv_target, fc_target):
     """
-    Recursive helper function to replace all relu layers with
+    Iterative helper function to replace relu layers with
     instances of MixedActivationLayer with the given params
     """
 
-    # keep track of previous layer to count input features
-    prev = None
+    # replace activation layers in features (conv) group
+    conv_layers = list(model.features._modules.items())
+    n_tgts = sum([1 if type(m) == nn.ReLU else 0 for n, m in conv_layers])
+    conv_target = TargetLayers(conv_target)
+    if conv_target in [TargetLayers.FIRSTHALF, TargetLayers.LASTHALF]:
+        n_tgts = n_tgts / 2
+    elif conv_target == TargetLayers.NOTHING:
+        n_tgts = 0
+    itr = reversed(range(len(conv_layers))) if conv_target == TargetLayers.LASTHALF else range(len(conv_layers))
+    for i in itr:
 
-    for name, module in model._modules.items():
+        if n_tgts <= 0:
+            break
 
-        # recursive case
-        if len(list(module.children())) > 0:
-            model._modules[name] = replace_act_layers(module, 
-                n_repeat, act_fns, act_fn_params, spatial)
-        
-        # base case
-        if type(module) == nn.ReLU:
+        name, module = conv_layers[i]
 
-            if type(prev) == nn.Conv2d:
-                n_features = prev.out_channels
-                model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-                    act_fns, act_fn_params, spatial) 
-            else:
-                n_features = prev.out_features
-                model._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-                    act_fns, act_fn_params)
+        if type(module) != nn.ReLU:
+            continue
 
-        # update previous layer
-        prev = module
+        _, prev = conv_layers[i-1]
+        n_features = prev.out_channels
+        model.features._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+            act_fns, act_fn_params, spatial) 
+        n_tgts -= 1
+
+    # then do the same thing for fc layers
+    fc_layers = list(model.classifier._modules.items())
+    n_tgts = sum([1 if type(m) == nn.ReLU else 0 for n, m in fc_layers])
+    fc_target = TargetLayers(fc_target)
+    if fc_target in [TargetLayers.FIRSTHALF, TargetLayers.LASTHALF]:
+        n_tgts = n_tgts / 2
+    elif fc_target == TargetLayers.NOTHING:
+        n_tgts = 0
+    itr = reversed(range(len(fc_layers))) if fc_target == TargetLayers.LASTHALF else range(len(fc_layers))
+    for i in itr:
+
+        if n_tgts <= 0:
+            break
+
+        name, module = fc_layers[i]
+
+        if type(module) != nn.ReLU:
+            continue
+
+        _, prev = fc_layers[i-1]
+        n_features = prev.out_features
+        model.classifier._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+            act_fns, act_fn_params)
+        n_tgts -= 1
 
     return model
 
@@ -261,7 +294,10 @@ class NetManager():
             act_fns = self.modified_layers["act_fns"]
             act_fn_params = self.modified_layers["act_fn_params"]
             spatial = self.modified_layers.get("spatial")
-            self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
+            conv_layers = self.modified_layers.get("conv_layers")
+            fc_layers = self.modified_layers.get("fc_layers")
+            self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial, 
+                conv_layers, fc_layers)
         
         # print net summary
         print(self.net)
@@ -320,9 +356,10 @@ class NetManager():
         torch.save(self.responses_output, output_filepath)
         torch.save(self.responses_input, input_filepath)
         
-    def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial):
+    def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial, 
+        conv_layers, fc_layers):
         """
-        Replace all nn.ReLU layers with MixedActivationLayers
+        Replace nn.ReLU layers with MixedActivationLayers
         """
 
         # set modified layer state
@@ -330,12 +367,14 @@ class NetManager():
             "n_repeat": n_repeat,
             "act_fns": act_fns,
             "act_fn_params": act_fn_params, 
-            "spatial": spatial
+            "spatial": spatial,
+            "conv_layers": conv_layers,
+            "fc_layers": fc_layers,
         }   
 
-        # call on recursive helper function
+        # call helper function
         self.net = replace_act_layers(self.net, n_repeat, act_fns, 
-            act_fn_params, spatial)
+            act_fn_params, spatial, conv_layers, fc_layers)
     
     def set_input_hook(self, layer_name):
         # store responses here...
@@ -646,13 +685,13 @@ class NetManager():
 
 if __name__=="__main__":
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
-    dataset = "cifar100"
+    dataset = "cifar10"
     net = "sticknet8"
     scheme = "adam"
     group = "cross-swish-tanh"
     case = "swish2-tanh0.01"
     sample = 6
-    epoch = 140
+    epoch = 100
 
     # initialize
     mgr = NetManager(dataset, net, group, case, data_dir, scheme)

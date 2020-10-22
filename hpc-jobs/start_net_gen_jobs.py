@@ -67,9 +67,12 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     run_params["group"] = group
                     run_params["case"] = case
                     
-                    if config.get("layer_names") is not None:
-                        run_params["layer_names"] = param_arr_helper(config.get("layer_names"))
-                        
+                    if config.get("conv_layers") is not None:
+                        run_params["conv_layers"] = config["conv_layers"]
+                    
+                    if config.get("fc_layers") is not None:
+                        run_params["fc_layers"] = config["fc_layers"]
+
                     act_fns = config["act_fns"]
                     run_params["act_fns"] = param_arr_helper(act_fns)
                     

@@ -867,7 +867,44 @@
     },
     
 
-
+    "layers-swish5-tanh0.5": {
+        "swish5-tanh0.5-conv1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 1,
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-conv2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 2,
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-convall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 3,
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-fc1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 1
+        },
+        "swish5-tanh0.5-fc2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 2
+        },
+        "swish5-tanh0.5-fcall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 3
+        }
+    },
 
     
 

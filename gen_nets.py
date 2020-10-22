@@ -21,7 +21,8 @@ parser.add_argument("--scheme", type=str, help="Set value for scheme", required=
 # config params
 parser.add_argument("--case", type=str, help="Set value for case")
 parser.add_argument("--group", type=str, help="Set value for group")
-parser.add_argument("--layer_names", type=str, nargs="+", help="Set value for layer_names")
+parser.add_argument("--conv_layers", type=int, help="Set value for conv_layers")
+parser.add_argument("--fc_layers", type=int, help="Set value for fc_layers")
 parser.add_argument("--n_repeat", type=int, nargs="+")
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
@@ -36,7 +37,7 @@ parser.set_defaults(find_lr=False)
 parser.add_argument("--pretrained", dest="pretrained", action="store_true")
 parser.set_defaults(pretrained=False)
 
-def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir, 
+def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained, scheme, dataset,
          spatial, find_lr):
     
@@ -55,7 +56,8 @@ def main(group, case, layer_names, n_repeat, act_fns, act_fn_params, data_dir,
         
         # modify layers
         if (act_fns is not None and len(act_fns) > 0):
-            manager.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial)
+            manager.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial, 
+                conv_layers, fc_layers)
         
         # save
         manager.save_net_snapshot()
