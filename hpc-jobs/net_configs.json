@@ -900,7 +900,7 @@
         "swish5-tanh0.5-fcall": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
-            "conv_layers": 0,
+            "conv_layers": 0
         }
     },
 
