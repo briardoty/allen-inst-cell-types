@@ -871,6 +871,40 @@
         "swish5-tanh0.5-all": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5]
+        },
+        "swish5-tanh0.5-conv1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 1,
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-conv2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 2,
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-convall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "fc_layers": 0
+        },
+        "swish5-tanh0.5-fc1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 1
+        },
+        "swish5-tanh0.5-fc2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 2
+        },
+        "swish5-tanh0.5-fcall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5],
+            "conv_layers": 0
         }
     },
 
@@ -880,6 +914,40 @@
         "swish10-tanh0.5-all": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [10, 0.5]
+        },
+        "swish10-tanh0.5-conv1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "conv_layers": 1,
+            "fc_layers": 0
+        },
+        "swish10-tanh0.5-conv2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "conv_layers": 2,
+            "fc_layers": 0
+        },
+        "swish10-tanh0.5-convall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "fc_layers": 0
+        },
+        "swish10-tanh0.5-fc1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 1
+        },
+        "swish10-tanh0.5-fc2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "conv_layers": 0,
+            "fc_layers": 2
+        },
+        "swish10-tanh0.5-fcall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [10, 0.5],
+            "conv_layers": 0
         }
     },
 
@@ -889,6 +957,40 @@
         "swish7.5-tanh0.1-all": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [7.5, 0.1]
+        },
+        "swish7.5-tanh0.1-conv1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "conv_layers": 1,
+            "fc_layers": 0
+        },
+        "swish7.5-tanh0.1-conv2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "conv_layers": 2,
+            "fc_layers": 0
+        },
+        "swish7.5-tanh0.1-convall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "fc_layers": 0
+        },
+        "swish7.5-tanh0.1-fc1": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "conv_layers": 0,
+            "fc_layers": 1
+        },
+        "swish7.5-tanh0.1-fc2": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "conv_layers": 0,
+            "fc_layers": 2
+        },
+        "swish7.5-tanh0.1-fcall": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [7.5, 0.1],
+            "conv_layers": 0
         }
     },
 

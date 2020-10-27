@@ -688,10 +688,10 @@ if __name__=="__main__":
     dataset = "cifar10"
     net = "sticknet8"
     scheme = "adam"
-    group = "cross-swish-tanh"
-    case = "swish2-tanh0.01"
+    group = "layers-swish5-tanh0.5"
+    case = "swish5-tanh0.5-fc2"
     sample = 6
-    epoch = 100
+    epoch = 0
 
     # initialize
     mgr = NetManager(dataset, net, group, case, data_dir, scheme)

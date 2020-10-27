@@ -6,7 +6,8 @@ data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
 
 # build group: case dict
 group_dict = dict()
-with open(os.path.join(data_dir, "net_configs.json"), "r") as json_file:
+config_path = "/home/briardoty/Source/allen-inst-cell-types/hpc-jobs/net_configs.json"
+with open(config_path, "r") as json_file:
     net_configs = json.load(json_file)
 
 for g in net_configs.keys():
@@ -21,9 +22,27 @@ vis = AccuracyVisualizer(
     save_png=True
     )
 
+# plot layer groups
+layer_groups = ["layers-swish5-tanh0.5",
+    "layers-swish7.5-tanh0.1",
+    "layers-swish10-tanh0.5"]
+for lg in layer_groups:
+    cases = group_dict[lg] + [lg[len("layers-"):]]
+    vis.plot_predictions("cifar10",
+        ["vgg11", "sticknet8"],
+        ["adam"],
+        cases=cases,
+        excl_arr=["spatial", "test"],
+        pred_type="max",
+        cross_family=None,
+        pred_std=True,
+        small=False,
+        filename=f"{lg} prediction"
+        )
+
 # all nets, all datasets
-nets = ["sticknet8", "vgg11"]
-datasets = ["cifar10", "fashionmnist", "cifar100"]
+nets = ["vgg11"]
+datasets = ["cifar100"]
 for n in nets:
     for d in datasets:
         vis.plot_predictions(d,

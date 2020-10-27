@@ -35,11 +35,12 @@ matplotlib.rc("ytick", labelsize=16)
 
 class AccuracyVisualizer():
     
-    def __init__(self, data_dir, save_fig=False, save_png=False):
+    def __init__(self, data_dir, save_fig=False, save_png=False, sub_dir_name=None):
         
         self.data_dir = data_dir
         self.save_fig = save_fig
         self.save_png = save_png
+        self.sub_dir_name = sub_dir_name
         
         self.stats_processor = AccuracyLoader(data_dir)
 
@@ -175,8 +176,8 @@ class AccuracyVisualizer():
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # filter vgg tanh2 because it's terrible
-        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
-            engine="python")
+        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+        #     engine="python")
 
         sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
 
@@ -308,8 +309,10 @@ class AccuracyVisualizer():
             if np.mod(i, 2) == 0:	
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
 
-            # plot "good" and "bad"
-            if perf - err > 0:
+            # BH corrected significance
+            bh_sig = row[f"{pred_type}_pred_rej_h0"].values[0]
+            sig_arr.append(bh_sig)
+            if bh_sig:
                 if cf or cross_family is not None:
                     plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
                         c=clr, linewidth=lw, alpha=.8)
@@ -339,9 +342,6 @@ class AccuracyVisualizer():
                 plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
                         c="k", linewidth=lw, alpha=.2)
 
-            # BH corrected significance
-            sig_arr.append(row[f"{pred_type}_pred_rej_h0"].values[0])
-
             # make an aligned label
             label_arr = [d, n, s, c]
             aligned = "".join([label_arr[i].ljust(lengths[i]) for i in label_idxs])
@@ -353,9 +353,10 @@ class AccuracyVisualizer():
         # indicate BH corrected significance
         h = plt.plot(i+100, 0, "k*", alpha=0.5, ms=ms)
         handles["p < 0.05"] = h[0]
+        xstar = xmax + xmax/14. if small else xmax + xmax/20.
         for i in range(len(sig_arr)):
             if sig_arr[i]:
-                plt.plot(xmax + xmax/20., i, "k*", alpha=0.5, ms=ms)
+                plt.plot(xstar, i, "k*", alpha=0.5, ms=ms)
 
         # determine padding for labels
         max_length = np.max([len(l) for l in ylabels.values()])
@@ -368,14 +369,14 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
-        plt.xlabel(f"Acc relative to {pred_type} prediction (%)", 
+        plt.xlabel(f"Acc. relative to {pred_type} prediction (%)", 
             fontsize=28, labelpad=10)
         plt.ylabel("Network configuration", fontsize=28, labelpad=10)
         plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
         yax = plt.gca().get_yaxis()
         yax.set_tick_params(pad=max_length*8)
         plt.ylim(-0.5, i + 0.5)
-        plt.legend(handles.values(), handles.keys(), fontsize=22, loc="upper left")
+        plt.legend(handles.values(), handles.keys(), fontsize=20 if small else 22, loc="upper left")
         plt.xlim([xmin - xmax/10., xmax + xmax/10.])
         
         plt.tight_layout()
@@ -422,7 +423,7 @@ class AccuracyVisualizer():
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.set_xlabel("Mixed net type", fontsize=large_font_size + 2)
-        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative acc. (%)", fontsize=large_font_size + 2)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels)
         plt.tight_layout()
@@ -459,7 +460,7 @@ class AccuracyVisualizer():
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.set_xlabel("Network", fontsize=large_font_size + 2)
-        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative acc. (%)", fontsize=large_font_size + 2)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels)
         plt.tight_layout()
@@ -495,7 +496,7 @@ class AccuracyVisualizer():
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.set_xlabel("Dataset", fontsize=large_font_size + 2)
-        ax.set_ylabel(f"Mean relative accuracy (%)", fontsize=large_font_size + 2)
+        ax.set_ylabel(f"Mean relative acc. (%)", fontsize=large_font_size + 2)
         ax.set_xticks(ticks)
         ax.set_xticklabels(labels)
         plt.tight_layout()
@@ -617,7 +618,10 @@ class AccuracyVisualizer():
 
     def save(self, sub_dir_name, filename):
 
+        if self.sub_dir_name is not None:
+            sub_dir_name = self.sub_dir_name
         sub_dir = ensure_sub_dir(self.data_dir, f"figures/{sub_dir_name}")
+
         filename = os.path.join(sub_dir, filename)
 
         print(f"Saving... {filename}")
@@ -721,7 +725,7 @@ class AccuracyVisualizer():
             plt.show()
 
     def heatmap_acc(self, dataset, net_name, scheme, metric="acc_vs_max", 
-        cmap="RdBu_r"):
+        cmap="RdBu_r", v_min=None, v_max=None):
 
         # pull data
         df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], list(), 
@@ -749,6 +753,7 @@ class AccuracyVisualizer():
 
         vmin = 100
         vmax = -100
+        vm_dict = { "xf": {"vmin": vmin, "vmax": vmax}, "swish": {"vmin": vmin, "vmax": vmax}, "tanh": {"vmin": vmin, "vmax": vmax} }
         for midx, row in df.iterrows():
             d, n, sch, g, c, m, xf = midx
             cc_arr = get_component_cases(case_dict, c)
@@ -759,9 +764,6 @@ class AccuracyVisualizer():
             except:
                 metric_val = float(row[metric]) * 100
 
-            vmin = min(metric_val, vmin)
-            vmax = max(metric_val, vmax)
-
             if xf:
                 multikey = tuple(sorted(cc_fns))
                 try:
@@ -770,23 +772,35 @@ class AccuracyVisualizer():
                 except KeyError:
                     continue
                 cross_mats[multikey][i, j] = metric_val
+                vm_dict["xf"]["vmin"] = min(metric_val, vm_dict["xf"]["vmin"], vmin)
+                vm_dict["xf"]["vmax"] = max(metric_val, vm_dict["xf"]["vmax"], vmax)
             else:
                 key = cc_fns[0]
                 i = p_dict[key].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
                 j = p_dict[key].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
 
                 within_mats[key][min(i, j), max(i, j)] = metric_val
+                within_mats[key][max(i, j), min(i, j)] = np.nan
+                vm_dict[key]["vmin"] = min(metric_val, vm_dict[key]["vmin"], vmin)
+                vm_dict[key]["vmax"] = max(metric_val, vm_dict[key]["vmax"], vmax)
 
         # plots
         if metric == "acc_vs_max":
             metric = "Relative accuracy (%)"
-            vabs = max(abs(vmin), abs(vmax))
-            vmin, vmax = -vabs, vabs
+
+            for key in vm_dict.keys():
+                vabs = max(abs(vm_dict[key]["vmin"]), abs(vm_dict[key]["vmax"]))
+                vm_dict[key]["vmin"], vm_dict[key]["vmax"] = -vabs, vabs
+
         else:
             metric = "Peak accuracy (%)"
         for k, v in within_mats.items():
             plt.figure()
-            im = plt.imshow(np.flip(v, axis=1), cmap=cmap, vmin=vmin, vmax=vmax)
+            current_cmap = matplotlib.cm.get_cmap()
+            current_cmap.set_bad(color="black")
+            v_min = vm_dict[k]["vmin"] if v_min is None else v_min
+            v_max = vm_dict[k]["vmax"] if v_max is None else v_max
+            im = plt.imshow(np.flip(v, axis=1), cmap=cmap, vmin=v_min, vmax=v_max)
             
             ax = plt.gca()
             divider = make_axes_locatable(ax)
@@ -815,7 +829,9 @@ class AccuracyVisualizer():
         
         for k, v in cross_mats.items():
             plt.figure()
-            im = plt.imshow(np.flip(v, axis=0), cmap=cmap, vmin=vmin, vmax=vmax)
+            v_min = vm_dict["xf"]["vmin"] if v_min is None else v_min
+            v_max = vm_dict["xf"]["vmax"] if v_max is None else v_max
+            im = plt.imshow(np.flip(v, axis=0), cmap=cmap, vmin=v_min, vmax=v_max)
             ax = plt.gca()
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.1)

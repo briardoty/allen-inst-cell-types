@@ -38,7 +38,7 @@ vis.plot_network_supplement("cifar10",
     cross_family=None
 )
 
-vis.plot_dataset_supplement(["cifar10", "fashionmnist"],
+vis.plot_dataset_supplement(["cifar10", "cifar100", "fashionmnist"],
     ["vgg11", "sticknet8"],
     ["adam"],
     excl_arr=["spatial", "test", "ratio"],
