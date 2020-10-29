@@ -43,11 +43,14 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     manager.load_net_snapshot_from_path(net_filepath)
 
     # set initial lr
-    if manager.initial_lr is not None:
+    if lr is not None:
+        initial_lr = lr
+    elif manager.initial_lr is not None:
         initial_lr = manager.initial_lr
         print(f"Using computed initial LR of {initial_lr}")
     else:
-        initial_lr = lr
+        print(f"No initial LR available, exiting.")
+        return -1
 
     (criterion, optimizer, scheduler) = get_training_vars(scheme, 
         manager, initial_lr, lr_step_size, lr_gamma, momentum)
