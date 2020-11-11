@@ -35,7 +35,7 @@ class FunctionVisualizer():
         self.data_dir = data_dir
         self.save_fig = save_fig
         
-    def plot_activation_fns(self, act_fns):
+    def plot_activation_fns(self, act_fns, clr_set="husl"):
         """
         Plots the given activation functions on the same figure
         """
@@ -43,7 +43,7 @@ class FunctionVisualizer():
         x = np.linspace(-100, 100, 10000)
         x = torch.tensor(x)
         fig, ax = plt.subplots(figsize=(5,5))
-        clrs = sns.color_palette("Set2", len(act_fns))
+        clrs = sns.color_palette(clr_set, len(act_fns))
 
         for i in range(len(act_fns)):
             fn = act_fns[i]
@@ -139,7 +139,7 @@ if __name__=="__main__":
 
     # visualizer.plot_activation_fns([Tanh(1), Swish(1), Relu()])
     # visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
-    visualizer.plot_activation_fns([Tanh(0.1), Tanh(0.5), Tanh(1)])
-    # visualizer.plot_activation_fns([Tanh(1), Swish(5)])
+    # visualizer.plot_activation_fns([Tanh(0.1), Tanh(0.5), Tanh(1)])
+    visualizer.plot_activation_fns([PTanh(1), Swish(5)])
 
     # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)

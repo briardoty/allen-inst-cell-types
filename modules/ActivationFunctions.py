@@ -21,7 +21,7 @@ class Swish(nn.Module):
         self.beta = float(beta)
 
     def __repr__(self):
-        return rf"Swish($\beta$={self.beta})"
+        return rf"Swish($\beta$={self.beta}, x)"
     
     def forward(self, input_tensor):
         
@@ -172,20 +172,20 @@ class Sigfreud(nn.Module):
         
         return self.beta ** torch.sigmoid(input_tensor) - 1
 
-class Tanh(nn.Module):
+class PTanh(nn.Module):
     """
-    Pytorch nn module implementation of "Tanh" activation function
-    where Tanh(x, beta) = 0.5 * (tanh(x) + tanh(b*x))
+    Pytorch nn module implementation of "PTanh" activation function
+    where PTanh(x, beta) = 0.5 * (tanh(x) + tanh(b*x))
     """
     
     def __init__(self, beta=1.0):
         
-        super(Tanh, self).__init__()
+        super(PTanh, self).__init__()
         self.beta = float(beta)
 
     def __repr__(self):
         
-        return rf"Tanh($\beta$={self.beta})"
+        return rf"PTanh($\beta$={self.beta}, x)"
     
     def forward(self, input_tensor):
         

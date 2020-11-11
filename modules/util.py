@@ -249,10 +249,11 @@ def get_component_cases(case_dict, case):
     def param_to_float(p):
         return float(p) if p != "None" else p
 
-    z = list(zip(case_dict[case]["act_fns"], [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
+    zipped_fn_name_and_param_arr = list(zip(case_dict[case]["act_fns"], 
+        [param_to_float(p) for p in case_dict[case]["act_fn_params"]]))
     component_cases = []
 
-    for k1, v1 in z:
+    for k1, v1 in zipped_fn_name_and_param_arr:
         for k2, v2 in case_dict.items():
             
             if (len(v2["act_fns"]) == 1 

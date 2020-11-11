@@ -24,48 +24,50 @@ vis = AccuracyVisualizer(
 )
 
 # summary
-# cases = group_dict["cross-swish-tanh"]
-# vis.plot_predictions("cifar10",
-#     ["vgg11", "sticknet8"],
-#     ["adam"],
-#     cases=cases,
-#     excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
-#     pred_type="max",
-#     cross_family=True,
-#     pred_std=False,
-#     small=True,
-#     filename=f"abstract fig2 prediction"
-# )
-
-# histograms
-vis.plot_family_supplement("cifar10",
-    ["vgg11"],
-    ["adam"],
-    excl_arr=["spatial", "test", "ratio"],
-    pred_type="max",
-    cross_family=None
-)
-
-vis.plot_network_supplement("cifar10",
+cases = group_dict["cross-swish-tanh"]
+vis.plot_predictions("cifar10",
     ["vgg11", "sticknet8"],
     ["adam"],
-    excl_arr=["spatial", "test", "ratio"],
+    cases=cases,
+    excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
     pred_type="max",
-    cross_family=None
+    cross_family=True,
+    pred_std=False,
+    small=True,
+    filename=f"abstract fig2 prediction"
 )
 
+# histograms
+# vis.plot_family_supplement("cifar10",
+#     ["vgg11", "sticknet8"],
+#     ["adam"],
+#     excl_arr=["spatial", "test", "ratio"],
+#     pred_type="max",
+#     cross_family=None
+# )
+
+# vis.plot_network_supplement("cifar10",
+#     ["vgg11", "sticknet8"],
+#     ["adam"],
+#     excl_arr=["spatial", "test", "ratio"],
+#     pred_type="max",
+#     cross_family=None
+# )
+
 # heatmaps
-vis.heatmap_acc("cifar10", 
-    "vgg11", 
-    "adam", 
-    metric="acc_vs_max",
-    v_min=-0.5,
-    v_max=0.5
-)
-vis.heatmap_acc("cifar10", 
-    "sticknet8", 
-    "adam", 
-    metric="acc_vs_max",
-    v_min=-2,
-    v_max=2
-)
+# vis.heatmap_acc("cifar10", 
+#     "vgg11", 
+#     "adam", 
+#     metric="max_val_acc",
+#     cmap="Reds",
+#     v_min=87,
+#     v_max=89.5
+# )
+# vis.heatmap_acc("cifar10", 
+#     "sticknet8", 
+#     "adam", 
+#     metric="max_val_acc",
+#     cmap="Reds",
+#     v_min=63,
+#     v_max=69
+# )
