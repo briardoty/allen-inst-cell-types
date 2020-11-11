@@ -7,6 +7,7 @@ Created on Tue Jul  7 14:22:11 2020
 """
 import os
 import sys
+import functools
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -88,6 +89,7 @@ class AccuracyVisualizer():
             axes[0].plot([i-width, i+width], [np.mean(yvals), np.mean(yvals)], 
                 linestyle=":", label=cc, c=c_clrs[i], linewidth=lw)
             
+            cc = cc.replace("tanh", "ptanh")
             c_labels[i] = cc
             
         # plot mixed case
@@ -129,7 +131,8 @@ class AccuracyVisualizer():
         axes[0].tick_params(axis="y", labelsize=12)
         axes[0].set_xticklabels(list(c_labels.values()), fontsize=12)
         axes[1].set_xticks([0])
-        axes[1].set_xticklabels([mixed_case], fontsize=12)
+        l = mixed_case.replace("tanh", "ptanh")
+        axes[1].set_xticklabels([l], fontsize=12)
         plt.tight_layout()
         # plt.tight_layout(rect=[0, 0, 1, 0.92])
 
@@ -343,6 +346,7 @@ class AccuracyVisualizer():
                         c="k", linewidth=lw, alpha=.2)
 
             # make an aligned label
+            c = c.replace("tanh", "ptanh")
             label_arr = [d, n, s, c]
             aligned = "".join([label_arr[i].ljust(lengths[i]) for i in label_idxs])
             ylabels[i] = aligned
@@ -374,7 +378,7 @@ class AccuracyVisualizer():
         plt.ylabel("Network configuration", fontsize=28, labelpad=10)
         plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
         yax = plt.gca().get_yaxis()
-        yax.set_tick_params(pad=max_length*8)
+        yax.set_tick_params(pad=max_length*9)
         plt.ylim(-0.5, i + 0.5)
         plt.legend(handles.values(), handles.keys(), fontsize=20 if small else 22, loc="upper left")
         plt.xlim([xmin - xmax/10., xmax + xmax/10.])
@@ -404,28 +408,61 @@ class AccuracyVisualizer():
         df = df[df.max_pred_rej_h0 == True]
 
         # plot
-        fig, ax = plt.subplots(figsize=(5,5))
+        fig, ax = plt.subplots(figsize=(8,5))
+        net_vals = list(df.index.unique(level=1))
+        net_vals.reverse()
+        # x = np.array([i * 1.25 for i in range(len(net_vals))])
         x = 0
-        cf_vals = df.index.unique(level=6)
-        clrs = sns.color_palette("Set2", len(cf_vals))
-        labels = []
-        ticks = []
-        for i in range(len(cf_vals)):
 
-            cf = cf_vals[i]
-            yvals = df.query(f"cross_fam == {cf}")[f"acc_vs_{pred_type}"]
-            ymean = np.mean(yvals) * 100
-            label = "Cross-family" if cf else "Within-family"
-            labels.append(label)
-            ticks.append(x)
-            ax.bar(x, ymean, 1/len(cf_vals), label=label, color=clrs[i])
-            x += 0.5
+        cf_vals = list(df.index.unique(level=6))
+        cf_vals.reverse()
+        width = 1.0 / len(cf_vals)
+        clrs = sns.color_palette("husl", len(cf_vals))
+
+        err_kw = dict(lw=1, capsize=15, capthick=1)
+
+        handles = dict()
+        for i in range(len(net_vals)):
+
+            net = net_vals[i]
+
+            for j in range(len(net_vals)):
+
+                cf = cf_vals[j]
+                rows = df.query(f"net_name == '{net}'") \
+                    .query(f"cross_fam == {cf}")[f"acc_vs_{pred_type}"]
+                yval = np.mean(rows) * 100
+
+                # plot
+                label = "Cross-family" if cf else "Within-family"
+                clr = clrs[i]
+                alpha = 1 if cf else 0.4
+                ax.bar(x, yval, width, label=label, 
+                    color=clr, alpha=alpha)
+
+                x += width
+
+            x += 0.25
+            
+        # legend
+        gray = (0.5, 0.5, 0.5)
+        h2 = ax.bar(100, yval, width, label=label, 
+            color=gray, alpha=0.4)
+        handles["Within-family"] = h2
+        h1 = ax.bar(100, yval, width, label=label, 
+            color=gray, alpha=1)
+        handles["Cross-family"] = h1
+
+        # plot text
+        loc = (len(cf_vals) - 1) / (2. * len(cf_vals))
+        ax.set_xticks([loc + i * 1.25 for i in range(len(net_vals))])
+        ax.set_xticklabels(net_vals)
+        ax.set_xlim([-3/8., x - width + 1/8.])
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
-        ax.set_xlabel("Mixed net type", fontsize=large_font_size + 2)
+        ax.set_xlabel("Network", fontsize=large_font_size + 2)
         ax.set_ylabel(f"Mean relative acc. (%)", fontsize=large_font_size + 2)
-        ax.set_xticks(ticks)
-        ax.set_xticklabels(labels)
+        ax.legend(handles.values(), handles.keys(), fontsize=18)
         plt.tight_layout()
 
         self.save("supplementary", "family")
@@ -729,7 +766,7 @@ class AccuracyVisualizer():
 
         # pull data
         df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], list(), 
-            [], "max", None)
+            [], "max", cross_family=None, mixed=False)
         
         # build parameter matrices
         p_dict = dict()
@@ -756,6 +793,8 @@ class AccuracyVisualizer():
         vm_dict = { "xf": {"vmin": vmin, "vmax": vmax}, "swish": {"vmin": vmin, "vmax": vmax}, "tanh": {"vmin": vmin, "vmax": vmax} }
         for midx, row in df.iterrows():
             d, n, sch, g, c, m, xf = midx
+
+
             cc_arr = get_component_cases(case_dict, c)
             cc_fns = tuple([case_dict[cc]["act_fns"][0] for cc in cc_arr])
 
@@ -764,7 +803,7 @@ class AccuracyVisualizer():
             except:
                 metric_val = float(row[metric]) * 100
 
-            if xf:
+            if m and xf:
                 multikey = tuple(sorted(cc_fns))
                 try:
                     i = p_dict[multikey[0]].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
@@ -774,7 +813,7 @@ class AccuracyVisualizer():
                 cross_mats[multikey][i, j] = metric_val
                 vm_dict["xf"]["vmin"] = min(metric_val, vm_dict["xf"]["vmin"], vmin)
                 vm_dict["xf"]["vmax"] = max(metric_val, vm_dict["xf"]["vmax"], vmax)
-            else:
+            elif m:
                 key = cc_fns[0]
                 i = p_dict[key].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
                 j = p_dict[key].index(float(case_dict[sorted(cc_arr)[1]]["act_fn_params"][0]))
@@ -783,7 +822,16 @@ class AccuracyVisualizer():
                 within_mats[key][max(i, j), min(i, j)] = np.nan
                 vm_dict[key]["vmin"] = min(metric_val, vm_dict[key]["vmin"], vmin)
                 vm_dict[key]["vmax"] = max(metric_val, vm_dict[key]["vmax"], vmax)
-
+            else:
+                try:
+                    key = cc_fns[0]
+                    i = p_dict[key].index(float(case_dict[sorted(cc_arr)[0]]["act_fn_params"][0]))
+                    within_mats[key][i, i] = metric_val
+                    vm_dict[key]["vmin"] = min(metric_val, vm_dict[key]["vmin"], vmin)
+                    vm_dict[key]["vmax"] = max(metric_val, vm_dict[key]["vmax"], vmax)
+                except:
+                    print(f"Not plotting {key}")
+                    continue
         # plots
         if metric == "acc_vs_max":
             metric = "Relative accuracy (%)"
@@ -808,8 +856,9 @@ class AccuracyVisualizer():
             cbar = plt.colorbar(im, cax=cax)
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
-            ax.set_ylabel(rf"{k} $\beta$", fontsize=large_font_size)
-            ax.set_xlabel(rf"{k} $\beta$", fontsize=large_font_size)
+            l = k if k == "swish" else "ptanh"
+            ax.set_ylabel(rf"{l} $\beta$", fontsize=large_font_size)
+            ax.set_xlabel(rf"{l} $\beta$", fontsize=large_font_size)
             tlabels = p_dict[k]
             tticks = [i for i in range(len(tlabels))]
             ax.set_xticks(tticks)
@@ -838,8 +887,9 @@ class AccuracyVisualizer():
             cbar = plt.colorbar(im, cax=cax)
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
-            ax.set_xlabel(rf"{k[1]} $\beta$", fontsize=large_font_size)
-            ax.set_ylabel(rf"{k[0]} $\beta$", fontsize=large_font_size)
+            l = [l if l == "swish" else "ptanh" for l in k]
+            ax.set_xlabel(rf"{l[1]} $\beta$", fontsize=large_font_size)
+            ax.set_ylabel(rf"{l[0]} $\beta$", fontsize=large_font_size)
             xtlabels = p_dict[k[1]]
             xticks = [i for i in range(len(xtlabels))]
             ytlabels = p_dict[k[0]]
@@ -925,13 +975,13 @@ class AccuracyVisualizer():
         acc_df = acc_df.query(f"sample == {sample}")
 
         # windowed z score at each epoch
-        window = 10
+        window = 2
         acc_df["z"] = 0.
         for idx in acc_df.index.values:
 
             # decompose
             row = acc_df.loc[idx]
-            d, n, sch, c, s, e, acc, z = row
+            d, n, sch, g, c, s, e, val_acc, train_acc, z = row
 
             # get window
             w_start = max(0, e - window)
@@ -941,7 +991,7 @@ class AccuracyVisualizer():
             w_mean = np.mean(acc_df.loc[w_idx, "val_acc"])
             w_std = np.std(acc_df.loc[w_idx, "val_acc"])
 
-            z_score = (acc - w_mean) / w_std if w_std != 0 else 0
+            z_score = (val_acc - w_mean) / w_std if w_std != 0 else 0
 
             # update df
             acc_df.at[idx, "z"] = z_score
@@ -949,24 +999,37 @@ class AccuracyVisualizer():
         # plot...
         fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14,8), sharex=True)
         fig.subplots_adjust(hspace=0)
-        clrs = sns.color_palette("hls", 2)
+        clrs = sns.color_palette("Set2", 3)
 
         # plot acc
-        yvals = acc_df["val_acc"].values
-        ax.plot(range(len(yvals)), yvals, c=clrs[0])
+        yvals = acc_df["val_acc"].values * 100
+        axes[0].plot(range(len(yvals)), yvals, c=clrs[0])
+
+        # highlight peak acc
+        ipeak = np.argmax(yvals)
+        axes[0].plot(ipeak, yvals[ipeak], marker="*", c=clrs[2])
 
         # plot z score
-        yvals = acc_df["z"].values
-        axes[1].plot(range(len(yvals)), yvals, c=clrs[1])
+        zvals = acc_df["z"].values
+        axes[1].plot(range(len(zvals)), zvals, c=clrs[1])
         axes[1].axhline(0, color="k", linestyle="--", alpha=0.5)
         
+        # highlight consecutive negative z scores
+        consec = 5
+        for i in range(len(zvals)):
+
+            prev_consec_neg = [True if z < 0 else False for z in zvals[i-consec+1:i+1]]
+            if len(prev_consec_neg) == 0:
+                continue
+            prev_consec_neg = functools.reduce(lambda a,b : a and b, prev_consec_neg)
+            if (prev_consec_neg):
+                axes[1].plot(i, zvals[i], marker="*", c=clrs[2])
         
-        fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
-        # ax.set_xlabel("Epoch", fontsize=16)
-        # ax.set_ylabel("Validation accuracy (%)", fontsize=16)
-        # ax.set_ylim([10, 100])
-        # ax.legend(fontsize=14)
-        
+        fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}, sample {sample}", fontsize=20)
+        axes[1].set_xlabel("Epoch", fontsize=16)
+        axes[0].set_ylabel("Validation accuracy (%)", fontsize=16)
+        axes[1].set_ylabel(f"Acc z-score over {window} epochs", fontsize=16)
+        axes[0].set_ylim([10, 100])
         plt.tight_layout()
         
         # optional saving
@@ -1071,36 +1134,36 @@ class AccuracyVisualizer():
 
 if __name__=="__main__":
     
-    visualizer = AccuracyVisualizer(
+    vis = AccuracyVisualizer(
         "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        save_fig=True,
+        save_fig=False,
         save_png=True
         )
     
-    # visualizer.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
+    # vis.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
 
-    # visualizer.plot_final_acc_decomp("fashionmnist", "vgg11", "adam", "swish10-tanh0.1")
-    # visualizer.plot_final_acc_decomp("fashionmnist", "vgg11", "adam", "swish0.1-0.5")
-    # visualizer.plot_final_acc_decomp("fashionmnist", "sticknet8", "adam", "swish7.5-tanh0.05")
+    # vis.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
 
-    # visualizer.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
+    # vis.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
-    # visualizer.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
+    vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
 
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["tanh0.01", "tanh0.05", "tanh0.1", "tanh0.5", "tanh1", "tanh2"], inset=False)
-    visualizer.plot_accuracy("cifar100", "vgg11", ["adam"], ["swish2", "swish5", "swish2-5", "relu"], inset=False)
-    # visualizer.plot_accuracy("cifar10", "vgg11", ["adam"], ["relu"], inset=True)
-    # visualizer.plot_accuracy("fashionmnist", "sticknet8", ["adam"], ["swish7.5-tanh0.05", "swish7.5", "tanh0.05", "relu"], inset=False)
-    # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["relu"], inset=True)
-    # visualizer.plot_accuracy("fashionmnist", "vgg11", ["adam"], ["swish10-tanh0.1", "swish10", "tanh0.1", "relu"], inset=False)
-
-    # visualizer.scatter_acc(
-    #     ["cifar10", "cifar100", "fashionmnist"],
-    #     ["vgg11", "sticknet8"],
+    # vis.plot_accuracy("cifar10", 
+    #     "vgg11", 
     #     ["adam"], 
-    #     excl_arr=["spatial", "test", "ratio"],
-    #     pred_type="max",
-    #     cross_family=None)
+    #     ["swish5", "swish5a", "swish5b", "swish5c"],
+    #     inset=False)
+    # vis.plot_accuracy("cifar10", 
+    #     "vgg11", 
+    #     ["adam"], 
+    #     ["tanh0.5", "tanh0.5a", "tanh0.5b", "tanh0.5c"],
+    #     inset=False)
+    # vis.plot_accuracy("cifar10", 
+    #     "vgg11", 
+    #     ["adam"], 
+    #     ["swish5-tanh0.5", "swish5-tanh0.5-alla", "swish5-tanh0.5-allb", "swish5-tanh0.5-allc"],
+    #     inset=False)
+
 
 
 
