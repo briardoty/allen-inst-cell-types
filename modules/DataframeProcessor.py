@@ -105,7 +105,7 @@ class DataframeProcessor():
         case_dict = dict()
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets")
+        net_dir = os.path.join(self.data_dir, f"nets/")
         for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -282,6 +282,8 @@ class DataframeProcessor():
         """
         acc_arr = []
             
+        # load in current df if it exists
+
         # walk dir looking for saved net stats
         net_dir = os.path.join(self.data_dir, f"nets/")
         for root, _, files in os.walk(net_dir):
@@ -320,10 +322,10 @@ class DataframeProcessor():
                     except TypeError:
                         print(f"Entry in perf_stats did not match expectations. Dataset: {dataset}; Scheme: {train_scheme}; Case {case}; Sample: {sample}; Epoch: {epoch}")
                         continue
-                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, epoch, val_acc, train_acc])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, epoch, val_acc, val_loss, train_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["epoch", "val_acc", "train_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["epoch", "val_acc", "val_loss", "train_acc"])
         
         # save df
         self.save_df("acc_df.csv", acc_df)
@@ -346,7 +348,8 @@ if __name__=="__main__":
     
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
     proc = DataframeProcessor(data_dir)
-    proc.refresh_max_acc_df()
+    # proc.refresh_max_acc_df()
+    proc.refresh_accuracy_df()
     # proc.add_group_to_df()
 
     
