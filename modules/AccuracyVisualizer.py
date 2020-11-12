@@ -955,7 +955,8 @@ class AccuracyVisualizer():
         plt.savefig(f"{filename}.svg")
         plt.savefig(f"{filename}.png", dpi=300)
 
-    def plot_single_accuracy(self, dataset, net_name, scheme, case, sample=0):
+    def plot_single_accuracy(self, dataset, net_name, scheme, case, 
+        metric="z", sample=0):
         """
         Plot single net accuracy trajectory with windowed z score
 
@@ -974,32 +975,40 @@ class AccuracyVisualizer():
         # filter more
         acc_df = acc_df.query(f"sample == {sample}")
 
-        # windowed z score at each epoch
-        window = 2
+        # windowed z score/numerical deriv at each epoch
+        window = 100
         acc_df["z"] = 0.
+        acc_df["deriv"] = 0.
         for idx in acc_df.index.values:
 
             # decompose
             row = acc_df.loc[idx]
-            d, n, sch, g, c, s, e, val_acc, train_acc, z = row
+            d, n, sch, g, c, s, e, v_acc, v_loss, t_acc, _, _ = row
 
             # get window
             w_start = max(0, e - window)
-            w_idx = acc_df.epoch[w_start:e].index
+            start_idx = acc_df.query(f"epoch == {w_start}").index.values[0]
+            w_idx = acc_df.epoch[w_start + 1:e + 1].index
 
             # compute window stats
             w_mean = np.mean(acc_df.loc[w_idx, "val_acc"])
             w_std = np.std(acc_df.loc[w_idx, "val_acc"])
-
-            z_score = (val_acc - w_mean) / w_std if w_std != 0 else 0
+            z_score = (v_acc - w_mean) / w_std if w_std != 0 else 0
+            
+            n = 3
+            rt_avg = np.mean(acc_df.loc[idx-n:idx+n, "val_acc"])
+            lf_avg = np.mean(acc_df.loc[start_idx-n:start_idx+n, "val_acc"])
+            w_deriv = (rt_avg - lf_avg) / (e - w_start)
+            w_deriv = 0 if w_deriv != w_deriv else w_deriv
 
             # update df
             acc_df.at[idx, "z"] = z_score
+            acc_df.at[idx, "deriv"] = w_deriv
 
         # plot...
         fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14,8), sharex=True)
         fig.subplots_adjust(hspace=0)
-        clrs = sns.color_palette("Set2", 3)
+        clrs = sns.color_palette("Set2", 4)
 
         # plot acc
         yvals = acc_df["val_acc"].values * 100
@@ -1007,28 +1016,29 @@ class AccuracyVisualizer():
 
         # highlight peak acc
         ipeak = np.argmax(yvals)
-        axes[0].plot(ipeak, yvals[ipeak], marker="*", c=clrs[2])
+        axes[0].plot(ipeak, yvals[ipeak], marker="*", c=clrs[3])
 
-        # plot z score
-        zvals = acc_df["z"].values
-        axes[1].plot(range(len(zvals)), zvals, c=clrs[1])
+        # plot convergence metric
+        cvals = acc_df[metric].values
+        axes[1].plot(range(len(cvals)), cvals, c=clrs[1])
         axes[1].axhline(0, color="k", linestyle="--", alpha=0.5)
         
-        # highlight consecutive negative z scores
-        consec = 5
-        for i in range(len(zvals)):
+        # highlight consecutive negative convergence vals
+        consec = 1
+        for i in range(len(cvals)):
 
-            prev_consec_neg = [True if z < 0 else False for z in zvals[i-consec+1:i+1]]
+            prev_consec_neg = [True if z < 0 else False for z in cvals[i-consec+1:i+1]]
             if len(prev_consec_neg) == 0:
                 continue
             prev_consec_neg = functools.reduce(lambda a,b : a and b, prev_consec_neg)
             if (prev_consec_neg):
-                axes[1].plot(i, zvals[i], marker="*", c=clrs[2])
-        
-        fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}, sample {sample}", fontsize=20)
-        axes[1].set_xlabel("Epoch", fontsize=16)
-        axes[0].set_ylabel("Validation accuracy (%)", fontsize=16)
-        axes[1].set_ylabel(f"Acc z-score over {window} epochs", fontsize=16)
+                axes[1].plot(i, cvals[i], marker="*", c=clrs[3])
+
+        # fig text
+        fig.suptitle(f"Classification accuracy during training: {net_name} on {dataset}, sample {sample}", fontsize=16)
+        axes[-1].set_xlabel("Epoch", fontsize=12)
+        axes[0].set_ylabel("Validation accuracy (%)", fontsize=12)
+        axes[1].set_ylabel(f"Convergence metric over {window} epochs", fontsize=12)
         axes[0].set_ylim([10, 100])
         plt.tight_layout()
         
@@ -1038,12 +1048,8 @@ class AccuracyVisualizer():
             plt.show()
             return
         
-        sub_dir = ensure_sub_dir(self.data_dir, f"figures/accuracy/")
-        filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample} accuracy"
-        filename = os.path.join(sub_dir, filename)
-        print(f"Saving... {filename}")
-        plt.savefig(f"{filename}.svg")
-        plt.savefig(f"{filename}.png", dpi=300)
+        filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample} zscore"
+        self.save("zscores", filename)
 
     def plot_accuracy(self, dataset, net_name, schemes, cases, inset=True):
         """
@@ -1146,7 +1152,9 @@ if __name__=="__main__":
 
     # vis.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
-    vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", sample=0)
+    vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", 
+        metric="deriv",
+        sample=2)
 
     # vis.plot_accuracy("cifar10", 
     #     "vgg11", 
