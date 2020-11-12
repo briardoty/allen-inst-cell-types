@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import os
+import json
 import sys
 
 # function for getting an identifier for a given net state
@@ -68,6 +69,26 @@ def ensure_sub_dir(data_dir, sub_dir):
         os.makedirs(sub_dir)
         
     return sub_dir
+
+def refresh_seeds(data_dir):
+
+    seeds_dict = dict()
+    for i in range(10):
+        s = os.urandom(4)
+        seeds_dict[i] = s.hex()
+
+    json_obj = json.dumps(seeds_dict)
+    seeds_filepath = os.path.join(data_dir, "seeds.json")
+    with open(seeds_filepath, "w") as json_file:
+        json_file.write(json_obj)
+
+def get_seed_for_sample(data_dir, sample):
+    
+    seeds_filepath = os.path.join(data_dir, "seeds.json")
+    with open(seeds_filepath, "r") as json_file:
+        seeds_json = json.load(json_file)
+    
+    return bytes.fromhex(seeds_json[str(sample)])
 
 # standard normalization applied to all stimuli
 normalize = transforms.Normalize(
@@ -271,3 +292,11 @@ def get_epoch_from_filename(filename):
     epoch = int(epoch.group().split(".")[0]) if epoch else None
     
     return epoch
+
+
+if __name__=="__main__":
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
+    # refresh_seeds(data_dir)
+
+    s = get_seed_for_sample(data_dir, 2)
+    x = 1
