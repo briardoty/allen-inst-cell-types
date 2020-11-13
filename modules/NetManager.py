@@ -173,10 +173,13 @@ class NetManager():
     def seed_everything(self, seed):
         
         if seed is None:
-            seed = time.time()
+            seed = os.urandom(4)
 
-        random.seed()
-        torch.manual_seed(seed)
+        random.seed(seed)
+
+        seed_as_int = int.from_bytes(seed, "big")
+        torch.manual_seed(seed_as_int)
+        np.random.seed(seed_as_int)
 
     def init_net(self, sample):
 
@@ -686,10 +689,10 @@ class NetManager():
 if __name__=="__main__":
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar10"
-    net = "sticknet8"
+    net = "vgg11"
     scheme = "adam"
-    group = "layers-swish5-tanh0.5"
-    case = "swish5-tanh0.5-fc2"
+    group = "component-tanh"
+    case = "tanh0.5"
     sample = 6
     epoch = 0
 

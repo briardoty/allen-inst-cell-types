@@ -10,7 +10,7 @@ import os
 import numpy as np
 import argparse
 from modules.NetManager import NetManager
-from modules.util import get_training_vars
+from modules.util import get_training_vars, get_seed_for_sample
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
@@ -37,10 +37,16 @@ def main(net_filepath, data_dir, net_name, n_classes, epochs, train_frac,
     # init net manager
     manager = NetManager(dataset, net_name, None, None, data_dir, 
         scheme)
-    manager.load_dataset(batch_size)
     
     # load the proper net
     manager.load_net_snapshot_from_path(net_filepath)
+
+    # seed
+    seed = get_seed_for_sample(data_dir, manager.sample)
+    manager.seed_everything(seed)
+
+    # load dataset
+    manager.load_dataset(batch_size)
 
     # set initial lr
     if lr is not None:

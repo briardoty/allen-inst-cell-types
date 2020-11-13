@@ -1,12 +1,15 @@
 import torch
 import torchvision
 from torchvision import datasets, models, transforms
+from torch.utils.data.sampler import SubsetRandomSampler
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import os
+import numpy as np
 import json
 import sys
+from sklearn.model_selection import train_test_split
 
 # function for getting an identifier for a given net state
 def get_net_tag(net_name, case_id, sample, epoch):
@@ -177,7 +180,8 @@ def load_fashionMNIST(dataset_dir, batch_size=128, n_workers=4):
 
     return (train_set, val_set, train_loader, val_loader)
 
-def load_cifar10(dataset_dir, batch_size=128, n_workers=4):
+def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
+    val_frac=0.1):
 
     # standard transforms
     train_xform = transforms.Compose([
@@ -191,21 +195,62 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4):
         normalize
     ])
 
-    # datasets
-    train_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
-        download=True, transform=train_xform)
-    
-    val_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=False,
-        download=True, transform=val_xform)
+    train_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=True,
+        download=True, transform=train_xform,
+    )
+    val_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=True,
+        download=True, transform=val_xform,
+    )
 
-    # loaders
-    train_loader = torch.utils.data.DataLoader(train_set,
-        batch_size=batch_size, shuffle=True, num_workers=n_workers)
+    # num_train = len(train_dataset)
+    # indices = list(range(num_train))
+    # split = int(np.floor(val_frac * num_train))
 
-    val_loader = torch.utils.data.DataLoader(val_set, 
-        batch_size=batch_size, shuffle=False, num_workers=n_workers)
+    # if shuffle:
+    #     np.random.seed(random_seed)
+    #     np.random.shuffle(indices)
 
-    return (train_set, val_set, train_loader, val_loader)
+    # train_idx, valid_idx = indices[split:], indices[:split]
+
+    targets = train_dataset.targets
+    train_idx, val_idx = train_test_split(
+        np.arange(len(targets)), test_size=val_frac, 
+        shuffle=True, stratify=targets)
+
+    train_sampler = SubsetRandomSampler(train_idx)
+    val_sampler = SubsetRandomSampler(val_idx)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size, sampler=train_sampler,
+        num_workers=n_workers)
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=batch_size, sampler=val_sampler,
+        num_workers=n_workers)
+
+
+
+
+
+
+    # # datasets
+    # full_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
+    #     download=True, transform=train_xform)
+
+    # # split train/validation
+    # train_size = int(0.8 * len(full_dataset))
+    # val_size = len(full_dataset) - train_size
+    # train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
+
+    # # loaders
+    # train_loader = torch.utils.data.DataLoader(train_set,
+    #     batch_size=batch_size, shuffle=True, num_workers=n_workers)
+
+    # val_loader = torch.utils.data.DataLoader(val_set, 
+    #     batch_size=batch_size, shuffle=False, num_workers=n_workers)
+
+    return (train_dataset, val_dataset, train_loader, val_loader)
 
 def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
