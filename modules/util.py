@@ -181,6 +181,42 @@ def load_fashionMNIST(dataset_dir, batch_size=128, n_workers=4):
     return (train_set, val_set, train_loader, val_loader)
 
 def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
+    train_frac=0.9):
+
+    # standard transforms
+    train_xform = transforms.Compose([
+        transforms.RandomHorizontalFlip(), 
+        transforms.RandomCrop(32, 4),
+        transforms.ToTensor(),
+        normalize
+    ])
+    val_xform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    # get cifar10
+    full_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=True,
+        download=True, transform=train_xform,
+    )
+
+    # split dataset into train and val
+    train_size = int(train_frac * len(full_dataset))
+    val_size = len(full_dataset) - train_size
+    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
+
+    # loaders
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size,
+        num_workers=n_workers)
+    val_loader = torch.utils.data.DataLoader(
+        val_dataset, batch_size=batch_size,
+        num_workers=n_workers)
+
+    return (train_dataset, val_dataset, train_loader, val_loader)
+
+def load_cifar10_old(dataset_dir, batch_size=128, n_workers=4, 
     val_frac=0.1):
 
     # standard transforms
