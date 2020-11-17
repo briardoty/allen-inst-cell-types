@@ -2,6 +2,7 @@ import torch
 import torchvision
 from torchvision import datasets, models, transforms
 from torch.utils.data.sampler import SubsetRandomSampler
+from torch.utils.data import Subset
 from torch.utils.data import TensorDataset
 import torch.nn as nn
 import torch.optim as optim
@@ -236,7 +237,7 @@ def sampleFromClass(ds, k):
     return (TensorDataset(torch.stack(train_data), torch.tensor(train_label)), 
         TensorDataset(torch.stack(test_data), torch.tensor(test_label)))
 
-def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
+def load_cifar10_hacked(dataset_dir, batch_size=128, n_workers=4, 
     train_frac=0.9):
 
     # standard transforms
@@ -246,14 +247,11 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         transforms.ToTensor(),
         normalize
     ])
-    val_xform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize
-    ])
 
     train_dataset = torchvision.datasets.CIFAR10(
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
+        shuffle=True
     )
 
     samples_per_class = (len(train_dataset) * train_frac) / len(train_dataset.classes)
@@ -268,7 +266,7 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
 
     return (train_dataset, train_dataset, train_loader, val_loader)
 
-def load_cifar10_sampler(dataset_dir, batch_size=128, n_workers=4, 
+def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
     val_frac=0.1):
 
     # standard transforms
@@ -283,7 +281,7 @@ def load_cifar10_sampler(dataset_dir, batch_size=128, n_workers=4,
         normalize
     ])
 
-    train_dataset = torchvision.datasets.CIFAR10(
+    full_dataset = torchvision.datasets.CIFAR10(
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
     )
@@ -292,9 +290,9 @@ def load_cifar10_sampler(dataset_dir, batch_size=128, n_workers=4,
     #     download=True, transform=val_xform,
     # )
 
-    num_train = len(train_dataset)
-    indices = list(range(num_train))
-    split = int(np.floor(val_frac * num_train))
+    # num_train = len(train_dataset)
+    # indices = list(range(num_train))
+    # split = int(np.floor(val_frac * num_train))
 
     # if shuffle:
     #     np.random.seed(random_seed)
@@ -302,19 +300,22 @@ def load_cifar10_sampler(dataset_dir, batch_size=128, n_workers=4,
 
     # train_idx, val_idx = indices[split:], indices[:split]
 
-    targets = train_dataset.targets
+    targets = full_dataset.targets
     train_idx, val_idx = train_test_split(
         np.arange(len(targets)), test_size=val_frac, 
         shuffle=True, stratify=targets)
 
-    train_sampler = SubsetRandomSampler(train_idx)
-    val_sampler = SubsetRandomSampler(val_idx)
+    train_dataset = Subset(full_dataset, train_idx)
+    val_dataset = Subset(full_dataset, val_idx)
+
+    # train_sampler = SubsetRandomSampler(train_idx)
+    # val_sampler = SubsetRandomSampler(val_idx)
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=train_sampler,
+        train_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, sampler=val_sampler,
+        val_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
 
     # # datasets
@@ -333,7 +334,7 @@ def load_cifar10_sampler(dataset_dir, batch_size=128, n_workers=4,
     # val_loader = torch.utils.data.DataLoader(val_set, 
     #     batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
-    return (train_dataset, train_dataset, train_loader, val_loader)
+    return (train_dataset, val_dataset, train_loader, val_loader)
 
 def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
