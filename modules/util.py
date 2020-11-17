@@ -248,12 +248,12 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
     #     np.random.seed(random_seed)
     #     np.random.shuffle(indices)
 
-    train_idx, val_idx = indices[split:], indices[:split]
+    # train_idx, val_idx = indices[split:], indices[:split]
 
-    # targets = train_dataset.targets
-    # train_idx, val_idx = train_test_split(
-    #     np.arange(len(targets)), test_size=val_frac, 
-    #     shuffle=True, stratify=targets)
+    targets = train_dataset.targets
+    train_idx, val_idx = train_test_split(
+        np.arange(len(targets)), test_size=val_frac, 
+        shuffle=True, stratify=targets)
 
     train_sampler = SubsetRandomSampler(train_idx)
     val_sampler = SubsetRandomSampler(val_idx)
