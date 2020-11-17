@@ -255,54 +255,16 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
     )
-    # val_dataset = torchvision.datasets.CIFAR10(
-    #     root=dataset_dir, train=True,
-    #     download=True, transform=val_xform,
-    # )
 
     samples_per_class = (len(train_dataset) * train_frac) / len(train_dataset.classes)
     train_dataset, val_dataset = sampleFromClass(train_dataset, samples_per_class)
-
-    # num_train = len(train_dataset)
-    # indices = list(range(num_train))
-    # split = int(np.floor(val_frac * num_train))
-
-    # # if shuffle:
-    # #     np.random.seed(random_seed)
-    # #     np.random.shuffle(indices)
-
-    # # train_idx, val_idx = indices[split:], indices[:split]
-
-    # targets = train_dataset.targets
-    # train_idx, val_idx = train_test_split(
-    #     np.arange(len(targets)), test_size=val_frac, 
-    #     shuffle=True, stratify=targets)
-
-    # train_sampler = SubsetRandomSampler(train_idx)
-    # val_sampler = SubsetRandomSampler(val_idx)
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size,
+        val_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
-
-    # # datasets
-    # full_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
-    #     download=True, transform=train_xform)
-
-    # # split train/validation
-    # train_size = int(0.8 * len(full_dataset))
-    # val_size = len(full_dataset) - train_size
-    # train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
-
-    # # loaders
-    # train_loader = torch.utils.data.DataLoader(train_set,
-    #     batch_size=batch_size, shuffle=True, num_workers=n_workers)
-
-    # val_loader = torch.utils.data.DataLoader(val_set, 
-    #     batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
     return (train_dataset, train_dataset, train_loader, val_loader)
 
