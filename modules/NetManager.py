@@ -438,6 +438,7 @@ class NetManager():
         running_corrects = 0
 
         loader = self.val_loader if phase == "val" else self.test_loader
+        dataset = self.val_set if phase == "val" else self.test_set
         for inputs, labels in loader:
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
@@ -452,7 +453,7 @@ class NetManager():
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
 
-        dataset_size = len(self.val_set)
+        dataset_size = len(dataset)
         epoch_loss = running_loss / dataset_size
         epoch_acc = running_corrects.double() / dataset_size
 
