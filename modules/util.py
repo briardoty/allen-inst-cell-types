@@ -235,10 +235,10 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
     )
-    val_dataset = torchvision.datasets.CIFAR10(
-        root=dataset_dir, train=True,
-        download=True, transform=val_xform,
-    )
+    # val_dataset = torchvision.datasets.CIFAR10(
+    #     root=dataset_dir, train=True,
+    #     download=True, transform=val_xform,
+    # )
 
     num_train = len(train_dataset)
     indices = list(range(num_train))
@@ -262,7 +262,7 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         train_dataset, batch_size=batch_size, sampler=train_sampler,
         num_workers=n_workers, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size, sampler=val_sampler,
+        train_dataset, batch_size=batch_size, sampler=val_sampler,
         num_workers=n_workers, shuffle=False)
 
     # # datasets
@@ -281,7 +281,7 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
     # val_loader = torch.utils.data.DataLoader(val_set, 
     #     batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
-    return (train_dataset, val_dataset, train_loader, val_loader)
+    return (train_dataset, train_dataset, train_loader, val_loader)
 
 def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
