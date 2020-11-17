@@ -264,6 +264,7 @@ class NetManager():
             "case": self.case,
             "sample": self.sample,
             "modified_layers": self.modified_layers,
+            "test_acc": self.test_acc
         }
 
         # save
@@ -329,11 +330,11 @@ class NetManager():
     
     def load_dataset(self, batch_size=128):
 
-        (self.train_set, 
-         self.val_set, 
-         self.train_loader, 
-         self.val_loader) = load_dataset(self.data_dir, self.dataset, 
-            batch_size)
+        (self.train_set, self.val_set, self.test_set,
+            self.train_loader, 
+            self.val_loader, 
+            self.test_loader) = load_dataset(self.data_dir, 
+            self.dataset, batch_size)
 
     def save_net_responses(self):
         # store responses as tensor
@@ -429,15 +430,15 @@ class NetManager():
             print("Setting inplace rectification to false!")
             potential_relu_layer.inplace = False
         
-    def evaluate_net(self, criterion):
+    def evaluate_net(self, criterion, phase="val"):
         # set to validate mode
-        phase = "val"
         self.net.eval()
         
         running_loss = 0.0
         running_corrects = 0
 
-        for inputs, labels in self.val_loader:
+        loader = self.val_loader if phase == "val" else self.test_loader
+        for inputs, labels in loader:
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
 
@@ -670,14 +671,15 @@ class NetManager():
                 best_acc = val_acc
                 best_epoch = epoch
 
-            # track z-score of currect stat w.r.t. last 10 epochs
-            
-
+            # TODO: track z-score?
             print()
     
         time_elapsed = time.time() - since
         print('Training complete in {:.0f}m {:.0f}s'.format(
             time_elapsed // 60, time_elapsed % 60))
+
+        # evaluate against test dataset
+        (self.test_acc, test_loss) = self.evaluate_net(criterion, phase="test")
 
         if best_acc > 0:
             print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
@@ -685,24 +687,26 @@ class NetManager():
             self.save_arr("perf_stats", np.array(self.perf_stats))
 
 
-
 if __name__=="__main__":
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar10"
-    net = "vgg11"
+    net = "sticknet8"
     scheme = "adam"
     group = "component-tanh"
     case = "tanh0.5"
-    sample = 6
+    sample = 2
     epoch = 0
 
     # initialize
     mgr = NetManager(dataset, net, group, case, data_dir, scheme)
-    mgr.load_dataset(128)
-    
-    # load
-    mgr.init_net(sample)
     mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
+    
+    # reliable seed
+    seed = get_seed_for_sample(data_dir, mgr.sample)
+    mgr.seed_everything(seed)
+
+    # load
+    mgr.load_dataset(128)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)

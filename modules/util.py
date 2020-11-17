@@ -192,6 +192,10 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         transforms.ToTensor(),
         normalize
     ])
+    test_xform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
 
     # full dataset
     full_dataset = torchvision.datasets.CIFAR10(
@@ -207,6 +211,9 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
 
     train_dataset = Subset(full_dataset, train_idx)
     val_dataset = Subset(full_dataset, val_idx)
+    test_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=False,
+        download=True, transform=test_xform)
 
     # loaders
     train_loader = torch.utils.data.DataLoader(
@@ -215,8 +222,12 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset, batch_size=batch_size,
+        num_workers=n_workers, shuffle=False)
 
-    return (train_dataset, val_dataset, train_loader, val_loader)
+    return (train_dataset, val_dataset, test_dataset, 
+        train_loader, val_loader, test_loader)
 
 def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
