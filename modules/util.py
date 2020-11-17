@@ -180,7 +180,7 @@ def load_fashionMNIST(dataset_dir, batch_size=128, n_workers=4):
 
     return (train_set, val_set, train_loader, val_loader)
 
-def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
+def load_cifar10_split(dataset_dir, batch_size=128, n_workers=4, 
     train_frac=0.9):
 
     # standard transforms
@@ -216,7 +216,7 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
 
     return (train_dataset, val_dataset, train_loader, val_loader)
 
-def load_cifar10_old(dataset_dir, batch_size=128, n_workers=4, 
+def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
     val_frac=0.1):
 
     # standard transforms
