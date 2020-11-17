@@ -260,10 +260,10 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size, sampler=train_sampler,
-        num_workers=n_workers)
+        num_workers=n_workers, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size, sampler=val_sampler,
-        num_workers=n_workers)
+        num_workers=n_workers, shuffle=False)
 
     # # datasets
     # full_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
