@@ -182,90 +182,6 @@ def load_fashionMNIST(dataset_dir, batch_size=128, n_workers=4):
 
     return (train_set, val_set, train_loader, val_loader)
 
-def load_cifar10_split(dataset_dir, batch_size=128, n_workers=4, 
-    train_frac=0.9):
-
-    # standard transforms
-    train_xform = transforms.Compose([
-        transforms.RandomHorizontalFlip(), 
-        transforms.RandomCrop(32, 4),
-        transforms.ToTensor(),
-        normalize
-    ])
-    val_xform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize
-    ])
-
-    # get cifar10
-    full_dataset = torchvision.datasets.CIFAR10(
-        root=dataset_dir, train=True,
-        download=True, transform=train_xform,
-    )
-
-    # split dataset into train and val
-    train_size = int(train_frac * len(full_dataset))
-    val_size = len(full_dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(full_dataset, [train_size, val_size])
-
-    # loaders
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size,
-        num_workers=n_workers)
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size,
-        num_workers=n_workers)
-
-    return (train_dataset, val_dataset, train_loader, val_loader)
-
-def sampleFromClass(ds, k):
-    class_counts = {}
-    train_data = []
-    train_label = []
-    test_data = []
-    test_label = []
-    for data, label in ds:
-        c = label
-        class_counts[c] = class_counts.get(c, 0) + 1
-        if class_counts[c] <= k:
-            train_data.append(data)
-            train_label.append(label)
-        else:
-            test_data.append(data)
-            test_label.append(label)
-
-    return (TensorDataset(torch.stack(train_data), torch.tensor(train_label)), 
-        TensorDataset(torch.stack(test_data), torch.tensor(test_label)))
-
-def load_cifar10_hacked(dataset_dir, batch_size=128, n_workers=4, 
-    train_frac=0.9):
-
-    # standard transforms
-    train_xform = transforms.Compose([
-        transforms.RandomHorizontalFlip(), 
-        transforms.RandomCrop(32, 4),
-        transforms.ToTensor(),
-        normalize
-    ])
-
-    train_dataset = torchvision.datasets.CIFAR10(
-        root=dataset_dir, train=True,
-        download=True, transform=train_xform,
-        shuffle=True
-    )
-
-    samples_per_class = (len(train_dataset) * train_frac) / len(train_dataset.classes)
-    train_dataset, val_dataset = sampleFromClass(train_dataset, samples_per_class)
-
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size,
-        num_workers=n_workers, shuffle=False)
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=batch_size,
-        num_workers=n_workers, shuffle=False)
-
-    return (train_dataset, train_dataset, train_loader, val_loader)
-
 def load_cifar10(dataset_dir, batch_size=128, n_workers=4, 
     val_frac=0.1):
 
@@ -276,30 +192,14 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
         transforms.ToTensor(),
         normalize
     ])
-    val_xform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize
-    ])
 
+    # full dataset
     full_dataset = torchvision.datasets.CIFAR10(
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
     )
-    # val_dataset = torchvision.datasets.CIFAR10(
-    #     root=dataset_dir, train=True,
-    #     download=True, transform=val_xform,
-    # )
 
-    # num_train = len(train_dataset)
-    # indices = list(range(num_train))
-    # split = int(np.floor(val_frac * num_train))
-
-    # if shuffle:
-    #     np.random.seed(random_seed)
-    #     np.random.shuffle(indices)
-
-    # train_idx, val_idx = indices[split:], indices[:split]
-
+    # train/val partition
     targets = full_dataset.targets
     train_idx, val_idx = train_test_split(
         np.arange(len(targets)), test_size=val_frac, 
@@ -308,31 +208,13 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
     train_dataset = Subset(full_dataset, train_idx)
     val_dataset = Subset(full_dataset, val_idx)
 
-    # train_sampler = SubsetRandomSampler(train_idx)
-    # val_sampler = SubsetRandomSampler(val_idx)
-
+    # loaders
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
-
-    # # datasets
-    # full_set = torchvision.datasets.CIFAR10(root=dataset_dir, train=True,
-    #     download=True, transform=train_xform)
-
-    # # split train/validation
-    # train_size = int(0.8 * len(full_dataset))
-    # val_size = len(full_dataset) - train_size
-    # train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
-
-    # # loaders
-    # train_loader = torch.utils.data.DataLoader(train_set,
-    #     batch_size=batch_size, shuffle=True, num_workers=n_workers)
-
-    # val_loader = torch.utils.data.DataLoader(val_set, 
-    #     batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
     return (train_dataset, val_dataset, train_loader, val_loader)
 
