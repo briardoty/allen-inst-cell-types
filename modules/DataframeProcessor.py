@@ -153,31 +153,35 @@ class DataframeProcessor():
                 try:
                     i_max = np.argmax(perf_stats[:,0])
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_max]
+                    test_acc = stats_dict.get("test_acc")
 
                     # for learning speed
                     pct_acc = (self.pct / 100.) * val_acc
                     i_first = next(x for x, val in enumerate(perf_stats[:,0]) if val > pct_acc)
 
-                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, i_first])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, test_acc, i_first])
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["max_val_acc", "epochs_past"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["max_val_acc", "test_acc", "epochs_past"])
 
         # process
         # 1. mark mixed nets
         acc_df["is_mixed"] = [len(case_dict[c]["act_fns"]) > 1 if case_dict.get(c) is not None else False for c in acc_df["case"]]
         acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
-        # 2. add columns
+        # 2. add columns for predictions
         acc_df["max_pred"] = np.nan
         acc_df["linear_pred"] = np.nan
         acc_df["max_pred_p_val"] = np.nan
         acc_df["linear_pred_p_val"] = np.nan
-        acc_df["min_pred_epochs_past_p_val"] = np.nan
-        acc_df["linear_pred_epochs_past_p_val"] = np.nan
+
+        acc_df["max_pred_test_acc"] = np.nan
+        acc_df["linear_pred_test_acc"] = np.nan
+        acc_df["max_pred_test_acc_p_val"] = np.nan
+        acc_df["linear_pred_test_acc_p_val"] = np.nan
 
         # index new and old without group
         idx_no_group = list(self.net_idx_cols)
@@ -225,7 +229,8 @@ class DataframeProcessor():
 
                 # choose component row accs/learning epochs
                 c_accs = []
-                c_epochs = []
+                c_accs_test = []
+                # c_epochs = []
                 for cc in component_cases:
                     c_row = component_rows \
                         .query(f"case == '{cc}'") \
@@ -235,7 +240,8 @@ class DataframeProcessor():
                         break
                     c_row = c_row.sample()
                     c_accs.append(c_row.max_val_acc.values[0])
-                    c_epochs.append(c_row.epochs_past.values[0])
+                    c_accs_test.append(c_row.test_acc.values[0])
+                    # c_epochs.append(c_row.epochs_past.values[0])
 
                     # mark component row as used in prediction
                     component_rows.at[c_row.index.values[0], "used"] = True
@@ -246,13 +252,16 @@ class DataframeProcessor():
                 ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
                 ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
                 
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "min_pred_epochs_past"] = np.min(c_epochs)
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_epochs_past"] = np.mean(c_epochs)
+                if len(c_accs_test) == 0:
+                    continue
+
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred_test_acc"] = np.max(c_accs_test)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
 
             # significance
-            upper_dists = ["max_val_acc", "max_val_acc", "min_pred_epochs_past", "linear_pred_epochs_past"]
-            lower_dists = ["max_pred", "linear_pred", "epochs_past", "epochs_past"]
-            cols = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
+            upper_dists = ["max_val_acc", "max_val_acc", "test_acc", "test_acc"]
+            lower_dists = ["max_pred", "linear_pred", "max_pred_test_acc", "linear_pred_test_acc"]
+            cols = ["max_pred", "linear_pred", "max_pred_test_acc", "linear_pred_test_acc"]
             for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
                 t, p = ttest_ind(ndf.at[(d, n, sch, g, c), upper], ndf.at[(d, n, sch, g, c), lower])
