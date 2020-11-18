@@ -46,7 +46,7 @@ class DataframeProcessor():
 
         # make and save df
         learning_df = pd.DataFrame(learning_arr, 
-            columns=self.net_idx_cols+["max_val_acc", "epoch_past_pct"])
+            columns=self.net_idx_cols+["val_acc", "epoch_past_pct"])
         self.save_df("learning_df.csv", learning_df)
 
     def add_group_to_df(self):
@@ -165,7 +165,7 @@ class DataframeProcessor():
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["max_val_acc", "test_acc", "epochs_past"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["val_acc", "test_acc", "epochs_past"])
 
         # process
         # 1. mark mixed nets
@@ -173,10 +173,10 @@ class DataframeProcessor():
         acc_df["cross_fam"] = [len(case_dict[c]["act_fns"]) == len(set(case_dict[c]["act_fns"])) if case_dict.get(c) is not None else False for c in acc_df["case"]]
 
         # 2. add columns for predictions
-        acc_df["max_pred"] = np.nan
-        acc_df["linear_pred"] = np.nan
-        acc_df["max_pred_p_val"] = np.nan
-        acc_df["linear_pred_p_val"] = np.nan
+        acc_df["max_pred_val_acc"] = np.nan
+        acc_df["linear_pred_val_acc"] = np.nan
+        acc_df["max_pred_val_acc_p_val"] = np.nan
+        acc_df["linear_pred_val_acc_p_val"] = np.nan
 
         acc_df["max_pred_test_acc"] = np.nan
         acc_df["linear_pred_test_acc"] = np.nan
@@ -206,7 +206,7 @@ class DataframeProcessor():
             d, n, sch, g, c, s = midx
             
             # skip if already predicted
-            if not math.isnan(ndf.at[midx, "max_pred"]):
+            if not math.isnan(ndf.at[midx, "max_pred_val_acc"]):
                 continue
 
             # get rows in this mixed case
@@ -239,7 +239,7 @@ class DataframeProcessor():
                     if len(c_row) == 0:
                         break
                     c_row = c_row.sample()
-                    c_accs.append(c_row.max_val_acc.values[0])
+                    c_accs.append(c_row.val_acc.values[0])
                     c_accs_test.append(c_row.test_acc.values[0])
                     # c_epochs.append(c_row.epochs_past.values[0])
 
@@ -249,8 +249,8 @@ class DataframeProcessor():
                 if len(c_accs) == 0:
                     break
 
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred"] = np.max(c_accs)
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred"] = np.mean(c_accs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
+                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
                 
                 if len(c_accs_test) == 0:
                     continue
@@ -259,9 +259,9 @@ class DataframeProcessor():
                 ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
 
             # significance
-            upper_dists = ["max_val_acc", "max_val_acc", "test_acc", "test_acc"]
-            lower_dists = ["max_pred", "linear_pred", "max_pred_test_acc", "linear_pred_test_acc"]
-            cols = ["max_pred", "linear_pred", "max_pred_test_acc", "linear_pred_test_acc"]
+            upper_dists = ["val_acc", "val_acc", "test_acc", "test_acc"]
+            lower_dists = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
+            cols = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
             for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
                 t, p = ttest_ind(ndf.at[(d, n, sch, g, c), upper], ndf.at[(d, n, sch, g, c), lower])
