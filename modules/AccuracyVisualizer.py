@@ -45,7 +45,7 @@ class AccuracyVisualizer():
         
         self.stats_processor = AccuracyLoader(data_dir)
 
-        with open(os.path.join(self.data_dir, "net_configs.json"), "r") as json_file:
+        with open("/home/briardoty/Source/allen-inst-cell-types/hpc-jobs/net_configs.json", "r") as json_file:
             self.net_configs = json.load(json_file)
 
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
@@ -156,14 +156,13 @@ class AccuracyVisualizer():
         self.save("decomposition", filename)
 
     def get_prediction_df(self, datasets, net_names, schemes, cases, excl_arr, 
-        pred_type="max", cross_family=None, mixed=True):
+        pred_type="max_pred", cross_family=None, mixed=True, metric="val_acc"):
 
         # pull data
         df, case_dict, _ = self.stats_processor.load_max_acc_df()
 
-        # performance relative to predictions
-        df["acc_vs_linear"] = df["max_val_acc"]["mean"] - df["linear_pred"]["mean"]
-        df["acc_vs_max"] = df["max_val_acc"]["mean"] - df["max_pred"]["mean"]
+        # performance relative to prediction
+        df[f"acc_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_{metric}"]["mean"]
 
         # filter dataframe
         if mixed:
@@ -263,7 +262,7 @@ class AccuracyVisualizer():
         
 
     def plot_predictions(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
-        pred_type="max", cross_family=None, pred_std=False, small=False, filename=None):
+        pred_type="max_pred", metric="val_acc", cross_family=None, pred_std=False, small=False, filename=None):
         """
         Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
@@ -271,7 +270,7 @@ class AccuracyVisualizer():
 
         # pull data
         sort_df, _ = self.get_prediction_df([dataset], net_names, schemes, cases, 
-            excl_arr, pred_type, cross_family)
+            excl_arr, pred_type, cross_family, metric)
         
         # determine each label length for alignment
         lengths = {}
@@ -299,7 +298,7 @@ class AccuracyVisualizer():
 
             # stats
             perf = row[f"acc_vs_{pred_type}"].values[0] * 100
-            err = row["max_val_acc"]["std"] * 1.98 * 100
+            err = row[f"{metric}"]["std"] * 1.98 * 100
 
             xmin = min(xmin, perf - err)
             xmax = max(xmax, perf + err)
@@ -313,7 +312,7 @@ class AccuracyVisualizer():
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
 
             # BH corrected significance
-            bh_sig = row[f"{pred_type}_pred_rej_h0"].values[0]
+            bh_sig = row[f"{pred_type}_{metric}_rej_h0"].values[0]
             sig_arr.append(bh_sig)
             if bh_sig:
                 if cf or cross_family is not None:
@@ -341,7 +340,7 @@ class AccuracyVisualizer():
 
             # optionally, plot the 95% ci for the prediction
             if pred_std:
-                pred_err = row[f"{pred_type}_pred"]["std"] * 1.98 * 100
+                pred_err = row[f"{pred_type}_{metric}"]["std"] * 1.98 * 100
                 plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
                         c="k", linewidth=lw, alpha=.2)
 
@@ -373,7 +372,7 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
-        plt.xlabel(f"Acc. relative to {pred_type} prediction (%)", 
+        plt.xlabel(f"{metric} relative to {pred_type} (%)", 
             fontsize=28, labelpad=10)
         plt.ylabel("Network configuration", fontsize=28, labelpad=10)
         plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
@@ -394,7 +393,7 @@ class AccuracyVisualizer():
         if filename is None:
             net_names = ", ".join(net_names)
             schemes = ", ".join(schemes)
-            filename = f"{dataset}_{net_names}_{schemes}_{pred_type}-prediction"
+            filename = f"{dataset}_{net_names}_{schemes}_{pred_type}_{metric}"
         self.save("prediction", filename)
 
     def plot_family_supplement(self, dataset, net_names, schemes, excl_arr, 
@@ -1051,7 +1050,7 @@ class AccuracyVisualizer():
         filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample} zscore"
         self.save("zscores", filename)
 
-    def plot_accuracy(self, dataset, net_name, schemes, cases, inset=True):
+    def plot_accuracy(self, dataset, net_name, schemes, groups, cases, inset=True):
         """
         Plots accuracy over training for different experimental cases.
 
@@ -1070,6 +1069,7 @@ class AccuracyVisualizer():
             schemes, cases)
 
         # process a bit
+        acc_df = acc_df.query(f"group in {groups}") 
         index_cols = ["dataset", "net_name", "train_scheme", "case", "epoch"]
         acc_df.set_index(index_cols, inplace=True)
         df_stats = acc_df.groupby(index_cols).agg({ "val_acc": [np.mean, np.std] })
@@ -1117,7 +1117,7 @@ class AccuracyVisualizer():
         ax.set_title(f"Classification accuracy during training: {net_name} on {dataset}", fontsize=20)
         ax.set_xlabel("Epoch", fontsize=16)
         ax.set_ylabel("Validation accuracy (%)", fontsize=16)
-        ax.set_ylim([10, 100])
+        ax.set_ylim([0, 100])
         ax.legend(fontsize=14)
         
         plt.tight_layout()
@@ -1142,24 +1142,25 @@ if __name__=="__main__":
     
     vis = AccuracyVisualizer(
         "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
-        save_fig=False,
+        save_fig=True,
         save_png=True
         )
     
     # vis.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
 
-    # vis.plot_final_acc_decomp("cifar10", "vgg11", "adam", "swish5-tanh0.5")
+    vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish5-ptanh2")
 
     # vis.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
 
-    vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", 
-        metric="deriv",
-        sample=2)
+    # vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", 
+    #     metric="deriv",
+    #     sample=2)
 
     # vis.plot_accuracy("cifar10", 
-    #     "vgg11", 
-    #     ["adam"], 
-    #     ["swish5", "swish5a", "swish5b", "swish5c"],
+    #     "sticknet8", 
+    #     ["adam"],
+    #     ["train-val-split"],
+    #     ["relu", "swish5-tanh0.5"],
     #     inset=False)
     # vis.plot_accuracy("cifar10", 
     #     "vgg11", 

@@ -23,34 +23,35 @@ vis = AccuracyVisualizer(
     )
 
 # plot layer groups
-layer_groups = ["layers-swish5-tanh0.5",
-    "layers-swish7.5-tanh0.1",
-    "layers-swish10-tanh0.5"]
-for lg in layer_groups:
-    cases = group_dict[lg] + [lg[len("layers-"):]]
-    vis.plot_predictions("cifar10",
-        ["vgg11", "sticknet8"],
-        ["adam"],
-        cases=cases,
-        excl_arr=["spatial", "test"],
-        pred_type="max",
-        cross_family=None,
-        pred_std=True,
-        small=False,
-        filename=f"{lg} prediction"
-        )
+# layer_groups = ["layers-swish5-tanh0.5",
+#     "layers-swish7.5-tanh0.1",
+#     "layers-swish10-tanh0.5"]
+# for lg in layer_groups:
+#     cases = group_dict[lg] + [lg[len("layers-"):]]
+#     vis.plot_predictions("cifar10",
+#         ["vgg11", "sticknet8"],
+#         ["adam"],
+#         cases=cases,
+#         excl_arr=["spatial", "test"],
+#         pred_type="max",
+#         cross_family=None,
+#         pred_std=True,
+#         small=False,
+#         filename=f"{lg} prediction"
+#         )
 
 # all nets, all datasets
-nets = ["vgg11"]
-datasets = ["cifar100"]
+nets = ["sticknet8"]
+datasets = ["cifar10"]
 for n in nets:
     for d in datasets:
         vis.plot_predictions(d,
             [n],
             ["adam"],
             cases=[],
-            excl_arr=["spatial", "test", "ratio"],
-            pred_type="max",
+            excl_arr=["spatial", "test", "ratio", "fc", "conv", "all"],
+            pred_type="max_pred",
+            metric="test_acc",
             cross_family=None,
             pred_std=True,
             small=False,

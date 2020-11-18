@@ -70,20 +70,30 @@ class AccuracyLoader():
         gidx_cols = self.net_idx_cols + ["is_mixed", "cross_fam"]
         gidx_cols.remove("sample")
         df_stats = acc_df.groupby(gidx_cols).agg(
-            { "max_val_acc": [np.mean, np.std],
-              "max_pred": [np.mean, np.std],
-              "linear_pred": [np.mean, np.std],
-              "max_pred_p_val": np.mean,
-              "linear_pred_p_val": np.mean,
+            { "val_acc": [np.mean, np.std],
+              "max_pred_val_acc": [np.mean, np.std],
+              "linear_pred_val_acc": [np.mean, np.std],
+              "max_pred_val_acc_p_val": np.mean,
+              "linear_pred_val_acc_p_val": np.mean,
 
-              "epochs_past": [np.mean, np.std],
-              "min_pred_epochs_past": [np.mean, np.std],
-              "linear_pred_epochs_past": [np.mean, np.std],
-              "min_pred_epochs_past_p_val": np.mean,
-              "linear_pred_epochs_past_p_val": np.mean })
+              "test_acc": [np.mean, np.std],
+              "max_pred_test_acc": [np.mean, np.std],
+              "linear_pred_test_acc": [np.mean, np.std],
+              "max_pred_test_acc_p_val": np.mean,
+              "linear_pred_test_acc_p_val": np.mean,
+
+            #   "epochs_past": [np.mean, np.std],
+            #   "min_pred_epochs_past": [np.mean, np.std],
+            #   "linear_pred_epochs_past": [np.mean, np.std],
+            #   "min_pred_epochs_past_p_val": np.mean,
+            #   "linear_pred_epochs_past_p_val": np.mean 
+              })
 
         # benjamini-hochberg correction
-        to_correct_arr = ["max_pred", "linear_pred", "min_pred_epochs_past", "linear_pred_epochs_past"]
+        to_correct_arr = ["max_pred_val_acc", "linear_pred_val_acc", 
+            "max_pred_test_acc", "linear_pred_test_acc", 
+            # "min_pred_epochs_past", "linear_pred_epochs_past"
+        ]
         mixed_idx = df_stats.query("is_mixed == True").index
         for to_correct in to_correct_arr:
 
