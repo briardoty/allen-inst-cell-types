@@ -19,6 +19,7 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 import random
 import matplotlib.pyplot as plt
+import functools
 import sys
 
 try:
@@ -552,7 +553,8 @@ class NetManager():
 
     def find_initial_lr(self, criterion, optimizer, lr_low, lr_high):
         """
-        ???
+        Run a single epoch without updating weights to compare LR and loss
+        and find optimal initial LR
         """
 
         self.net.train()
@@ -627,7 +629,6 @@ class NetManager():
 
         return best_lr / 2.0
 
-
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
         end_epoch=10, snap_freq=50):
         """
@@ -650,6 +651,7 @@ class NetManager():
             self.update_resume_state(scheduler, end_epoch)
 
         epochs = range(self.epoch + 1, end_epoch + 1)
+        convergence_arr = []
         for epoch in epochs:
             print('Epoch {}/{}'.format(epoch, end_epoch))
             print('-' * 10)
@@ -672,7 +674,25 @@ class NetManager():
                 best_acc = val_acc
                 best_epoch = epoch
 
-            # TODO: track z-score?
+            # track convergence metric
+            window = 100
+            w_start = max(0, epoch - window)
+            points = 7
+            rhs = np.mean([s[0] for s in self.perf_stats[epoch-points:epoch]])
+            lhs = np.mean([s[0] for s in self.perf_stats[w_start:w_start+points]])
+            w_deriv = (rhs - lhs) / (epoch - w_start)
+            w_deriv = 0 if w_deriv != w_deriv else w_deriv
+            convergence_arr.append(w_deriv)
+
+            # detect convergence as consecutive negative acc slope
+            consec = 2
+            consec_neg = [True if d < 0 else False for d in convergence_arr[-consec:]]
+            consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
+            if consec_neg:
+                print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
+                print(f"Exiting training at epoch {epoch}!")
+                break
+
             print()
     
         time_elapsed = time.time() - since
@@ -683,7 +703,7 @@ class NetManager():
         (self.test_acc, test_loss) = self.evaluate_net(criterion, phase="test")
 
         if best_acc > 0:
-            print('Best val Acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
+            print('Best val acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
             # save perf stats
             self.save_arr("perf_stats", np.array(self.perf_stats))
 
