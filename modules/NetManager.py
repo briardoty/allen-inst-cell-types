@@ -630,7 +630,7 @@ class NetManager():
         return best_lr / 2.0
 
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-        end_epoch=10, snap_freq=50):
+        end_epoch=10, snap_freq=100):
         """
         Run end_epoch of training and validation
         """
