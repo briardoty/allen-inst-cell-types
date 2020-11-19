@@ -678,8 +678,10 @@ class NetManager():
             window = 100
             w_start = max(0, epoch - window)
             points = 7
-            rhs = np.mean([s[0] for s in self.perf_stats[epoch-points:epoch]])
-            lhs = np.mean([s[0] for s in self.perf_stats[w_start:w_start+points]])
+            rhs = [s[0] for s in self.perf_stats[max(epoch-points,0):epoch]]
+            rhs = np.mean(rhs)
+            lhs = [s[0] for s in self.perf_stats[w_start:w_start+points] if s is not None]
+            lhs = np.mean(lhs)
             w_deriv = (rhs - lhs) / (epoch - w_start)
             w_deriv = 0 if w_deriv != w_deriv else w_deriv
             convergence_arr.append(w_deriv)
@@ -737,8 +739,8 @@ if __name__=="__main__":
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     
-    # mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
-    mgr.train_net(criterion, optimizer, exp_lr_scheduler, 1.0)
+    mgr.run_training_loop(criterion, optimizer, exp_lr_scheduler)
+    # mgr.train_net(criterion, optimizer, exp_lr_scheduler, 1.0)
 
     # eval net
     mgr.evaluate_net(criterion)

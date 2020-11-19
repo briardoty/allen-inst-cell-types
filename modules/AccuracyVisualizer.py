@@ -994,10 +994,10 @@ class AccuracyVisualizer():
             w_std = np.std(acc_df.loc[w_idx, "val_acc"])
             z_score = (v_acc - w_mean) / w_std if w_std != 0 else 0
             
-            n = 3
-            rt_avg = np.mean(acc_df.loc[idx-n:idx+n, "val_acc"])
-            lf_avg = np.mean(acc_df.loc[start_idx-n:start_idx+n, "val_acc"])
-            w_deriv = (rt_avg - lf_avg) / (e - w_start)
+            points = 7
+            rhs = np.mean(acc_df.loc[idx-points:idx, "val_acc"])
+            lhs = np.mean(acc_df.loc[start_idx-points:start_idx, "val_acc"])
+            w_deriv = (rhs - lhs) / (e - w_start)
             w_deriv = 0 if w_deriv != w_deriv else w_deriv
 
             # update df
@@ -1023,7 +1023,7 @@ class AccuracyVisualizer():
         axes[1].axhline(0, color="k", linestyle="--", alpha=0.5)
         
         # highlight consecutive negative convergence vals
-        consec = 1
+        consec = 2
         for i in range(len(cvals)):
 
             prev_consec_neg = [True if z < 0 else False for z in cvals[i-consec+1:i+1]]
