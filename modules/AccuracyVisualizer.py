@@ -978,31 +978,41 @@ class AccuracyVisualizer():
         window = 100
         acc_df["z"] = 0.
         acc_df["deriv"] = 0.
+        acc_df["alex"] = 0.
         for idx in acc_df.index.values:
 
             # decompose
             row = acc_df.loc[idx]
-            d, n, sch, g, c, s, e, v_acc, v_loss, t_acc, _, _ = row
+            d, n, sch, g, c, s, e, v_acc, v_loss, t_acc, _, _, _ = row
 
             # get window
             w_start = max(0, e - window)
             start_idx = acc_df.query(f"epoch == {w_start}").index.values[0]
             w_idx = acc_df.epoch[w_start + 1:e + 1].index
 
-            # compute window stats
-            w_mean = np.mean(acc_df.loc[w_idx, "val_acc"])
-            w_std = np.std(acc_df.loc[w_idx, "val_acc"])
-            z_score = (v_acc - w_mean) / w_std if w_std != 0 else 0
+            # compute windowed z score
+            if metric == "z":
+                w_mean = np.mean(acc_df.loc[w_idx, "val_acc"])
+                w_std = np.std(acc_df.loc[w_idx, "val_acc"])
+                z_score = (v_acc - w_mean) / w_std if w_std != 0 else 0
+                acc_df.at[idx, "z"] = z_score
             
-            points = 7
-            rhs = np.mean(acc_df.loc[idx-points:idx, "val_acc"])
-            lhs = np.mean(acc_df.loc[start_idx-points:start_idx, "val_acc"])
-            w_deriv = (rhs - lhs) / (e - w_start)
-            w_deriv = 0 if w_deriv != w_deriv else w_deriv
+            # compute windowed deriv
+            elif metric == "deriv":
+                points = 7
+                rhs = np.mean(acc_df.loc[idx-points:idx, "val_acc"])
+                lhs = np.mean(acc_df.loc[start_idx-points:start_idx, "val_acc"])
+                w_deriv = (rhs - lhs) / (e - w_start)
+                w_deriv = 0 if w_deriv != w_deriv else w_deriv
+                acc_df.at[idx, "deriv"] = w_deriv
 
-            # update df
-            acc_df.at[idx, "z"] = z_score
-            acc_df.at[idx, "deriv"] = w_deriv
+            # compute alex's metric
+            elif metric == "alex":
+                w_vals = list(acc_df.loc[w_idx, "val_acc"])
+                diff = v_acc - w_vals
+                alex = np.mean(diff)
+                acc_df.at[idx, "alex"] = alex
+                
 
         # plot...
         fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(14,8), sharex=True)
@@ -1023,7 +1033,7 @@ class AccuracyVisualizer():
         axes[1].axhline(0, color="k", linestyle="--", alpha=0.5)
         
         # highlight consecutive negative convergence vals
-        consec = 2
+        consec = 3
         for i in range(len(cvals)):
 
             prev_consec_neg = [True if z < 0 else False for z in cvals[i-consec+1:i+1]]
@@ -1047,8 +1057,8 @@ class AccuracyVisualizer():
             plt.show()
             return
         
-        filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample} zscore"
-        self.save("zscores", filename)
+        filename = f"{dataset}_{net_name}_{scheme}_{case}_{sample}_{metric} convergence"
+        self.save("convergence", filename)
 
     def plot_accuracy(self, dataset, net_name, schemes, groups, cases, inset=True):
         """

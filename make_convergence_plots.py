@@ -15,8 +15,9 @@ dataset = "cifar10"
 net = "vgg11"
 scheme = "adam"
 case = "swish10"
+metric = "alex"
 
 for s in range(10):
     vis.plot_single_accuracy(dataset, net, scheme, case, 
-    metric="deriv",
+    metric=metric,
     sample=s)

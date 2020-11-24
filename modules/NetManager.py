@@ -631,8 +631,8 @@ class NetManager():
 
     def get_convergence_metric(self, epoch, metric="deriv"):
 
-        window = 100
-        w_start = max(0, epoch - window)
+        self.convergence_window = 100
+        w_start = max(0, epoch - self.convergence_window)
 
         if metric == "deriv":
             points = 7
@@ -646,7 +646,7 @@ class NetManager():
             return w_deriv
 
         elif metric == "wdiff":
-            w_vals = [s[0] for s in self.perf_stats[w_start:epoch]]
+            w_vals = np.array([s[0] for s in self.perf_stats[w_start:epoch]])
             diff = self.perf_stats[epoch][0] - w_vals
             wdiff = np.mean(diff)
             
@@ -705,7 +705,7 @@ class NetManager():
             consec = 3
             consec_neg = [True if d < 0 else False for d in convergence_arr[-consec:]]
             consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
-            if consec_neg:
+            if consec_neg and epoch > self.convergence_window:
                 print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
                 self.save_net_snapshot(epoch, val_acc)
                 print(f"Exiting training at epoch {epoch}!")
