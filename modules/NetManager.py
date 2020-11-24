@@ -629,6 +629,29 @@ class NetManager():
 
         return best_lr / 2.0
 
+    def get_convergence_metric(self, epoch, metric="deriv"):
+
+        window = 100
+        w_start = max(0, epoch - window)
+
+        if metric == "deriv":
+            points = 7
+            rhs = [s[0] for s in self.perf_stats[max(epoch-points,0):epoch]]
+            rhs = np.mean(rhs)
+            lhs = [s[0] for s in self.perf_stats[w_start:w_start+points] if s is not None]
+            lhs = np.mean(lhs)
+            w_deriv = (rhs - lhs) / (epoch - w_start)
+            w_deriv = 0 if w_deriv != w_deriv else w_deriv
+
+            return w_deriv
+
+        elif metric == "wdiff":
+            w_vals = [s[0] for s in self.perf_stats[w_start:epoch]]
+            diff = self.perf_stats[epoch][0] - w_vals
+            wdiff = np.mean(diff)
+            
+            return wdiff
+
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
         end_epoch=10, snap_freq=100):
         """
@@ -675,23 +698,16 @@ class NetManager():
                 best_epoch = epoch
 
             # track convergence metric
-            window = 100
-            w_start = max(0, epoch - window)
-            points = 7
-            rhs = [s[0] for s in self.perf_stats[max(epoch-points,0):epoch]]
-            rhs = np.mean(rhs)
-            lhs = [s[0] for s in self.perf_stats[w_start:w_start+points] if s is not None]
-            lhs = np.mean(lhs)
-            w_deriv = (rhs - lhs) / (epoch - w_start)
-            w_deriv = 0 if w_deriv != w_deriv else w_deriv
-            convergence_arr.append(w_deriv)
+            convergence_metric = self.get_convergence_metric(epoch, metric="wdiff")
+            convergence_arr.append(convergence_metric)
 
             # detect convergence as consecutive negative acc slope
-            consec = 2
+            consec = 3
             consec_neg = [True if d < 0 else False for d in convergence_arr[-consec:]]
             consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
             if consec_neg:
                 print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
+                self.save_net_snapshot(epoch, val_acc)
                 print(f"Exiting training at epoch {epoch}!")
                 break
 
