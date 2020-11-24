@@ -2,7 +2,6 @@
 import torch
 import os
 import pandas as pd
-import re
 import numpy as np
 import json
 from scipy.stats import ttest_ind
@@ -22,39 +21,6 @@ try:
     from .util import ensure_sub_dir
 except:
     from util import ensure_sub_dir
-
-def get_epoch_from_filename(filename):
-    
-    epoch = re.search(r"\d+\.pt$", filename)
-    epoch = int(epoch.group().split(".")[0]) if epoch else None
-    
-    return epoch
-    
-def get_first_epoch(net_filenames):
-    
-    for filename in net_filenames:
-        
-        epoch = get_epoch_from_filename(filename)
-        if epoch == 0:
-            return filename
-
-def get_last_epoch(net_filenames):
-    
-    max_epoch = -1
-    last_net_filename = None
-    
-    for filename in net_filenames:
-        
-        epoch = get_epoch_from_filename(filename)
-
-        if epoch is None:
-            continue
-
-        if epoch > max_epoch:
-            max_epoch = epoch
-            last_net_filename = filename
-
-    return last_net_filename
 
 
 class WeightStatProcessor():

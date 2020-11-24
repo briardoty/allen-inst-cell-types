@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import os
+import re
 import numpy as np
 import json
 import sys
@@ -314,6 +315,32 @@ def get_epoch_from_filename(filename):
     epoch = int(epoch.group().split(".")[0]) if epoch else None
     
     return epoch
+
+def get_first_epoch(net_filenames):
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+        if epoch == 0:
+            return filename
+
+def get_last_epoch(net_filenames):
+    
+    max_epoch = -1
+    last_net_filename = None
+    
+    for filename in net_filenames:
+        
+        epoch = get_epoch_from_filename(filename)
+
+        if epoch is None:
+            continue
+
+        if epoch > max_epoch:
+            max_epoch = epoch
+            last_net_filename = filename
+
+    return last_net_filename
 
 
 if __name__=="__main__":

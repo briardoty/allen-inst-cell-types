@@ -36,6 +36,9 @@ class MetadataProcessor():
             
             slugs = root.split("/")
             
+            first_snapshot = get_first_epoch(files)
+            last_snapshot = get_last_epoch(files)
+
             # consider all files...
             for filename in files:
 
@@ -48,8 +51,12 @@ class MetadataProcessor():
                 if epoch is None:
                     continue
 
-                if epoch % 50 == 0:
+                if epoch % 100 == 0:
                     continue
+
+                if filename in [first_snapshot, last_snapshot]:
+                    continue
+
                 else:
                     # delete
                     filepath = os.path.join(root, filename)
