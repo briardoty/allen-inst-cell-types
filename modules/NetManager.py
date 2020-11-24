@@ -653,7 +653,7 @@ class NetManager():
             return wdiff
 
     def run_training_loop(self, criterion, optimizer, scheduler, train_frac=1., 
-        end_epoch=10, snap_freq=100):
+        end_epoch=10, snap_freq=1000):
         """
         Run end_epoch of training and validation
         """
@@ -707,7 +707,6 @@ class NetManager():
             consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
             if consec_neg and epoch > self.convergence_window:
                 print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
-                self.save_net_snapshot(epoch, val_acc)
                 print(f"Exiting training at epoch {epoch}!")
                 break
 
@@ -724,6 +723,9 @@ class NetManager():
             print('Best val acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
             # save perf stats
             self.save_arr("perf_stats", np.array(self.perf_stats))
+        
+        # save final snapshot
+        self.save_net_snapshot(epoch, val_acc)
 
 
 if __name__=="__main__":
