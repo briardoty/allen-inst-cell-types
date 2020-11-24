@@ -60,8 +60,8 @@ def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, 
                 conv_layers, fc_layers)
         
         # save
-        # manager.save_net_snapshot()
-        # net_filepaths.append(manager.get_net_filepath())
+        manager.save_net_snapshot()
+        net_filepaths.append(manager.get_net_filepath())
 
         # find initial learning rate
         if find_lr:
@@ -76,27 +76,27 @@ def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, 
             (criterion, optimizer, _) = get_training_vars(scheme, manager, 
                 lr_low)
             found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
-            manager.initial_lr = found_lr
-            # lr_arr.append(found_lr)
+            # manager.initial_lr = found_lr
+            lr_arr.append(found_lr)
 
         # save 
-        manager.save_net_snapshot()
+        # manager.save_net_snapshot()
 
-    # if find_lr:
-    #     # determine mean starting lr, add it to network snapshots
-    #     mean_lr = np.mean(lr_arr)
-    #     std_dev_lr = np.std(lr_arr)
-    #     print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
-    #     for net_filepath, sample_lr in zip(net_filepaths, lr_arr):
+    if find_lr:
+        # determine mean starting lr, add it to network snapshots
+        mean_lr = np.mean(lr_arr)
+        std_dev_lr = np.std(lr_arr)
+        print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
+        for net_filepath, sample_lr in zip(net_filepaths, lr_arr):
             
-    #         # load snapshot
-    #         manager.load_net_snapshot_from_path(net_filepath)
+            # load snapshot
+            manager.load_net_snapshot_from_path(net_filepath)
 
-    #         # append lr
-    #         manager.initial_lr = mean_lr
+            # append lr
+            manager.initial_lr = mean_lr
 
-    #         # re-save snapshot
-    #         manager.save_net_snapshot()
+            # re-save snapshot
+            manager.save_net_snapshot()
 
     print(f"gen_nets.py completed case {case}")
     return   
