@@ -8,9 +8,41 @@
     },
 
     "test": {
-        "swish5-tanh0.5-all2": {
+        "swish5-tanh0.5-alla": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5]
+        },
+        "swish5a": {
+            "act_fns": ["swish"],
+            "act_fn_params": [5]
+        },
+        "tanh0.5a": {
+            "act_fns": ["tanh"],
+            "act_fn_params": [0.5]
+        },
+        "swish5-tanh0.5-allb": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5b": {
+            "act_fns": ["swish"],
+            "act_fn_params": [5]
+        },
+        "tanh0.5b": {
+            "act_fns": ["tanh"],
+            "act_fn_params": [0.5]
+        },
+        "swish5-tanh0.5-allc": {
+            "act_fns": ["swish", "tanh"],
+            "act_fn_params": [5, 0.5]
+        },
+        "swish5c": {
+            "act_fns": ["swish"],
+            "act_fn_params": [5]
+        },
+        "tanh0.5c": {
+            "act_fns": ["tanh"],
+            "act_fn_params": [0.5]
         }
     },
 
@@ -874,40 +906,47 @@
     "layers-swish5-tanh0.5": {
         "swish5-tanh0.5-all": {
             "act_fns": ["swish", "tanh"],
-            "act_fn_params": [5, 0.5]
+            "act_fn_params": [5, 0.5],
+            "default_fn": 0
         },
         "swish5-tanh0.5-conv1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "conv_layers": 1,
             "fc_layers": 0
         },
         "swish5-tanh0.5-conv2": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "conv_layers": 2,
             "fc_layers": 0
         },
         "swish5-tanh0.5-convall": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "fc_layers": 0
         },
         "swish5-tanh0.5-fc1": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "conv_layers": 0,
             "fc_layers": 1
         },
         "swish5-tanh0.5-fc2": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "conv_layers": 0,
             "fc_layers": 2
         },
         "swish5-tanh0.5-fcall": {
             "act_fns": ["swish", "tanh"],
             "act_fn_params": [5, 0.5],
+            "default_fn": 0,
             "conv_layers": 0
         }
     },

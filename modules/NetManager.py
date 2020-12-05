@@ -37,46 +37,6 @@ try:
 except:
     from util import *
 
-# structural data
-nets = {
-    "vgg11": {
-        "layers_of_interest": {
-            "conv1": 0,
-            "conv2": 3,
-            "conv3": 6,
-            "conv4": 8,
-            "conv5": 11,
-            "conv6": 13,
-            "conv7": 16,
-            "conv8": 18,
-            "relu1": 1,
-            "relu2": 4,
-            "relu3": 7,
-            "relu4": 9,
-            "relu5": 12,
-            "relu6": 14,
-            "relu7": 17,
-            "relu8": 19,
-            "relu9": 22,
-            "relu10": 25,
-            "dropout2": 26
-        },
-        "state_keys": {
-            "features.0.weight": "conv1", 
-            "features.3.weight": "conv2", 
-            "features.6.weight": "conv3", 
-            "features.8.weight": "conv4", 
-            "features.11.weight": "conv5", 
-            "features.13.weight": "conv6", 
-            "features.16.weight": "conv7", 
-            "features.18.weight": "conv8", 
-            "classifier.0.weight": "fc1", 
-            "classifier.3.weight": "fc2", 
-            "classifier.6.weight": "fc3"
-        }
-    }
-}
-
 from enum import Enum
 class TargetLayers(Enum):
     NOTHING = 0
@@ -85,7 +45,7 @@ class TargetLayers(Enum):
     ALL = None
 
 def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
-    conv_target, fc_target):
+    conv_target, fc_target, default_fn):
     """
     Iterative helper function to replace relu layers with
     instances of MixedActivationLayer with the given params
@@ -99,11 +59,10 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
         n_tgts = n_tgts / 2
     elif conv_target == TargetLayers.NOTHING:
         n_tgts = 0
-    itr = reversed(range(len(conv_layers))) if conv_target == TargetLayers.LASTHALF else range(len(conv_layers))
+    itr = (reversed(range(len(conv_layers))) 
+        if conv_target == TargetLayers.LASTHALF 
+        else range(len(conv_layers)))
     for i in itr:
-
-        if n_tgts <= 0:
-            break
 
         name, module = conv_layers[i]
 
@@ -112,9 +71,18 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
 
         _, prev = conv_layers[i-1]
         n_features = prev.out_channels
-        model.features._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-            act_fns, act_fn_params, spatial) 
-        n_tgts -= 1
+
+        if n_tgts <= 0:
+            # replace with default component layer
+            model.features._modules[name] = MixedActivationLayer(n_features, [1], 
+                [act_fns[default_fn]], [act_fn_params[default_fn]], spatial) 
+
+        else:
+            # replace with mixed layer
+            model.features._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+                act_fns, act_fn_params, spatial) 
+            
+            n_tgts -= 1
 
     # then do the same thing for fc layers
     fc_layers = list(model.classifier._modules.items())
@@ -127,9 +95,6 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
     itr = reversed(range(len(fc_layers))) if fc_target == TargetLayers.LASTHALF else range(len(fc_layers))
     for i in itr:
 
-        if n_tgts <= 0:
-            break
-
         name, module = fc_layers[i]
 
         if type(module) != nn.ReLU:
@@ -137,8 +102,19 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
 
         _, prev = fc_layers[i-1]
         n_features = prev.out_features
-        model.classifier._modules[name] = MixedActivationLayer(n_features, n_repeat, 
-            act_fns, act_fn_params)
+        
+        if n_tgts <= 0:
+            # replace with default component layer
+            model.classifier._modules[name] = MixedActivationLayer(n_features, [1], 
+                [act_fns[default_fn]], [act_fn_params[default_fn]], spatial) 
+
+        else:
+            # replace with mixed layer
+            model.classifier._modules[name] = MixedActivationLayer(n_features, n_repeat, 
+                act_fns, act_fn_params, spatial) 
+            
+            n_tgts -= 1
+
         n_tgts -= 1
 
     return model
@@ -301,8 +277,9 @@ class NetManager():
             spatial = self.modified_layers.get("spatial")
             conv_layers = self.modified_layers.get("conv_layers")
             fc_layers = self.modified_layers.get("fc_layers")
+            default_fn = self.modified_layers.get("default_fn")
             self.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial, 
-                conv_layers, fc_layers)
+                conv_layers, fc_layers, default_fn)
         
         # print net summary
         print(self.net)
@@ -362,7 +339,7 @@ class NetManager():
         torch.save(self.responses_input, input_filepath)
         
     def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial, 
-        conv_layers, fc_layers):
+        conv_layers, fc_layers, default_fn):
         """
         Replace nn.ReLU layers with MixedActivationLayers
         """
@@ -375,11 +352,12 @@ class NetManager():
             "spatial": spatial,
             "conv_layers": conv_layers,
             "fc_layers": fc_layers,
+            "default_fn": default_fn
         }   
 
         # call helper function
         self.net = replace_act_layers(self.net, n_repeat, act_fns, 
-            act_fn_params, spatial, conv_layers, fc_layers)
+            act_fn_params, spatial, conv_layers, fc_layers, default_fn)
     
     def set_input_hook(self, layer_name):
         # store responses here...
@@ -729,18 +707,18 @@ class NetManager():
 
 
 if __name__=="__main__":
-    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data/"
     dataset = "cifar10"
     net = "sticknet8"
     scheme = "adam"
-    group = "component-tanh"
-    case = "tanh0.5"
-    sample = 2
+    group = "layers-swish5-tanh0.5"
+    case = "swish5-tanh0.5-conv2"
+    sample = 0
     epoch = 0
 
     # initialize
     mgr = NetManager(dataset, net, group, case, data_dir, scheme)
-    mgr.load_net_snapshot_from_path(f"/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
+    mgr.load_net_snapshot_from_path(f"{data_dir}nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
     
     # reliable seed
     seed = get_seed_for_sample(data_dir, mgr.sample)

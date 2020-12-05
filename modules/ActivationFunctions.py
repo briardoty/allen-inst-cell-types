@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Jul  6 13:44:32 2020
-
-@author: briardoty
-"""
 import torch
 import torch.nn as nn
 import numpy as np
@@ -153,25 +146,6 @@ class Relu(nn.Module):
         
         return torch.relu(input_tensor)
 
-class Sigfreud(nn.Module):
-    """
-    Pytorch nn module implementation of "Sigfreud" activation function
-    where sigfreud(x, beta) = sigmoid(beta * x)
-    """
-    
-    def __init__(self, beta=1.0):
-        
-        super(Sigfreud, self).__init__()
-        self.beta = float(beta)
-
-    def __repr__(self):
-        
-        return f"Sigfreud(beta={self.beta})"
-    
-    def forward(self, input_tensor):
-        
-        return self.beta ** torch.sigmoid(input_tensor) - 1
-
 class PTanh(nn.Module):
     """
     Pytorch nn module implementation of "PTanh" activation function
@@ -188,18 +162,7 @@ class PTanh(nn.Module):
         return rf"PTanh($\beta$={self.beta}, x)"
     
     def forward(self, input_tensor):
-        
-        # return torch.tanh(input_tensor)
-        # new: anything inside torch.exp() needs to be clamped to 50.0 to avoid inf
-        # p1 = torch.clamp(torch.mul(self.beta, input_tensor), max=50)
-        # p2 = torch.clamp(torch.neg(input_tensor), max=50)
-        
-        # top = torch.exp(p1) - torch.exp(p2)
-        # bot = torch.exp(p1) + torch.exp(p2)
-        
-        # return torch.div(top, bot)
-        # return torch.tanh(torch.mul((self.beta + 1.0) / 2.0, input_tensor))
-        
+
         return 0.5 * torch.add(
             torch.tanh(input_tensor), 
             torch.tanh(torch.mul(self.beta, input_tensor)))
@@ -229,20 +192,6 @@ class Gompertz(nn.Module):
         exp2 = torch.exp(p2)
         
         return torch.mul(self.a, exp2)
-
-class SanityCheck(nn.Module):
-    """
-    Pytorch nn module to implement sanity check activation function
-    """
-    
-    def __init__(self, _):
-        
-        super(SanityCheck, self).__init__()
-        self._ = _ # throwaway param
-    
-    def forward(self, input_tensor):
-        
-        return input_tensor * 0
     
 class Heaviside(nn.Module):
     """
@@ -261,14 +210,3 @@ class Heaviside(nn.Module):
         output[:] = np.heaviside(input_tensor.detach().cpu().numpy(), self.x2)
     
         return output
-    
-    
-if __name__=="__main__":
-    x = torch.tensor([2.], requires_grad=True)
-    y = Renluf.apply(x, 2)
-    # z = y * y * -3
-    # z = y * -1
-    # k = Renluf.apply(z, 2)
-    out = y.mean()
-    out.backward()
-    bpt = True

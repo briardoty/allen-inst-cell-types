@@ -1,20 +1,11 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 30 13:03:23 2020
-
-@author: briardoty
-"""
 import math
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 try:
-    from .ActivationFunctions import (Renlu, Swish, SanityCheck, 
-    Heaviside, Sigfreud, HSwish, PTanh)
+    from .ActivationFunctions import (Swish, PTanh, Renlu)
 except:
-    from ActivationFunctions import (Renlu, Swish, SanityCheck, 
-    Heaviside, Sigfreud, HSwish, PTanh)
+    from ActivationFunctions import (Swish, PTanh, Renlu)
 
 
 # map act fn names to fns themselves
@@ -22,14 +13,11 @@ act_fn_dict = {
     "relu": torch.relu,
     "torch.tanh": torch.tanh,
     "sigmoid": torch.sigmoid,
-    "sigfreud": Sigfreud,
     "tanh": PTanh,
     "ptanh": PTanh,
     "tanhe": PTanh,
     "renlu": Renlu,
-    "swish": Swish,
-    "sanityCheck": SanityCheck,
-    "heaviside": Heaviside
+    "swish": Swish
 }
 
 def generate_masks(n_features, n_fns, n_repeat):

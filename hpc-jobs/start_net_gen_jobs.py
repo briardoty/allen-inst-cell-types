@@ -72,6 +72,9 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     
                     if config.get("fc_layers") is not None:
                         run_params["fc_layers"] = config["fc_layers"]
+                    
+                    if config.get("default_fn") is not None:
+                        run_params["default_fn"] = config["default_fn"]
 
                     act_fns = config["act_fns"]
                     run_params["act_fns"] = param_arr_helper(act_fns)

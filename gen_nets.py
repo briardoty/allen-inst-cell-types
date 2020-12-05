@@ -23,6 +23,7 @@ parser.add_argument("--case", type=str, help="Set value for case")
 parser.add_argument("--group", type=str, help="Set value for group")
 parser.add_argument("--conv_layers", type=int, help="Set value for conv_layers")
 parser.add_argument("--fc_layers", type=int, help="Set value for fc_layers")
+parser.add_argument("--default_fn", type=int, help="Set value for default_fn")
 parser.add_argument("--n_repeat", type=int, nargs="+")
 parser.add_argument("--act_fns", type=str, nargs="+", help="Set value for act_fns")
 parser.add_argument("--act_fn_params", type=str, nargs="+", help="Set value for act_fn_params")
@@ -37,7 +38,7 @@ parser.set_defaults(find_lr=False)
 parser.add_argument("--pretrained", dest="pretrained", action="store_true")
 parser.set_defaults(pretrained=False)
 
-def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, data_dir, 
+def main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained, scheme, dataset,
          spatial, find_lr):
     
@@ -57,7 +58,7 @@ def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, 
         # modify layers
         if (act_fns is not None and len(act_fns) > 0):
             manager.replace_act_layers(n_repeat, act_fns, act_fn_params, spatial, 
-                conv_layers, fc_layers)
+                conv_layers, fc_layers, default_fn)
         
         # save
         manager.save_net_snapshot()
@@ -102,9 +103,31 @@ def main(group, case, conv_layers, fc_layers, n_repeat, act_fns, act_fn_params, 
     return   
 
 if __name__=="__main__":
-    args = parser.parse_args()
-    print(args)
-    main(**vars(args))
+    # args = parser.parse_args()
+    # print(args)
+    # main(**vars(args))
+
+    group = "layers-swish5-tanh0.5"
+    case = "swish5-tanh0.5-conv2"
+    conv_layers = 2
+    fc_layers = 0
+    n_repeat = [1,1]
+    act_fns = ["swish", "tanh"]
+    act_fn_params = [5, 0.5]
+    default_fn = 0
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data"
+    net_name = "sticknet8"
+    n_classes = 10
+    n_samples = 1
+    pretrained = False
+    scheme = "adam"
+    dataset = "cifar10"
+    spatial = False
+    find_lr = False
+    
+    main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act_fn_params, data_dir, 
+         net_name, n_classes, n_samples, pretrained, scheme, dataset,
+         spatial, find_lr)
 
 
 
