@@ -103,6 +103,8 @@ class DataframeProcessor():
 
         acc_arr = []
         case_dict = dict()
+        with open(os.path.join(self.df_sub_dir, "case_dict.json"), "r") as json_file:
+            case_dict = json.load(json_file)
 
         # walk dir looking for saved net stats
         net_dir = os.path.join(self.data_dir, f"nets/")
@@ -145,8 +147,8 @@ class DataframeProcessor():
                     }
 
                 # array containing acc/loss
-                perf_stats = stats_dict.get("perf_stats")
-                if len(perf_stats) == 0 or perf_stats[-1] is None:
+                perf_stats = np.array([s for s in stats_dict.get("perf_stats") if s is not None])
+                if len(perf_stats) == 0:
                     continue
 
                 # find peak accuracy
@@ -357,8 +359,8 @@ if __name__=="__main__":
     
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
     proc = DataframeProcessor(data_dir)
-    # proc.refresh_max_acc_df()
-    proc.refresh_accuracy_df()
+    proc.refresh_max_acc_df()
+    # proc.refresh_accuracy_df()
     # proc.add_group_to_df()
 
     
