@@ -80,7 +80,7 @@ class AccuracyVisualizer():
 
             cc = component_cases[i]
             cc_rows = df.query(f"case == '{cc}'")
-            yvals = cc_rows["max_val_acc"].values * 100
+            yvals = cc_rows["val_acc"].values * 100
             start = x[-1] + 2
             x = [i for i in range(start, start + len(yvals))]
 
@@ -97,7 +97,7 @@ class AccuracyVisualizer():
         mwidth = width + 0.09
         m_clrs = sns.color_palette("hls", len(component_cases) + 3)
         m_rows = df.query(f"case == '{mixed_case}'")
-        yact = m_rows["max_val_acc"].values * 100
+        yact = m_rows["val_acc"].values * 100
         axes[1].plot([0] * len(yact), yact, ".", label=cc,
             c=m_clrs[len(component_cases)], markersize=markersize, alpha=0.6)
         axes[1].plot([-mwidth, mwidth], [np.mean(yact), np.mean(yact)], 
@@ -162,7 +162,7 @@ class AccuracyVisualizer():
         df, case_dict, _ = self.stats_processor.load_max_acc_df()
 
         # performance relative to prediction
-        df[f"acc_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_{metric}"]["mean"]
+        df[f"acc_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
 
         # filter dataframe
         if mixed:
@@ -1158,9 +1158,9 @@ if __name__=="__main__":
     
     # vis.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
 
-    vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish5-ptanh2")
+    vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.1")
 
-    # vis.plot_all_samples_accuracy("cifar10", "vgg11", "adam", "testswish10c", acc_type="val")
+    # vis.plot_all_samples_accuracy("cifar10", "sticknet8", "adam", "relu", acc_type="val")
 
     # vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", 
     #     metric="deriv",

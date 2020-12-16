@@ -107,7 +107,7 @@ class DataframeProcessor():
             case_dict = json.load(json_file)
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/")
+        net_dir = os.path.join(self.data_dir, f"nets")
         for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -296,7 +296,7 @@ class DataframeProcessor():
         # load in current df if it exists
 
         # walk dir looking for saved net stats
-        net_dir = os.path.join(self.data_dir, f"nets/")
+        net_dir = os.path.join(self.data_dir, f"nets")
         for root, _, files in os.walk(net_dir):
             
             # only interested in locations files are saved
@@ -326,7 +326,7 @@ class DataframeProcessor():
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
 
-                perf_stats = stats_dict.get("perf_stats")
+                perf_stats = np.array([s for s in stats_dict.get("perf_stats") if s is not None])
                 for epoch in range(len(perf_stats)):
                     try:
                         (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
