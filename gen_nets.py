@@ -103,31 +103,9 @@ def main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act
     return   
 
 if __name__=="__main__":
-    # args = parser.parse_args()
-    # print(args)
-    # main(**vars(args))
-
-    group = "layers-swish5-tanh0.5"
-    case = "swish5-tanh0.5-conv2"
-    conv_layers = 2
-    fc_layers = 0
-    n_repeat = [1,1]
-    act_fns = ["swish", "tanh"]
-    act_fn_params = [5, 0.5]
-    default_fn = 0
-    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data"
-    net_name = "sticknet8"
-    n_classes = 10
-    n_samples = 1
-    pretrained = False
-    scheme = "adam"
-    dataset = "cifar10"
-    spatial = False
-    find_lr = False
-    
-    main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act_fn_params, data_dir, 
-         net_name, n_classes, n_samples, pretrained, scheme, dataset,
-         spatial, find_lr)
+    args = parser.parse_args()
+    print(args)
+    main(**vars(args))
 
 
 
