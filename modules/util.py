@@ -262,9 +262,9 @@ def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
 def create_optimizer(name, manager, lr, momentum):
 
-    if name == "sgd":
+    if "sgd" in name:
         return optim.SGD(manager.net.parameters(), lr=lr, momentum=momentum, weight_decay=5e-4)
-    elif name == "adam":
+    elif "adam" in name:
         return optim.Adam(manager.net.parameters(), lr=lr, weight_decay=5e-4)
     else:
         print(f"Unknown optimizer configured: {name}")
