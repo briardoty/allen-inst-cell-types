@@ -26,10 +26,10 @@ parser.add_argument("--net_names", type=str, nargs="+", required=True, help="Set
 parser.add_argument("--schemes", type=str, nargs="+", required=True, help="Set schemes")
 parser.add_argument("--config_groups", type=str, nargs="+", required=True, help="Set config_groups")
 
-parser.add_argument("--find_lr", dest="find_lr", action="store_true")
-parser.set_defaults(find_lr=False)
+parser.add_argument("--find_lr_avg", dest="find_lr_avg", action="store_true")
+parser.set_defaults(find_lr_avg=False)
 
-def main(dataset, net_names, schemes, config_groups, find_lr):
+def main(dataset, net_names, schemes, config_groups, find_lr_avg):
     
     job_title = "gen_nets"
     
@@ -99,9 +99,9 @@ def main(dataset, net_names, schemes, config_groups, find_lr):
                     if spatial:
                         params_list.append("--spatial")
 
-                    cfg_find_lr = config.get("find_lr")
-                    if cfg_find_lr or find_lr:
-                        params_list.append("--find_lr")
+                    cfg_find_lr_avg = config.get("find_lr_avg")
+                    if cfg_find_lr_avg or find_lr_avg:
+                        params_list.append("--find_lr_avg")
 
                     params_string = " ".join(params_list)
                     

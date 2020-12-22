@@ -32,15 +32,15 @@ parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--spatial", dest="spatial", action="store_true")
 parser.set_defaults(spatial=False)
 
-parser.add_argument("--find_lr", dest="find_lr", action="store_true")
-parser.set_defaults(find_lr=False)
+parser.add_argument("--find_lr_avg", dest="find_lr_avg", action="store_true")
+parser.set_defaults(find_lr_avg=False)
 
 parser.add_argument("--pretrained", dest="pretrained", action="store_true")
 parser.set_defaults(pretrained=False)
 
 def main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act_fn_params, data_dir, 
          net_name, n_classes, n_samples, pretrained, scheme, dataset,
-         spatial, find_lr):
+         spatial, find_lr_avg):
     
     # init net manager
     manager = NetManager(dataset, net_name, group, case, 
@@ -65,39 +65,33 @@ def main(group, case, conv_layers, fc_layers, default_fn, n_repeat, act_fns, act
         net_filepaths.append(manager.get_net_filepath())
 
         # find initial learning rate
-        if find_lr:
-            if scheme == "sgd":
+        if "sgd" in scheme:
+            lr_low, lr_high = 1e-7, 0.1
+        elif "adam" in scheme:
+            if net_name == "vgg11":
+                lr_low, lr_high = 1e-7, 0.005
+            elif net_name == "sticknet8":
                 lr_low, lr_high = 1e-7, 0.1
-            elif scheme == "adam":
-                if net_name == "vgg11":
-                    lr_low, lr_high = 1e-7, 0.005
-                elif net_name == "sticknet8":
-                    lr_low, lr_high = 1e-7, 0.1
-            
-            (criterion, optimizer, _) = get_training_vars(scheme, manager, 
-                lr_low)
-            found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
-            # manager.initial_lr = found_lr
-            lr_arr.append(found_lr)
+        
+        (criterion, optimizer, _) = get_training_vars(scheme, manager, 
+            lr_low)
+        found_lr = manager.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+        lr_arr.append(found_lr)
 
-        # save 
-        # manager.save_net_snapshot()
+    # determine mean starting lr, add it to network snapshots, save
+    mean_lr = np.mean(lr_arr)
+    std_dev_lr = np.std(lr_arr)
+    print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
+    for net_filepath, sample_lr in zip(net_filepaths, lr_arr):
+        
+        # load snapshot
+        manager.load_net_snapshot_from_path(net_filepath)
 
-    if find_lr:
-        # determine mean starting lr, add it to network snapshots
-        mean_lr = np.mean(lr_arr)
-        std_dev_lr = np.std(lr_arr)
-        print(f"Mean initial LR of {mean_lr} has std dev of {std_dev_lr}.")
-        for net_filepath, sample_lr in zip(net_filepaths, lr_arr):
-            
-            # load snapshot
-            manager.load_net_snapshot_from_path(net_filepath)
+        # append lr
+        manager.initial_lr = mean_lr if find_lr_avg else sample_lr
 
-            # append lr
-            manager.initial_lr = mean_lr
-
-            # re-save snapshot
-            manager.save_net_snapshot()
+        # re-save snapshot
+        manager.save_net_snapshot()
 
     print(f"gen_nets.py completed case {case}")
     return   
