@@ -115,8 +115,6 @@ def replace_act_layers(model, n_repeat, act_fns, act_fn_params, spatial,
             
             n_tgts -= 1
 
-        n_tgts -= 1
-
     return model
 
 
