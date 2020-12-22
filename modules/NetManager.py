@@ -675,18 +675,18 @@ class NetManager():
                 best_acc = val_acc
                 best_epoch = epoch
 
-            # track convergence metric
-            convergence_metric = self.get_convergence_metric(epoch, metric="wdiff")
-            convergence_arr.append(convergence_metric)
+            # # track convergence metric
+            # convergence_metric = self.get_convergence_metric(epoch, metric="wdiff")
+            # convergence_arr.append(convergence_metric)
 
-            # detect convergence as consecutive negative acc slope
-            consec = 3
-            consec_neg = [True if d < 0 else False for d in convergence_arr[-consec:]]
-            consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
-            if consec_neg and epoch > self.convergence_window:
-                print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
-                print(f"Exiting training at epoch {epoch}!")
-                break
+            # # detect convergence as consecutive negative acc slope
+            # consec = 3
+            # consec_neg = [True if d < 0 else False for d in convergence_arr[-consec:]]
+            # consec_neg = functools.reduce(lambda a,b : a and b, consec_neg)
+            # if consec_neg and epoch > self.convergence_window:
+            #     print(f"Convergence detected via {consec} consecutive decreases in validation accuracy!")
+            #     print(f"Exiting training at epoch {epoch}!")
+            #     break
 
             print()
     
