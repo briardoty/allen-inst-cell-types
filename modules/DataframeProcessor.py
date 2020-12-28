@@ -134,6 +134,7 @@ class DataframeProcessor():
                 dataset = stats_dict.get("dataset") if stats_dict.get("dataset") is not None else "imagenette2"
                 net_name = stats_dict.get("net_name")
                 train_scheme = stats_dict.get("train_scheme") if stats_dict.get("train_scheme") is not None else "sgd"
+                initial_lr = stats_dict.get("initial_lr") if stats_dict.get("initial_lr") is not None else -1
                 case = stats_dict.get("case")
                 sample = stats_dict.get("sample")
                 group = stats_dict.get("group")
@@ -161,13 +162,13 @@ class DataframeProcessor():
                     pct_acc = (self.pct / 100.) * val_acc
                     i_first = next(x for x, val in enumerate(perf_stats[:,0]) if val > pct_acc)
 
-                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, test_acc, i_first])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, test_acc, i_first, initial_lr])
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["val_acc", "test_acc", "epochs_past"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["val_acc", "test_acc", "epochs_past", "initial_lr"])
 
         # process
         # 1. mark mixed nets
