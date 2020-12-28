@@ -312,7 +312,7 @@ class AccuracyVisualizer():
                 plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
 
             # BH corrected significance
-            bh_sig = row[f"{pred_type}_{metric}_rej_h0"].values[0]
+            bh_sig = row[f"{pred_type}_pred_{metric}_rej_h0"].values[0]
             sig_arr.append(bh_sig)
             if bh_sig:
                 if cf or cross_family is not None:
@@ -340,7 +340,7 @@ class AccuracyVisualizer():
 
             # optionally, plot the 95% ci for the prediction
             if pred_std:
-                pred_err = row[f"{pred_type}_{metric}"]["std"] * 1.98 * 100
+                pred_err = row[f"{pred_type}_pred_{metric}"]["std"] * 1.98 * 100
                 plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
                         c="k", linewidth=lw, alpha=.2)
 

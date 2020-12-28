@@ -239,7 +239,8 @@ class NetManager():
             "case": self.case,
             "sample": self.sample,
             "modified_layers": self.modified_layers,
-            "test_acc": self.test_acc
+            "test_acc": self.test_acc,
+            "initial_lr": self.initial_lr
         }
 
         # save
@@ -695,23 +696,23 @@ class NetManager():
         # evaluate against test dataset
         (self.test_acc, test_loss) = self.evaluate_net(criterion, phase="test")
 
-        if best_acc > 0:
-            print('Best val acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
-            # save perf stats
-            self.save_arr("perf_stats", np.array(self.perf_stats))
+        # if best_acc > 0:
+        print('Best val acc: {:.8f} on epoch {}'.format(best_acc, best_epoch))
+        # save perf stats
+        self.save_arr("perf_stats", np.array(self.perf_stats))
         
         # save final snapshot
         self.save_net_snapshot(epoch, val_acc)
 
 
 if __name__=="__main__":
-    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data/"
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar10"
     net = "sticknet8"
-    scheme = "adam"
-    group = "layers-swish5-tanh0.5"
-    case = "swish5-tanh0.5-conv2"
-    sample = 0
+    scheme = "adam-lr-avg"
+    group = "within-swish"
+    case = "swish0.1-1"
+    sample = 8
     epoch = 0
 
     # initialize
