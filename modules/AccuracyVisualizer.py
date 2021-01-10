@@ -156,13 +156,13 @@ class AccuracyVisualizer():
         self.save("decomposition", filename)
 
     def get_prediction_df(self, datasets, net_names, schemes, cases, excl_arr, 
-        pred_type="max_pred", cross_family=None, mixed=True, metric="val_acc"):
+        pred_type="max", cross_family=None, mixed=True, metric="val_acc"):
 
         # pull data
         df, case_dict, _ = self.stats_processor.load_max_acc_df()
 
         # performance relative to prediction
-        df[f"acc_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
+        df[f"{metric}_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
 
         # filter dataframe
         if mixed:
@@ -181,7 +181,7 @@ class AccuracyVisualizer():
         # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
         #     engine="python")
 
-        sort_df = df.sort_values(["net_name", f"acc_vs_{pred_type}"])
+        sort_df = df.sort_values(["net_name", f"{metric}_vs_{pred_type}"])
 
         return sort_df, case_dict
 
@@ -260,9 +260,75 @@ class AccuracyVisualizer():
         filename = f"{ratio_group}"
         self.save("ratio group", filename)
         
+    def plot_pred_vs_lr(self, dataset, net_name, schemes, excl_arr=[], pred_type="max",
+        metric="val_acc", filename=None):
+        """
+        Scatter plot comparing relative accuracy with initial learning rate
+        """
+
+        # pull data
+        sort_df, _ = self.get_prediction_df([dataset], [net_name], schemes, [], 
+            excl_arr, pred_type, None, metric)
+
+        # plot
+        fig, ax = plt.subplots(figsize=(6,6))
+
+        # identifiers
+        fmts = [".", "^"]
+        clrs = sns.color_palette("husl", len(schemes))
+        ms = 10
+
+        ylabels = dict()
+        handles = dict()
+        sig_arr = list()
+        i = 0
+        xmax = 0
+        xmin = 0
+        lw = 600 / len(sort_df)
+        ms = lw * 0.5
+        for midx, row in sort_df.iterrows():
+
+            # stats
+            rel_acc = row[f"{metric}_vs_{pred_type}"].values[0] * 100
+            rel_acc_err = row[f"{metric}"]["std"] * 1.98 * 100
+
+            initial_lr = row["initial_lr"]["mean"]
+            initial_lr_err = row["initial_lr"]["std"]
+
+            xmin = min(xmin, rel_acc - rel_acc_err)
+            xmax = max(xmax, rel_acc + rel_acc_err)
+
+            # dataset, net, scheme, case, mixed, cross-family
+            d, n, sch, g, c, m, cf = midx
+            clr = clrs[schemes.index(sch)]
+            fmt = fmts[0]
+
+            # plot
+            h = ax.plot(initial_lr, rel_acc, c=clr, marker=fmt, alpha=0.8)
+            handles[sch] = h[0]
+
+        # set figure text
+        ax.set_ylabel(f"{metric} relative to {pred_type} prediction (%)", fontsize=20)
+        ax.set_xlabel("Initial LR", fontsize=20)
+        
+        # ax.set_xlim([xmin - 1, xmax + 1])
+        # ax.set_ylim([ymin - 1, ymax + 1])
+        # ax.set_aspect("equal", "box")
+        ax.legend(handles.values(), handles.keys(), fontsize=18)
+
+        plt.tight_layout()
+         
+        # optional saving
+        if not self.save_fig:
+            plt.show()
+            return
+
+        filename = f"{dataset}_{net_name}_{pred_type}-lr-scatter"
+        self.save("lr-scatter", filename)
+
 
     def plot_predictions(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
-        pred_type="max_pred", metric="val_acc", cross_family=None, pred_std=False, small=False, filename=None):
+        pred_type="max", metric="val_acc", cross_family=None, pred_std=False, small=False, filename=None):
         """
         Plot a single axis figure of offset from predicted max accuracy for
         the given mixed cases.
@@ -1153,12 +1219,15 @@ if __name__=="__main__":
     vis = AccuracyVisualizer(
         "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint", 
         save_fig=True,
-        save_png=True
+        save_png=False
         )
     
     # vis.plot_ratio_group("cifar10", "sticknet8", "adam", "ratios-swish2-tanh2")
 
-    vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.1")
+    # vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.1")
+
+    vis.plot_pred_vs_lr("cifar10", "sticknet8", ["adam-lr-per-sample", "adam-lr-avg"], excl_arr=[], pred_type="max",
+        metric="val_acc", filename=None)
 
     # vis.plot_all_samples_accuracy("cifar10", "sticknet8", "adam", "relu", acc_type="val")
 

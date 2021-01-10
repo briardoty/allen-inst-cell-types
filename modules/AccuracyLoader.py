@@ -82,6 +82,8 @@ class AccuracyLoader():
               "max_pred_test_acc_p_val": np.mean,
               "linear_pred_test_acc_p_val": np.mean,
 
+              "initial_lr": [np.mean, np.std],
+
             #   "epochs_past": [np.mean, np.std],
             #   "min_pred_epochs_past": [np.mean, np.std],
             #   "linear_pred_epochs_past": [np.mean, np.std],
