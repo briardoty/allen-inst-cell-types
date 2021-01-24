@@ -22,6 +22,24 @@
             "email_options": "a"
         }
     },
+    "save_net_activations": {
+        "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/save_net_activations.py",
+        "run_params": {
+            "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
+            "train_frac": 1.0,
+            "batch_size": 128
+        },
+        "job_settings": {
+            "queue": "braintv",
+            "mem": "32g",
+            "walltime": "1:00:00",
+            "ppn": 4,
+            "nodes": 1,
+            "gpus": 1,
+            "email": "briar.doty@alleninstitute.org",
+            "email_options": "a"
+        }
+    },
     "gen_nets": {
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/gen_nets.py",
         "run_params": {

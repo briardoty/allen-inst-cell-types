@@ -8,19 +8,19 @@ Created on Thu Jun 25 14:19:48 2020
 import torch
 import gc
 import torch.nn as nn
-from torchvision import datasets, models, transforms
+from torchvision import models
 import os
 import math
 import time
 import seaborn as sns
 import numpy as np
-import copy
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import random
 import matplotlib.pyplot as plt
 import functools
 import sys
+import pandas as pd
 
 try:
     from .MixedActivationLayer import MixedActivationLayer
@@ -220,18 +220,19 @@ class NetManager():
         print(f"Saving network snapshot {net_filepath}")
         torch.save(snapshot_state, net_filepath)
     
-    def save_arr(self, name, np_arr):
+    def save_arr(self, name, obj_to_save):
         """
         Save a generic numpy array in the current net's output location
         with identifying metadata
         """
+
         # location
         filename = f"{name}.npy"
         filepath = os.path.join(self.net_dir, filename)
         print(f"Saving {filename}")
         
         data = {
-            f"{name}": np_arr,
+            f"{name}": obj_to_save,
             "net_name": self.net_name,
             "dataset": self.dataset,
             "train_scheme": self.train_scheme,
@@ -312,30 +313,6 @@ class NetManager():
             self.val_loader, 
             self.test_loader) = load_dataset(self.data_dir, 
             self.dataset, batch_size)
-
-    def save_net_responses(self):
-        # store responses as tensor
-        self.responses_input = torch.stack(self.responses_input)
-        self.responses_output = torch.stack(self.responses_output)
-        
-        # output location
-        net_tag = get_net_tag(self.net_name)
-        output_filename = f"output_{net_tag}.pt"
-        input_filename = f"input_{net_tag}.pt"
-        resp_dir = os.path.join(self.data_dir, 
-            f"responses/{self.dataset}/{self.net_name}/{self.train_scheme}/{self.case}/sample-{self.sample}/")
-        
-        print(f"Saving network responses to {resp_dir}")
-
-        if not os.path.exists(resp_dir):
-            os.makedirs(resp_dir)
-        
-        output_filepath = os.path.join(resp_dir, output_filename)
-        input_filepath = os.path.join(resp_dir, input_filename)
-        
-        # save
-        torch.save(self.responses_output, output_filepath)
-        torch.save(self.responses_input, input_filepath)
         
     def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial, 
         conv_layers, fc_layers, default_fn):
@@ -357,57 +334,45 @@ class NetManager():
         # call helper function
         self.net = replace_act_layers(self.net, n_repeat, act_fns, 
             act_fn_params, spatial, conv_layers, fc_layers, default_fn)
-    
-    def set_input_hook(self, layer_name):
-        # store responses here...
-        self.responses_input = []
         
-        # define hook fn
-        def input_hook(module, inp, output):
-            self.responses_input.append(inp)
-        
-        # just hook up single layer for now
-        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
-        if i_layer < len(self.net.features):
-            # target layer is in "features"
-            self.net.features[i_layer].register_forward_hook(input_hook)
-            
-        else:
-            # target layer must be in fc layers under "classifier"
-            i_layer = i_layer - len(self.net.features)
-            self.net.classifier[i_layer].register_forward_hook(input_hook)
-        
-        # set ReLU layer in place rectification to false to get unrectified responses
-        potential_relu_layer = self.net.features[i_layer + 1]
-        if isinstance(potential_relu_layer, nn.ReLU):
-            print("Setting inplace rectification to false!")
-            potential_relu_layer.inplace = False
-    
-    def set_output_hook(self, layer_name):
-        # store responses here...
-        self.responses_output = []
-        
-        # define hook fn
+    def register_hook(self, module, key):
+
+        self.activation_dict[key] = list()
         def output_hook(module, inp, output):
-            self.responses_output.append(output)
-        
-        # just hook up single layer for now
-        i_layer = nets[self.net_name]["layers_of_interest"][layer_name]
-        if i_layer < len(self.net.features):
-            # target layer is in "features"
-            self.net.features[i_layer].register_forward_hook(output_hook)
+            self.activation_dict[key].append(output)
+
+        module.register_forward_hook(output_hook)
+
+    def set_activation_hooks(self):
+        """
+        Wire up output hooks for all layers
+        """
+
+        # dict contains activations 
+        self.activation_dict = dict()
+
+        # conv activation layers
+        conv_layers = list(self.net.features._modules.items())
+        for i in range(len(conv_layers)):
+
+            name, module = conv_layers[i]
+            if not type(module) in (nn.ReLU, MixedActivationLayer):
+                continue
             
-        else:
-            # target layer must be in fc layers under "classifier"
-            i_layer = i_layer - len(self.net.features)
-            self.net.classifier[i_layer].register_forward_hook(output_hook)
-        
-        # set ReLU layer in place rectification to false to get unrectified responses
-        potential_relu_layer = self.net.features[i_layer + 1]
-        if isinstance(potential_relu_layer, nn.ReLU):
-            print("Setting inplace rectification to false!")
-            potential_relu_layer.inplace = False
-        
+            key = f"{str(module)}_{i}"
+            self.register_hook(module, key)
+
+        # fc activation layers
+        fc_layers = list(self.net.classifier._modules.items())
+        for j in range(len(fc_layers)):
+
+            name, module = fc_layers[j]
+            if not type(module) in (nn.ReLU, MixedActivationLayer):
+                continue
+            
+            key = f"{str(module)}_{i+j}"
+            self.register_hook(module, key)
+
     def evaluate_net(self, criterion, phase="val"):
         # set to validate mode
         self.net.eval()

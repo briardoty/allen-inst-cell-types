@@ -78,6 +78,13 @@ class DataframeProcessor():
         # save
         self.save_df(df_name, df)
 
+    def refresh_activation_df(self):
+        """
+
+        """
+        return
+
+
     def refresh_max_acc_df(self):
         """
         Refreshes dataframe with max validation accuracy.
