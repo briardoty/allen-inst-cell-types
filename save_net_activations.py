@@ -28,7 +28,7 @@ def main(net_filepath, data_dir, net_name, batch_size, dataset):
     manager.seed_everything(seed)
 
     # load dataset
-    manager.load_dataset(batch_size)
+    manager.load_activation_dataset(batch_size)
 
     # training vars
     criterion = nn.CrossEntropyLoss()
@@ -41,7 +41,7 @@ def main(net_filepath, data_dir, net_name, batch_size, dataset):
     manager.train_net(criterion, optimizer, None, 1.0)
 
     # save output
-    manager.save_arr("activation_dict", manager.activation_dict)
+    manager.save_arr("activation_dict", manager.activation_dict, False)
 
     print("save_net_activations.py completed")
     return
@@ -52,7 +52,7 @@ if __name__=="__main__":
     print(args)
     main(**vars(args))
     
-    # net_filepath = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam-lr-avg/cross-swish-tanh/swish0.5-tanh0.01/sample-2/sticknet8_case-swish0.5-tanh0.01_sample-2_epoch-500.pt"
+    # net_filepath = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam-lr-avg/component-tanh/tanh1/sample-1/sticknet8_case-tanh1_sample-1_epoch-500.pt"
     # data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
     # net_name = "sticknet8"
     # batch_size = 128

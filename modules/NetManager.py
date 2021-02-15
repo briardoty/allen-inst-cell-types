@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 25 14:19:48 2020
-
-@author: briardoty
-"""
 import torch
 import gc
 import torch.nn as nn
@@ -21,6 +14,8 @@ import matplotlib.pyplot as plt
 import functools
 import sys
 import pandas as pd
+import xarray as xr
+import pickle
 
 try:
     from .MixedActivationLayer import MixedActivationLayer
@@ -136,6 +131,7 @@ class NetManager():
         self.epoch = 0
         self.modified_layers = None
         self.initial_lr = None
+        self.test_acc = None
         self.perf_stats = []
 
         if (torch.cuda.is_available()):
@@ -219,15 +215,15 @@ class NetManager():
 
         print(f"Saving network snapshot {net_filepath}")
         torch.save(snapshot_state, net_filepath)
-    
-    def save_arr(self, name, obj_to_save):
+
+    def save_arr(self, name, obj_to_save, save_np=True):
         """
         Save a generic numpy array in the current net's output location
         with identifying metadata
         """
 
         # location
-        filename = f"{name}.npy"
+        filename = f"{name}.npy" if save_np else f"{name}.pkl"
         filepath = os.path.join(self.net_dir, filename)
         print(f"Saving {filename}")
         
@@ -245,7 +241,11 @@ class NetManager():
         }
 
         # save
-        np.save(filepath, data)
+        if save_np:
+            np.save(filepath, data)
+        else:
+            with open(filepath, "wb") as pkl_file:
+                pickle.dump(data, pkl_file)
         
     def load_net_snapshot_from_path(self, net_filepath):
         # load snapshot
@@ -313,6 +313,14 @@ class NetManager():
             self.val_loader, 
             self.test_loader) = load_dataset(self.data_dir, 
             self.dataset, batch_size)
+
+    def load_activation_dataset(self, batch_size=128):
+
+        (self.train_set, self.val_set, self.test_set,
+            self.train_loader, 
+            self.val_loader, 
+            self.test_loader) = load_cifar10_activation(self.data_dir, 
+            batch_size)
         
     def replace_act_layers(self, n_repeat, act_fns, act_fn_params, spatial, 
         conv_layers, fc_layers, default_fn):
@@ -339,6 +347,10 @@ class NetManager():
 
         self.activation_dict[key] = list()
         def output_hook(module, inp, output):
+            output = output.detach().numpy()
+            output = np.float16(output)
+            dims = ("img", "unit", "x", "y") if len(output.shape) == 4 else ("img", "unit")
+            output = xr.DataArray(output, dims=dims)
             self.activation_dict[key].append(output)
 
         module.register_forward_hook(output_hook)
@@ -445,6 +457,7 @@ class NetManager():
             # run net forward, tracking history
             with torch.set_grad_enabled(True), torch.autograd.set_detect_anomaly(True):
                 
+                self.labels = labels
                 outputs = self.net(inputs)
 
                 _, preds = torch.max(outputs, 1)

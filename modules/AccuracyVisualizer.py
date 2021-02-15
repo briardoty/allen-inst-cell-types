@@ -363,7 +363,7 @@ class AccuracyVisualizer():
         for midx, row in sort_df.iterrows():
 
             # stats
-            perf = row[f"acc_vs_{pred_type}"].values[0] * 100
+            perf = row[f"{metric}_vs_{pred_type}"].values[0] * 100
             err = row[f"{metric}"]["std"] * 1.98 * 100
 
             xmin = min(xmin, perf - err)
