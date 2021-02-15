@@ -22,7 +22,7 @@ parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 parser.add_argument("--cases", type=str, nargs="+", required=True, help="Set cases")
 
 parser.add_argument("--final", dest="final", action="store_true")
-parser.set_defaults(final=False)
+parser.set_defaults(final=True)
 
 def main(net_name, cases, scheme, dataset, final):
 
