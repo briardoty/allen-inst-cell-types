@@ -26,7 +26,6 @@
         "script": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/Source/allen-inst-cell-types/save_net_activations.py",
         "run_params": {
             "data_dir": "/allen/programs/braintv/workgroups/nc-ophys/briar.doty/data/",
-            "train_frac": 1.0,
             "batch_size": 128
         },
         "job_settings": {
