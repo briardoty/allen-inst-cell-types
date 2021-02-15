@@ -20,12 +20,11 @@ parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
 parser.add_argument("--cases", type=str, nargs="+", required=True, help="Set cases")
-parser.add_argument("--batch_size", type=int)
 
 parser.add_argument("--final", dest="final", action="store_true")
 parser.set_defaults(final=False)
 
-def main(net_name, cases, scheme, batch_size, dataset, final):
+def main(net_name, cases, scheme, dataset, final):
 
     job_title = "save_net_activations"
     
@@ -43,7 +42,6 @@ def main(net_name, cases, scheme, batch_size, dataset, final):
     run_params = job_params["run_params"]
     run_params["net_name"] = net_name
     run_params["dataset"] = dataset
-    run_params["batch_size"] = batch_size if batch_size is not None else run_params["batch_size"]
 
     job_settings = job_params["job_settings"]
     
