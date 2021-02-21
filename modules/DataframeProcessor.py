@@ -165,7 +165,7 @@ class DataframeProcessor():
                         i_acc = np.argmax(perf_stats[:,0])
                     else:
                         i_acc = -1
-                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_accc]
+                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_acc]
                     test_acc = stats_dict.get("test_acc")
 
                     # for learning speed
