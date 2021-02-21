@@ -16,7 +16,7 @@ def main(data_dir):
     
     # refresh various dataframes
     proc.refresh_accuracy_df()
-    proc.refresh_max_acc_df()
+    proc.refresh_final_acc_df()
 
     # need to load acc df to refresh learning
     df_sub_dir = os.path.join(data_dir, "dataframes/")

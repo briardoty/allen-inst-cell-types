@@ -85,7 +85,7 @@ class DataframeProcessor():
         return
 
 
-    def refresh_max_acc_df(self):
+    def refresh_final_acc_df(self, report_peak_acc=False):
         """
         Refreshes dataframe with max validation accuracy.
         """
@@ -161,8 +161,11 @@ class DataframeProcessor():
 
                 # find peak accuracy
                 try:
-                    i_max = np.argmax(perf_stats[:,0])
-                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_max]
+                    if report_peak_acc:
+                        i_acc = np.argmax(perf_stats[:,0])
+                    else:
+                        i_acc = -1
+                    (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_accc]
                     test_acc = stats_dict.get("test_acc")
 
                     # for learning speed
