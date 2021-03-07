@@ -48,6 +48,36 @@ class AccuracyVisualizer():
         with open("/home/briardoty/Source/allen-inst-cell-types/hpc-jobs/net_configs.json", "r") as json_file:
             self.net_configs = json.load(json_file)
 
+    def get_prediction_df(self, datasets, net_names, schemes, cases, excl_arr, 
+        pred_type="max", cross_family=None, mixed=True, metric="val_acc"):
+
+        # pull data
+        df, case_dict, _ = self.stats_processor.load_max_acc_df()
+
+        # performance relative to prediction
+        df[f"{metric}_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
+
+        # filter dataframe
+        if mixed:
+            df = df.query(f"is_mixed")
+        df = df.query(f"dataset in {datasets}") \
+            .query(f"net_name in {net_names}") \
+            .query(f"train_scheme in {schemes}")
+        if len(cases) > 0:
+            df = df.query(f"case in {cases}")
+        if cross_family is not None:
+            df = df.query(f"cross_fam == {cross_family}")
+        for excl in excl_arr:
+            df = df.query(f"not case.str.contains('{excl}')", engine="python")
+
+        # filter vgg tanh2 because it's terrible
+        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+        #     engine="python")
+
+        sort_df = df.sort_values(["net_name", f"{metric}_vs_{pred_type}"])
+
+        return sort_df, case_dict
+
     def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
         """
         Plot accuracy at the end of training for mixed case, 
@@ -154,36 +184,6 @@ class AccuracyVisualizer():
 
         filename = f"{mixed_case} comparison"
         self.save("decomposition", filename)
-
-    def get_prediction_df(self, datasets, net_names, schemes, cases, excl_arr, 
-        pred_type="max", cross_family=None, mixed=True, metric="val_acc"):
-
-        # pull data
-        df, case_dict, _ = self.stats_processor.load_max_acc_df()
-
-        # performance relative to prediction
-        df[f"{metric}_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
-
-        # filter dataframe
-        if mixed:
-            df = df.query(f"is_mixed")
-        df = df.query(f"dataset in {datasets}") \
-            .query(f"net_name in {net_names}") \
-            .query(f"train_scheme in {schemes}")
-        if len(cases) > 0:
-            df = df.query(f"case in {cases}")
-        if cross_family is not None:
-            df = df.query(f"cross_fam == {cross_family}")
-        for excl in excl_arr:
-            df = df.query(f"not case.str.contains('{excl}')", engine="python")
-
-        # filter vgg tanh2 because it's terrible
-        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
-        #     engine="python")
-
-        sort_df = df.sort_values(["net_name", f"{metric}_vs_{pred_type}"])
-
-        return sort_df, case_dict
 
     def plot_ratio_group(self, dataset, net_name, scheme, ratio_group):
 
@@ -336,7 +336,8 @@ class AccuracyVisualizer():
 
         # pull data
         sort_df, _ = self.get_prediction_df([dataset], net_names, schemes, cases, 
-            excl_arr, pred_type, cross_family, metric)
+            excl_arr=excl_arr, pred_type=pred_type, cross_family=cross_family, 
+            mixed=True, metric=metric)
         
         # determine each label length for alignment
         lengths = {}
@@ -438,6 +439,7 @@ class AccuracyVisualizer():
             handles["within-family"] = h2
 
         # set figure text
+        metric = "Val acc" if metric=="val_acc" else "Test acc"
         plt.xlabel(f"{metric} relative to {pred_type} (%)", 
             fontsize=28, labelpad=10)
         plt.ylabel("Network configuration", fontsize=28, labelpad=10)
@@ -463,17 +465,18 @@ class AccuracyVisualizer():
         self.save("prediction", filename)
 
     def plot_family_supplement(self, dataset, net_names, schemes, excl_arr, 
-        pred_type="max", cross_family=None):
+        pred_type="max", metric="val_acc", cross_family=None, ymax=3, ymin=0):
 
         # pull data
-        df, _ = self.get_prediction_df([dataset], net_names, schemes, [], excl_arr, 
-            pred_type, cross_family)
+        df, _ = self.get_prediction_df([dataset], net_names, schemes, 
+            [], excl_arr=excl_arr, pred_type=pred_type, 
+            cross_family=cross_family, mixed=True, metric=metric)
 
         # filter to just p-val < 0.05
-        df = df[df.max_pred_rej_h0 == True]
+        # df = df[df.max_pred_val_acc_rej_h0 == True]
 
         # plot
-        fig, ax = plt.subplots(figsize=(8,5))
+        fig, ax = plt.subplots(figsize=(5,5))
         net_vals = list(df.index.unique(level=1))
         net_vals.reverse()
         # x = np.array([i * 1.25 for i in range(len(net_vals))])
@@ -495,7 +498,7 @@ class AccuracyVisualizer():
 
                 cf = cf_vals[j]
                 rows = df.query(f"net_name == '{net}'") \
-                    .query(f"cross_fam == {cf}")[f"acc_vs_{pred_type}"]
+                    .query(f"cross_fam == {cf}")[f"{metric}_vs_{pred_type}"]
                 yval = np.mean(rows) * 100
 
                 # plot
@@ -523,14 +526,16 @@ class AccuracyVisualizer():
         ax.set_xticks([loc + i * 1.25 for i in range(len(net_vals))])
         ax.set_xticklabels(net_vals)
         ax.set_xlim([-3/8., x - width + 1/8.])
+        ax.set_ylim([ymin, ymax])
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.set_xlabel("Network", fontsize=large_font_size + 2)
-        ax.set_ylabel(f"Mean relative acc. (%)", fontsize=large_font_size + 2)
-        ax.legend(handles.values(), handles.keys(), fontsize=18)
+        metric = "val acc" if metric == "val_acc" else "test acc"
+        ax.set_ylabel(f"Mean {metric} relative to {pred_type} (%)", fontsize=large_font_size + 2)
+        ax.legend(handles.values(), handles.keys(), fontsize=16, loc="upper left")
         plt.tight_layout()
 
-        self.save("supplementary", "family")
+        self.save("supplementary", f"family_{pred_type}")
 
     def plot_network_supplement(self, dataset, net_names, schemes, excl_arr, 
         pred_type="max", cross_family=None):
@@ -540,7 +545,7 @@ class AccuracyVisualizer():
             pred_type, cross_family)
 
         # filter to just p-val < 0.05
-        df = df[df.max_pred_rej_h0 == True]
+        df = df[df.max_pred_val_acc_rej_h0 == True]
 
         # plot
         fig, ax = plt.subplots(figsize=(5,5))
@@ -553,7 +558,7 @@ class AccuracyVisualizer():
         for i in range(len(net_vals)):
 
             net = net_vals[i]
-            yvals = df.query(f"net_name == '{net}'")[f"acc_vs_{pred_type}"]
+            yvals = df.query(f"net_name == '{net}'")[f"val_acc_vs_{pred_type}"]
             ymean = np.mean(yvals) * 100
             labels.append(net)
             ticks.append(x)
@@ -791,7 +796,7 @@ class AccuracyVisualizer():
             vabs = max(abs(vmin), abs(vmax))
             vmin, vmax = -vabs, vabs
         else:
-            metric = "Peak accuracy (%)"
+            metric = "Final accuracy (%)"
 
         ratio_matrix = sorted(list(ratio_matrix.items()), key=lambda kvp: max(kvp[1][1:-1]), reverse=True)
         M = np.array([v for k, v in ratio_matrix])
@@ -906,7 +911,7 @@ class AccuracyVisualizer():
                 vm_dict[key]["vmin"], vm_dict[key]["vmax"] = -vabs, vabs
 
         else:
-            metric = "Peak accuracy (%)"
+            metric = "Final accuracy (%)"
         for k, v in within_mats.items():
             plt.figure()
             current_cmap = matplotlib.cm.get_cmap()
@@ -922,8 +927,9 @@ class AccuracyVisualizer():
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
             l = k if k == "swish" else "ptanh"
-            ax.set_ylabel(rf"{l} $\beta$", fontsize=large_font_size)
-            ax.set_xlabel(rf"{l} $\beta$", fontsize=large_font_size)
+            p = rf"$\beta$" if l == "swish" else rf"$\alpha$"
+            ax.set_ylabel(rf"{l} {p}", fontsize=large_font_size)
+            ax.set_xlabel(rf"{l} {p}", fontsize=large_font_size)
             tlabels = p_dict[k]
             tticks = [i for i in range(len(tlabels))]
             ax.set_xticks(tticks)
@@ -952,9 +958,10 @@ class AccuracyVisualizer():
             cbar = plt.colorbar(im, cax=cax)
             cbar.ax.set_ylabel(metric, fontsize=large_font_size)
 
+            p = [rf"$\beta$" if l == "swish" else rf"$\alpha$" for l in k]
             l = [l if l == "swish" else "ptanh" for l in k]
-            ax.set_xlabel(rf"{l[1]} $\beta$", fontsize=large_font_size)
-            ax.set_ylabel(rf"{l[0]} $\beta$", fontsize=large_font_size)
+            ax.set_xlabel(rf"{l[1]} {p[1]}", fontsize=large_font_size)
+            ax.set_ylabel(rf"{l[0]} {p[0]}", fontsize=large_font_size)
             xtlabels = p_dict[k[1]]
             xticks = [i for i in range(len(xtlabels))]
             ytlabels = p_dict[k[0]]
@@ -1226,10 +1233,10 @@ if __name__=="__main__":
 
     # vis.plot_final_acc_decomp("cifar10", "sticknet8", "adam", "swish7.5-tanh0.1")
 
-    vis.plot_pred_vs_lr("cifar10", "sticknet8", ["adam-lr-per-sample", "adam-lr-avg"], excl_arr=[], pred_type="max",
-        metric="val_acc", filename=None)
+    # vis.plot_pred_vs_lr("cifar10", "sticknet8", ["adam-lr-per-sample", "adam-lr-avg"], excl_arr=[], pred_type="max",
+    #     metric="val_acc", filename=None)
 
-    # vis.plot_all_samples_accuracy("cifar10", "sticknet8", "adam", "relu", acc_type="val")
+    vis.plot_all_samples_accuracy("cifar10", "sticknet8", "adam-lr-avg", "swish7.5-tanh1", acc_type="val")
 
     # vis.plot_single_accuracy("cifar10", "vgg11", "adam", "swish10", 
     #     metric="deriv",

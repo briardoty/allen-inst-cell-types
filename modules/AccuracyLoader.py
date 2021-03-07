@@ -21,7 +21,7 @@ class AccuracyLoader():
         self.exclude_slug = "(exclude)"
         self.pct = 90
 
-        self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "sample"]
+        self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "epoch", "sample"]
     
     def load_learning_df(self, pct):
         """
