@@ -24,12 +24,13 @@ class DataframeProcessor():
         self.pct = 90
 
         self.df_sub_dir = os.path.join(self.data_dir, "dataframes/")
-        self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "sample"]
+        self.net_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "epoch", "sample"]
+        self.acc_idx_cols = ["dataset", "net_name", "train_scheme", "group", "case", "sample", "epoch"]
     
     def refresh_learning_df(self, acc_df, pct):
 
         learning_arr = []
-        acc_df.set_index(self.net_idx_cols, inplace=True)
+        acc_df.set_index(self.acc_idx_cols, inplace=True)
 
         for idx in acc_df.index.unique():
 
@@ -105,7 +106,7 @@ class DataframeProcessor():
 
         # load current df if exists
         df_name = "max_acc_df.csv"
-        curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
+        # curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
         # curr_df.drop(columns="Unnamed: 0", inplace=True)
 
         acc_arr = []
@@ -159,20 +160,30 @@ class DataframeProcessor():
                 if len(perf_stats) == 0:
                     continue
 
-                # find peak accuracy
+                # find peak accuracy?
                 try:
+
                     if report_peak_acc:
                         i_acc = np.argmax(perf_stats[:,0])
                     else:
                         i_acc = -1
                     (val_acc, val_loss, train_acc, train_loss) = perf_stats[i_acc]
-                    test_acc = stats_dict.get("test_acc")
 
                     # for learning speed
                     pct_acc = (self.pct / 100.) * val_acc
                     i_first = next(x for x, val in enumerate(perf_stats[:,0]) if val > pct_acc)
+                    
+                    test_acc = stats_dict.get("test_acc")
 
-                    acc_arr.append([dataset, net_name, train_scheme, group, case, sample, val_acc, test_acc, i_first, initial_lr])
+                    acc_arr.append([dataset, net_name, train_scheme, group, case, i_acc, sample, val_acc, test_acc, i_first, initial_lr])
+
+                    # by epoch
+                    for epoch in np.linspace(0, len(perf_stats), 5):
+                        
+                        epoch = int(epoch)
+                        (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
+                        acc_arr.append([dataset, net_name, train_scheme, group, case, epoch, sample, val_acc, None, None, initial_lr])
+
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
                     continue
@@ -197,18 +208,19 @@ class DataframeProcessor():
         acc_df["linear_pred_test_acc_p_val"] = np.nan
 
         # index new and old without group
-        idx_no_group = list(self.net_idx_cols)
-        idx_no_group.remove("group")
-        curr_df.set_index(idx_no_group, inplace=True)
-        acc_df.set_index(idx_no_group, inplace=True)
+        # idx_no_group = list(self.net_idx_cols + ["epoch"])
+        # idx_no_group.remove("group")
+        # curr_df.set_index(idx_no_group, inplace=True)
+        # acc_df.set_index(idx_no_group, inplace=True)
 
         # merge new and old, preferring new
-        ndf = pd.concat([curr_df[~curr_df.index.isin(acc_df.index)], acc_df])
+        # ndf = pd.concat([curr_df[~curr_df.index.isin(acc_df.index)], acc_df])
 
         # port over group from old df where appropriate
         # ndf[ndf.index.isin(curr_df.index)]["group"] = curr_df["group"]
 
         # 2.9. index with group
+        ndf = acc_df
         ndf.reset_index(drop=False, inplace=True)
         ndf.set_index(self.net_idx_cols, inplace=True)
 
@@ -216,14 +228,14 @@ class DataframeProcessor():
         for midx in ndf.query("is_mixed == True").index.values:
 
             # break up multi-index
-            d, n, sch, g, c, s = midx
+            d, n, sch, g, c, e, s = midx
             
             # skip if already predicted
             if not math.isnan(ndf.at[midx, "max_pred_val_acc"]):
                 continue
 
             # get rows in this mixed case
-            mixed_case_rows = ndf.loc[(d, n, sch, g, c)]
+            mixed_case_rows = ndf.loc[(d, n, sch, g, c, e)]
             
             # get component case rows
             component_cases = get_component_cases(case_dict, c)
@@ -231,7 +243,8 @@ class DataframeProcessor():
                 .query(f"dataset == '{d}'") \
                 .query(f"net_name == '{n}'") \
                 .query(f"train_scheme == '{sch}'") \
-                .query(f"case in {component_cases}")
+                .query(f"case in {component_cases}") \
+                .query(f"epoch == {e}")
 
             # flag to indicate whether row used in prediction yet
             component_rows["used"] = False
@@ -262,14 +275,14 @@ class DataframeProcessor():
                 if len(c_accs) == 0:
                     break
 
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
+                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
+                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
                 
                 if len(c_accs_test) == 0:
                     continue
 
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "max_pred_test_acc"] = np.max(c_accs_test)
-                ndf.at[(d, n, sch, g, c, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
+                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_test_acc"] = np.max(c_accs_test)
+                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
 
             # significance
             upper_dists = ["val_acc", "val_acc", "test_acc", "test_acc"]
@@ -277,12 +290,12 @@ class DataframeProcessor():
             cols = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
             for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
-                t, p = ttest_ind(ndf.at[(d, n, sch, g, c), upper], ndf.at[(d, n, sch, g, c), lower])
+                t, p = ttest_ind(ndf.at[(d, n, sch, g, c, e), upper], ndf.at[(d, n, sch, g, c), lower])
                 if t < 0:
                     p = 1. - p / 2.
                 else:
                     p = p / 2.
-                ndf.loc[(d, n, sch, g, c), f"{col}_p_val"] = p
+                ndf.loc[(d, n, sch, g, c, e), f"{col}_p_val"] = p
 
         # save things
         self.save_df(df_name, ndf)
@@ -347,7 +360,7 @@ class DataframeProcessor():
                     acc_arr.append([dataset, net_name, train_scheme, group, case, sample, epoch, val_acc, val_loss, train_acc])
                 
         # make dataframe
-        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["epoch", "val_acc", "val_loss", "train_acc"])
+        acc_df = pd.DataFrame(acc_arr, columns=self.net_idx_cols+["val_acc", "val_loss", "train_acc"])
         
         # save df
         self.save_df("acc_df.csv", acc_df)

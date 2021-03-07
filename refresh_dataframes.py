@@ -19,11 +19,11 @@ def main(data_dir):
     proc.refresh_final_acc_df()
 
     # need to load acc df to refresh learning
-    df_sub_dir = os.path.join(data_dir, "dataframes/")
-    acc_df = pd.read_csv(os.path.join(df_sub_dir, "acc_df.csv"))
-    acc_df.drop(columns="Unnamed: 0", inplace=True)
+    # df_sub_dir = os.path.join(data_dir, "dataframes/")
+    # acc_df = pd.read_csv(os.path.join(df_sub_dir, "acc_df.csv"))
+    # acc_df.drop(columns="Unnamed: 0", inplace=True)
 
-    proc.refresh_learning_df(acc_df, pct=90)
+    # proc.refresh_learning_df(acc_df, pct=90)
 
     print("refresh_dataframes.py completed")
     return
