@@ -178,7 +178,7 @@ class DataframeProcessor():
                     acc_arr.append([dataset, net_name, train_scheme, group, case, i_acc, sample, val_acc, test_acc, i_first, initial_lr])
 
                     # by epoch
-                    for epoch in np.linspace(0, len(perf_stats), 5):
+                    for epoch in np.linspace(0, len(perf_stats)-1, 5):
                         
                         epoch = int(epoch)
                         (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
