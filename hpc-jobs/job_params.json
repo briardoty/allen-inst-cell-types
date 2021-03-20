@@ -65,7 +65,7 @@
         "job_settings": {
             "queue": "braintv",
             "mem": "8g",
-            "walltime": "2:00:00",
+            "walltime": "8:00:00",
             "ppn": 2,
             "nodes": 1,
             "email": "briar.doty@alleninstitute.org",

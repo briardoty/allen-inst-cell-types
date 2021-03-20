@@ -15,7 +15,7 @@ def main(data_dir):
     proc = DataframeProcessor(data_dir)
     
     # refresh various dataframes
-    proc.refresh_accuracy_df()
+    # proc.refresh_accuracy_df()
     proc.refresh_final_acc_df()
 
     # need to load acc df to refresh learning
