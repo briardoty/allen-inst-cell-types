@@ -180,14 +180,10 @@ class DataframeProcessor():
                     # by epoch
                     epochs = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
                     epochs = epochs[:-1] + [int(x) for x in np.linspace(epochs[-1], len(perf_stats)-1, 5)]
-                    for epoch in :
+                    for epoch in epochs:
                         
-                        epoch = i*5
-                        epoch = int(epoch)
                         (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
                         acc_arr.append([dataset, net_name, train_scheme, group, case, epoch, sample, val_acc, None, None, initial_lr])
-
-                        i += 1
 
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
