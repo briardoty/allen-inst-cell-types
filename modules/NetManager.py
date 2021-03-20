@@ -348,9 +348,9 @@ class NetManager():
         self.activation_dict[key] = list()
         def output_hook(module, inp, output):
             output = output.detach().cpu().numpy()
-            output = np.float16(output)
             dims = ("img", "unit", "x", "y") if len(output.shape) == 4 else ("img", "unit")
-            coords = {"img": np.array(self.labels)}
+            labels = self.labels.detach().cpu().numpy()
+            coords = {"img": labels}
             output = xr.DataArray(output, dims=dims, coords=coords)
             self.activation_dict[key].append(output)
 
