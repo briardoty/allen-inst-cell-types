@@ -178,9 +178,9 @@ class DataframeProcessor():
                     acc_arr.append([dataset, net_name, train_scheme, group, case, i_acc, sample, val_acc, test_acc, i_first, initial_lr])
 
                     # by epoch
-                    i = epoch = 0
-                    while epoch < len(perf_stats) - 1:
-                    # for epoch in np.linspace(0, len(perf_stats)-1, 5):
+                    epochs = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+                    epochs = epochs[:-1] + [int(x) for x in np.linspace(epochs[-1], len(perf_stats)-1, 5)]
+                    for epoch in :
                         
                         epoch = i*5
                         epoch = int(epoch)
