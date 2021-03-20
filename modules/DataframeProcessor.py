@@ -179,7 +179,7 @@ class DataframeProcessor():
 
                     # by epoch
                     i = epoch = 0
-                    while epoch < len(perf_stats):
+                    while epoch < len(perf_stats) - 1:
                     # for epoch in np.linspace(0, len(perf_stats)-1, 5):
                         
                         epoch = i*5
