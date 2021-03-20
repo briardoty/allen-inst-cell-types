@@ -350,7 +350,8 @@ class NetManager():
             output = output.detach().cpu().numpy()
             output = np.float16(output)
             dims = ("img", "unit", "x", "y") if len(output.shape) == 4 else ("img", "unit")
-            output = xr.DataArray(output, dims=dims)
+            coords = {"img": np.array(self.labels)}
+            output = xr.DataArray(output, dims=dims, coords=coords)
             self.activation_dict[key].append(output)
 
         module.register_forward_hook(output_hook)
@@ -368,8 +369,8 @@ class NetManager():
         for i in range(len(conv_layers)):
 
             name, module = conv_layers[i]
-            if not type(module) in (nn.ReLU, MixedActivationLayer):
-                continue
+            # if not type(module) in (nn.ReLU, MixedActivationLayer):
+            #     continue
             
             key = f"{str(module)}_{i}"
             self.register_hook(module, key)

@@ -236,38 +236,36 @@ def load_cifar10_activation(data_dir, batch_size=128, n_workers=4,
     dataset_dir = os.path.join(data_dir, "cifar10")
     
     # standard transforms
-    train_xform = transforms.Compose([
-        transforms.RandomHorizontalFlip(), 
-        transforms.RandomCrop(32, 4),
+    test_xform = transforms.Compose([
         transforms.ToTensor(),
         normalize
     ])
 
     # full dataset
     full_dataset = torchvision.datasets.CIFAR10(
-        root=dataset_dir, train=True,
-        download=True, transform=train_xform,
+        root=dataset_dir, train=False,
+        download=True, transform=test_xform,
     )
 
-    n_val = len(full_dataset) - n_samples
-    val_frac = n_val / len(full_dataset)
+    n_take = len(full_dataset) - n_samples
+    frac_take = n_take / len(full_dataset)
 
-    # train/val partition
+    # partition
     targets = full_dataset.targets
-    train_idx, _ = train_test_split(
-        np.arange(len(targets)), test_size=val_frac, 
+    idx, _ = train_test_split(
+        np.arange(len(targets)), test_size=frac_take, 
         shuffle=True, stratify=targets)
 
-    train_dataset = Subset(full_dataset, train_idx)
+    dataset = Subset(full_dataset, idx)
 
     # loaders
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size,
+    loader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size,
         num_workers=n_workers, shuffle=False)
 
     _ = None
-    return (train_dataset, _, _, 
-        train_loader, _, _)
+    return (dataset, _, _, 
+        loader, _, _)
 
 def load_cifar100(dataset_dir, batch_size=128, n_workers=4):
 
