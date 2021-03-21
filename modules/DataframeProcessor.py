@@ -186,7 +186,7 @@ class DataframeProcessor():
                             (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
                             acc_arr.append([dataset, net_name, train_scheme, group, case, epoch, sample, val_acc, None, None, initial_lr])
                         except IndexError:
-                            continue
+                            break
 
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
