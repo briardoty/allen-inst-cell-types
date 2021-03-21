@@ -182,8 +182,11 @@ class DataframeProcessor():
                     epochs = epochs[:-1] + [int(x) for x in np.linspace(epochs[-1], len(perf_stats)-1, 5)]
                     for epoch in epochs:
                         
-                        (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
-                        acc_arr.append([dataset, net_name, train_scheme, group, case, epoch, sample, val_acc, None, None, initial_lr])
+                        try:
+                            (val_acc, val_loss, train_acc, train_loss) = perf_stats[epoch]
+                            acc_arr.append([dataset, net_name, train_scheme, group, case, epoch, sample, val_acc, None, None, initial_lr])
+                        except IndexError:
+                            continue
 
                 except ValueError:
                     print(f"Max entry in {case} {sample} perf_stats did not match expectations.")
