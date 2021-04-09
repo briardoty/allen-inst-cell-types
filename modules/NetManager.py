@@ -308,11 +308,13 @@ class NetManager():
     
     def load_dataset(self, batch_size=128):
 
+        (train_dataset, val_dataset, test_dataset, train_loader, val_loader, test_loader) = load_dataset(self.data_dir, 
+            self.dataset, batch_size)
+
         (self.train_set, self.val_set, self.test_set,
             self.train_loader, 
             self.val_loader, 
-            self.test_loader) = load_dataset(self.data_dir, 
-            self.dataset, batch_size)
+            self.test_loader) = (train_dataset, test_dataset, test_dataset, train_loader, test_loader, test_loader)
 
     def load_activation_dataset(self, batch_size=128):
 
@@ -687,7 +689,7 @@ class NetManager():
 if __name__=="__main__":
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar10"
-    net = "sticknet8"
+    net = "vgg11"
     scheme = "adam-lr-avg"
     group = "within-swish"
     case = "swish0.1-1"
@@ -695,8 +697,9 @@ if __name__=="__main__":
     epoch = 0
 
     # initialize
-    mgr = NetManager(dataset, net, group, case, data_dir, scheme)
-    mgr.load_net_snapshot_from_path(f"{data_dir}nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
+    mgr = NetManager(dataset, net, group, case, data_dir, scheme, True)
+    mgr.init_net(0)
+    # mgr.load_net_snapshot_from_path(f"{data_dir}nets/{dataset}/{net}/{scheme}/{group}/{case}/sample-{sample}/{net}_case-{case}_sample-{sample}_epoch-{epoch}.pt")
     
     # reliable seed
     seed = get_seed_for_sample(data_dir, mgr.sample)

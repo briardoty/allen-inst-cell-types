@@ -199,6 +199,42 @@ def load_cifar10(dataset_dir, batch_size=128, n_workers=4,
     ])
 
     # full dataset
+    train_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=True,
+        download=True, transform=train_xform,
+    )
+
+    test_dataset = torchvision.datasets.CIFAR10(
+        root=dataset_dir, train=False,
+        download=True, transform=test_xform)
+
+    # loaders
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, batch_size=batch_size,
+        num_workers=n_workers, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset, batch_size=batch_size,
+        num_workers=n_workers, shuffle=False)
+
+    return (train_dataset, None, test_dataset, 
+        train_loader, None, test_loader)
+
+def load_cifar10_3split(dataset_dir, batch_size=128, n_workers=4, 
+    val_frac=0.1):
+
+    # standard transforms
+    train_xform = transforms.Compose([
+        transforms.RandomHorizontalFlip(), 
+        transforms.RandomCrop(32, 4),
+        transforms.ToTensor(),
+        normalize
+    ])
+    test_xform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ])
+
+    # full dataset
     full_dataset = torchvision.datasets.CIFAR10(
         root=dataset_dir, train=True,
         download=True, transform=train_xform,
