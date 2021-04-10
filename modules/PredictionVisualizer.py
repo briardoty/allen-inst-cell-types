@@ -3,6 +3,7 @@ import sys
 import functools
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 import seaborn as sns
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import json
@@ -36,7 +37,7 @@ class PredictionVisualizer():
         self.save_png = save_png
         self.sub_dir_name = sub_dir_name
         
-        self.stats_processor = AccuracyLoader(data_dir)
+        self.accuracy_loader = AccuracyLoader(data_dir)
 
         with open("/home/briardoty/Source/allen-inst-cell-types/hpc-jobs/net_configs.json", "r") as json_file:
             self.net_configs = json.load(json_file)
@@ -45,7 +46,7 @@ class PredictionVisualizer():
         pred_type="max", cross_family=None, mixed=True, metric="val_acc"):
 
         # pull data
-        df, case_dict, _ = self.stats_processor.load_max_acc_df()
+        df, case_dict, _ = self.accuracy_loader.load_max_acc_df()
 
         # performance relative to prediction
         df[f"{metric}_vs_{pred_type}"] = df[f"{metric}"]["mean"] - df[f"{pred_type}_pred_{metric}"]["mean"]
@@ -79,7 +80,7 @@ class PredictionVisualizer():
         """
 
         # pull data
-        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df_ungrouped()
+        df, case_dict, idx_cols = self.accuracy_loader.load_max_acc_df_ungrouped()
         component_cases = get_component_cases(case_dict, mixed_case)
 
         # filter dataframe
@@ -244,6 +245,244 @@ class PredictionVisualizer():
 
         filename = f"{dataset}_{net_name}_{pred_type}-lr-scatter"
         self.save("lr-scatter", filename)
+
+
+    def plot_epoch_prediction_scatter(self, dataset, net_name, scheme, epochs, 
+        cases=[], excl_arr=[], pred_type="max", metric="val_acc"):
+        """
+        Make a scatterplot of training epoch vs. accuracy relative to prediction.
+        """
+
+        # pull data
+        df, _ = self.get_prediction_df([dataset], [net_name], [scheme], cases, 
+            excl_arr=excl_arr, pred_type=pred_type, cross_family=None, 
+            mixed=True, metric=metric)
+
+        # create figure
+        _, ax = plt.subplots(figsize=(6,6))
+
+        # identifiers
+        clrs = sns.color_palette("Set2", 2)
+        handles = dict()
+
+        xfam_arr = [True, False]
+        for xfam in xfam_arr:
+
+            net_df = df \
+                .query(f"net_name == '{net_name}'") \
+                .query(f"cross_fam == {xfam}")
+            bh_sig = [net_df.query(f"epoch == {epoch}")[f"{pred_type}_pred_{metric}_rej_h0"].values for epoch in epochs]
+            data = [net_df.query(f"epoch == {epoch}")[f"{metric}_vs_{pred_type}"].values * 100 for epoch in epochs]
+
+            clr = clrs[xfam_arr.index(xfam)]
+            handles["Cross-family" if xfam else "Within-family"] = mpatches.Patch(color=clr)
+            parts = ax.violinplot(data,
+                showmeans=False,
+                showmedians=True)
+            for pc in parts['bodies']:
+                pc.set_color(clr)
+                pc.set_facecolor(clr)
+                pc.set_edgecolor(clr)
+                pc.set_alpha(0.4)
+            
+            for pc in [parts["cbars"], parts["cmaxes"], parts["cmins"], parts["cmedians"]]:
+                pc.set_color(clr)
+                pc.set_facecolor(clr)
+                pc.set_edgecolor(clr)
+                pc.set_alpha(0.8)
+
+
+        # for epoch in epochs:
+            
+        #     sort_df = df.query(f"epoch == {epoch}")
+
+        #     # plot
+        #     lw = 600 / len(sort_df)
+        #     ms = lw * 0.5
+        #     for midx, row in sort_df.iterrows():
+
+        #         # stats
+        #         perf = row[f"{metric}_vs_{pred_type}"].values[0] * 100
+        #         err = row[f"{metric}"]["std"] * 1.98 * 100
+
+        #         xmin = min(xmin, perf)
+        #         xmax = max(xmax, perf)
+
+        #         # dataset, net, scheme, case, mixed, cross-family
+        #         d, n, sch, g, c, e, m, cf = midx
+        #         if (e != epoch):
+        #             continue
+        #         clr = clrs[net_names.index(n)]
+        #         fmt = fmts[0]
+
+        #         # BH corrected significance
+        #         bh_sig = row[f"{pred_type}_pred_{metric}_rej_h0"].values[0]
+        #         sig_arr.append(bh_sig)
+
+        #         # 
+        #         ax.plot(epoch, perf, c=clr, marker=fmt, alpha=0.8)
+
+        # set figure text
+        plt.gca().axhline(0, color="k", linestyle="-", alpha=0.5)
+        metric_label = "Val acc" if metric=="val_acc" else "Test acc"
+        plt.xlabel("Epoch", fontsize=18, labelpad=10)
+        plt.ylabel(f"{metric_label} relative to {pred_type} (%)", fontsize=18, labelpad=10)
+        ax.set_xticks([e+1 for e in range(len(epochs))])
+        ax.set_xticklabels(epochs)
+        plt.legend(handles.values(), handles.keys(), fontsize=18, loc="upper left")
+        # plt.xlim([min(epochs) - 5, max(epochs) + 5])
+        # plt.ylim([xmin - xmax/10., xmax + xmax/10.])
+        
+        plt.tight_layout()
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        filename = f"{dataset}_{net_name}_{pred_type}_{metric}"
+        self.save("epoch pred scatter", filename)
+
+
+    def plot_predictions(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
+        pred_type="max", metric="val_acc", cross_family=None, pred_std=False, small=False, filename=None):
+        """
+        Plot a single axis figure of offset from predicted max accuracy for
+        the given mixed cases.
+        """
+
+        # pull data
+        sort_df, _ = self.get_prediction_df([dataset], net_names, schemes, cases, 
+            excl_arr=excl_arr, pred_type=pred_type, cross_family=cross_family, 
+            mixed=True, metric=metric)
+        
+        sort_df = sort_df.query("epoch == -1")
+
+        # determine each label length for alignment
+        lengths = {}
+        label_idxs = [3]
+        for i in label_idxs:
+            lengths[i] = np.max([len(x) for x in sort_df.index.unique(level=i)]) + 2
+
+        # plot
+        if small:
+            plt.figure(figsize=(10,16))
+        else:
+            plt.figure(figsize=(16,16))
+        plt.gca().axvline(0, color='k', linestyle='--')
+        clrs = sns.color_palette("husl", len(net_names))
+
+        ylabels = dict()
+        handles = dict()
+        sig_arr = list()
+        i = 0
+        xmax = 0
+        xmin = 0
+        lw = 600 / len(sort_df)
+        ms = lw * 0.5
+        for midx, row in sort_df.iterrows():
+
+            # stats
+            perf = row[f"{metric}_vs_{pred_type}"].values[0] * 100
+            err = row[f"{metric}"]["std"] * 1.98 * 100
+
+            xmin = min(xmin, perf - err)
+            xmax = max(xmax, perf + err)
+
+            # dataset, net, scheme, case, mixed, cross-family
+            d, n, s, g, c, e, m, cf = midx
+            clr = clrs[net_names.index(n)]
+            
+            # prettify	
+            if np.mod(i, 2) == 0:	
+                plt.gca().axhspan(i-.5, i+.5, alpha = 0.1, color="k")
+
+            # BH corrected significance
+            bh_sig = row[f"{pred_type}_pred_{metric}_rej_h0"].values[0]
+            sig_arr.append(bh_sig)
+            if bh_sig:
+                if cf or cross_family is not None:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        c=clr, linewidth=lw, alpha=.8)
+                else:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        c=clr, linewidth=lw, alpha=.8)
+                h = plt.plot(perf, i, c=clr, marker="o", ms=ms)
+                handles[n] = h[0]
+            else:
+                if cf or cross_family is not None:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        c=clr, linewidth=lw, alpha=.2)
+                    plt.plot([perf - err, perf + err], [i,i], linestyle="-", 
+                        linewidth=lw, c="k", alpha=.1)
+                else:
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        c=clr, linewidth=lw, alpha=.2)
+                    plt.plot([perf - err, perf + err], [i,i], linestyle=":", 
+                        linewidth=lw, c="k", alpha=.1)
+                h = plt.plot(perf, i, c=clr, marker="o", ms=ms, alpha=0.5)
+                if handles.get(n) is None:
+                    handles[n] = h[0]
+
+            # optionally, plot the 95% ci for the prediction
+            if pred_std:
+                pred_err = row[f"{pred_type}_pred_{metric}"]["std"] * 1.98 * 100
+                plt.plot([-pred_err, pred_err], [i,i], linestyle="-", 
+                        c="k", linewidth=lw, alpha=.2)
+
+            # make an aligned label
+            c = c.replace("tanh", "ptanh")
+            label_arr = [d, n, s, c]
+            aligned = "".join([label_arr[i].ljust(lengths[i]) for i in label_idxs])
+            ylabels[i] = aligned
+
+            # track vars
+            i += 1
+
+        # indicate BH corrected significance
+        h = plt.plot(i+100, 0, "k*", alpha=0.5, ms=ms)
+        handles["p < 0.05"] = h[0]
+        xstar = xmax + xmax/14. if small else xmax + xmax/20.
+        for i in range(len(sig_arr)):
+            if sig_arr[i]:
+                plt.plot(xstar, i, "k*", alpha=0.5, ms=ms)
+
+        # determine padding for labels
+        max_length = np.max([len(l) for l in ylabels.values()])
+
+        # add handles
+        if cross_family is None:
+            h1 = plt.gca().axhline(i+100, color="k", linestyle="-", alpha=0.5)
+            h2 = plt.gca().axhline(i+100, color="k", linestyle=":", alpha=0.5)
+            handles["cross-family"] = h1
+            handles["within-family"] = h2
+
+        # set figure text
+        metric = "Val acc" if metric=="val_acc" else "Test acc"
+        plt.xlabel(f"{metric} relative to {pred_type} (%)", 
+            fontsize=28, labelpad=10)
+        plt.ylabel("Network configuration", fontsize=28, labelpad=10)
+        plt.yticks(list(ylabels.keys()), ylabels.values(), ha="left")
+        yax = plt.gca().get_yaxis()
+        yax.set_tick_params(pad=max_length*9)
+        plt.ylim(-0.5, i + 0.5)
+        plt.legend(handles.values(), handles.keys(), fontsize=20 if small else 22, loc="upper left")
+        plt.xlim([xmin - xmax/10., xmax + xmax/10.])
+        
+        plt.tight_layout()
+
+        # optional saving
+        if not self.save_fig:
+            print("Not saving.")
+            plt.show()
+            return
+
+        if filename is None:
+            net_names = ", ".join(net_names)
+            schemes = ", ".join(schemes)
+            filename = f"{dataset}_{net_names}_{schemes}_{pred_type}_{metric}"
+        self.save("prediction", filename)
 
 
     def plot_predictions_over_epochs(self, dataset, net_names, schemes, cases=[], excl_arr=[], 
@@ -431,19 +670,41 @@ if __name__=="__main__":
     vis = PredictionVisualizer(
         data_dir, 
         save_fig=True,
-        save_png=False
+        save_png=True
         )
 
     # plot
     cases = group_dict["cross-swish-tanh"]
-    vis.plot_predictions_over_epochs("cifar10",
+    # vis.plot_predictions_over_epochs("cifar10",
+    #     ["vgg11", "sticknet8"],
+    #     [scheme],
+    #     cases=cases,
+    #     excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
+    #     pred_type="max",
+    #     metric=metric,
+    #     cross_family=True,
+    #     pred_std=False,
+    #     small=False
+    # )
+
+    # vis.plot_epoch_prediction_scatter("cifar10", 
+    #     "sticknet8", 
+    #     scheme, 
+    #     [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+    #     cases=[], 
+    #     excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"], 
+    #     pred_type="max", 
+    #     metric=metric
+    # )
+
+    vis.plot_predictions("cifar10",
         ["vgg11", "sticknet8"],
         [scheme],
-        cases=cases,
+        cases=[],
         excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
         pred_type="max",
         metric=metric,
-        cross_family=True,
+        cross_family=False,
         pred_std=False,
-        small=False
+        small=False,
     )
