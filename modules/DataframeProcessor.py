@@ -229,77 +229,80 @@ class DataframeProcessor():
         ndf.set_index(self.net_idx_cols, inplace=True)
 
         # 3. predictions for mixed cases
-        for midx in ndf.query("is_mixed == True").index.values:
+        mixed_df = ndf.query("is_mixed == True")
+        for epoch in mixed_df.index.unique(level=5):
 
-            # break up multi-index
-            d, n, sch, g, c, e, s = midx
-            
-            # skip if already predicted
-            if not math.isnan(ndf.at[midx, "max_pred_val_acc"]):
-                continue
+            for midx in mixed_df.query(f"epoch == {epoch}").index.values:
 
-            # get rows in this mixed case
-            mixed_case_rows = ndf.loc[(d, n, sch, g, c, e)]
-            
-            # get component case rows
-            component_cases = get_component_cases(case_dict, c)
-            component_rows = ndf.query(f"is_mixed == False") \
-                .query(f"dataset == '{d}'") \
-                .query(f"net_name == '{n}'") \
-                .query(f"train_scheme == '{sch}'") \
-                .query(f"case in {component_cases}") \
-                .query(f"epoch == {e}")
-
-            # flag to indicate whether row used in prediction yet
-            component_rows["used"] = False
-
-            # make a prediction for each sample in this mixed case
-            for i in range(len(mixed_case_rows)):
-                mixed_case_row = mixed_case_rows.iloc[i]
-
-                # choose component row accs/learning epochs
-                c_accs = []
-                c_accs_test = []
-                # c_epochs = []
-                for cc in component_cases:
-                    c_row = component_rows \
-                        .query(f"case == '{cc}'") \
-                        .query(f"used == False")
-                    
-                    if len(c_row) == 0:
-                        break
-                    c_row = c_row.sample()
-                    c_accs.append(c_row.val_acc.values[0])
-                    c_accs_test.append(c_row.test_acc.values[0])
-                    # c_epochs.append(c_row.epochs_past.values[0])
-
-                    # mark component row as used in prediction
-                    component_rows.at[c_row.index.values[0], "used"] = True
-
-                if len(c_accs) == 0:
-                    break
-
-                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
-                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
+                # break up multi-index
+                d, n, sch, g, c, e, s = midx
                 
-                if len(c_accs_test) == 0:
+                # skip if already predicted
+                if not math.isnan(ndf.at[midx, "max_pred_val_acc"]):
                     continue
 
-                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_test_acc"] = np.max(c_accs_test)
-                ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
+                # get rows in this mixed case
+                mixed_case_rows = ndf.loc[(d, n, sch, g, c, e)]
+                
+                # get component case rows
+                component_cases = get_component_cases(case_dict, c)
+                component_rows = ndf.query(f"is_mixed == False") \
+                    .query(f"dataset == '{d}'") \
+                    .query(f"net_name == '{n}'") \
+                    .query(f"train_scheme == '{sch}'") \
+                    .query(f"case in {component_cases}") \
+                    .query(f"epoch == {e}")
 
-            # significance
-            upper_dists = ["val_acc", "val_acc", "test_acc", "test_acc"]
-            lower_dists = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
-            cols = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
-            for upper, lower, col in zip(upper_dists, lower_dists, cols):
+                # flag to indicate whether row used in prediction yet
+                component_rows["used"] = False
 
-                t, p = ttest_ind(ndf.at[(d, n, sch, g, c, e), upper], ndf.at[(d, n, sch, g, c), lower])
-                if t < 0:
-                    p = 1. - p / 2.
-                else:
-                    p = p / 2.
-                ndf.loc[(d, n, sch, g, c, e), f"{col}_p_val"] = p
+                # make a prediction for each sample in this mixed case
+                for i in range(len(mixed_case_rows)):
+                    mixed_case_row = mixed_case_rows.iloc[i]
+
+                    # choose component row accs/learning epochs
+                    c_accs = []
+                    c_accs_test = []
+                    # c_epochs = []
+                    for cc in component_cases:
+                        c_row = component_rows \
+                            .query(f"case == '{cc}'") \
+                            .query(f"used == False")
+                        
+                        if len(c_row) == 0:
+                            break
+                        c_row = c_row.sample()
+                        c_accs.append(c_row.val_acc.values[0])
+                        c_accs_test.append(c_row.test_acc.values[0])
+                        # c_epochs.append(c_row.epochs_past.values[0])
+
+                        # mark component row as used in prediction
+                        component_rows.at[c_row.index.values[0], "used"] = True
+
+                    if len(c_accs) == 0:
+                        break
+
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
+                    
+                    if len(c_accs_test) == 0:
+                        continue
+
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_test_acc"] = np.max(c_accs_test)
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_test_acc"] = np.mean(c_accs_test)
+
+                # significance
+                upper_dists = ["val_acc", "val_acc", "test_acc", "test_acc"]
+                lower_dists = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
+                cols = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
+                for upper, lower, col in zip(upper_dists, lower_dists, cols):
+
+                    t, p = ttest_ind(ndf.at[(d, n, sch, g, c, e), upper], ndf.at[(d, n, sch, g, c), lower])
+                    if t < 0:
+                        p = 1. - p / 2.
+                    else:
+                        p = p / 2.
+                    ndf.loc[(d, n, sch, g, c, e), f"{col}_p_val"] = p
 
         # save things
         self.save_df(df_name, ndf)
