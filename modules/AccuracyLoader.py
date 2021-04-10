@@ -96,13 +96,16 @@ class AccuracyLoader():
             "max_pred_test_acc", "linear_pred_test_acc", 
             # "min_pred_epochs_past", "linear_pred_epochs_past"
         ]
-        mixed_idx = df_stats.query("is_mixed == True").index
         for to_correct in to_correct_arr:
 
-            pvals = df_stats.loc[mixed_idx][f"{to_correct}_p_val","mean"].values
-            rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
-            df_stats.loc[mixed_idx, f"{to_correct}_p_val_corr"] = pval_corr
-            df_stats.loc[mixed_idx, f"{to_correct}_rej_h0"] = rej_h0
+            for epoch in df_stats.index.unique(level=5):
+
+                mixed_idx = df_stats.query("is_mixed == True").query(f"epoch == {epoch}").index
+
+                pvals = df_stats.loc[mixed_idx][f"{to_correct}_p_val","mean"].values
+                rej_h0, pval_corr = multipletests(pvals, alpha=0.05, method="fdr_bh")[:2]
+                df_stats.loc[mixed_idx, f"{to_correct}_p_val_corr"] = pval_corr
+                df_stats.loc[mixed_idx, f"{to_correct}_rej_h0"] = rej_h0
 
         df_stats.drop(columns=[f"{to_correct}_p_val" for to_correct in to_correct_arr], inplace=True)
 
