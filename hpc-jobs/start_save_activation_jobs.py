@@ -19,7 +19,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", type=str, required=True, help="Set dataset")
 parser.add_argument("--net_name", type=str, required=True, help="Set net_name")
 parser.add_argument("--scheme", type=str, help="Set scheme", required=True)
-parser.add_argument("--cases", type=str, nargs="+", required=True, help="Set cases")
+parser.add_argument("--cases", default=[], nargs="+", type=str)
+
 
 parser.add_argument("--final", dest="final", action="store_true")
 parser.set_defaults(final=True)
@@ -66,8 +67,8 @@ def main(net_name, cases, scheme, dataset, final):
         if not scheme in slugs:
             continue
 
-        # only interested in the given cases
-        if not any(c in slugs for c in cases):
+        # only interested in the given cases (unless [])
+        if len(cases) > 0 and not any(c in slugs for c in cases):
             continue
 
         # start from first or last epoch
