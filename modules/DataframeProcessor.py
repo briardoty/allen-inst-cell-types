@@ -131,6 +131,10 @@ class DataframeProcessor():
             if any(self.exclude_slug in slug for slug in slugs):
                 continue
 
+            # only latest results
+            if not "adam_lravg_nosplit" in slugs:
+                continue
+
             # consider all files...
             for filename in files:
 
