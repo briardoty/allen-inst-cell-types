@@ -6,6 +6,9 @@ import numpy as np
 import json
 from scipy.stats import ttest_ind
 import math
+import warnings
+
+warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 try:
     from .util import ensure_sub_dir, get_component_cases
@@ -242,7 +245,7 @@ class DataframeProcessor():
                     prediction = ndf.at[midx, "max_pred_val_acc"]
                     if not math.isnan(prediction):
                         continue
-                except ValueError:
+                except:
                     print(f"Prediction did not match expectations at: {midx} - {prediction}")
                     continue
 
