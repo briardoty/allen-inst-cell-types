@@ -69,7 +69,7 @@ class DataframeProcessor():
                 group_dict[c] = g
 
         # load current df
-        df_name = "max_acc_df.csv"
+        df_name = "final_acc_df.csv"
         df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
         df.drop(columns="Unnamed: 0", inplace=True)
 
@@ -108,7 +108,7 @@ class DataframeProcessor():
                 group_dict[c] = g
 
         # load current df if exists
-        df_name = "max_acc_df.csv"
+        df_name = "final_acc_df.csv"
         # curr_df = pd.read_csv(os.path.join(self.df_sub_dir, df_name))
         # curr_df.drop(columns="Unnamed: 0", inplace=True)
 
@@ -185,8 +185,10 @@ class DataframeProcessor():
                     acc_arr.append([dataset, net_name, train_scheme, group, case, i_acc, sample, val_acc, test_acc, i_first, initial_lr])
 
                     # by epoch
-                    epochs = [10*i for i in range(31)]
+                    n_epoch_samples = 31
+                    epochs = [10*i for i in range(n_epoch_samples)]
                     epochs = epochs[:-1] + [int(x) for x in np.linspace(epochs[-1], len(perf_stats)-1, 5)]
+                    epochs = list(set(epochs))
                     for epoch in epochs:
                         
                         try:
@@ -294,8 +296,11 @@ class DataframeProcessor():
                     if len(c_accs) == 0:
                         break
 
-                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_val_acc"] = np.max(c_accs)
-                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_val_acc"] = np.mean(c_accs)
+                    max_pred = np.max(c_accs)
+                    lin_pred = np.mean(c_accs)
+
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "max_pred_val_acc"] = max_pred
+                    ndf.at[(d, n, sch, g, c, e, mixed_case_row.name), "linear_pred_val_acc"] = lin_pred
                     
                     if len(c_accs_test) == 0:
                         continue
@@ -319,7 +324,7 @@ class DataframeProcessor():
         # save things
         self.save_df(df_name, ndf)
 
-        # TODO: separate the refresh code for this from max_acc_df???
+        # TODO: separate the refresh code for this from final_acc_df???
         self.save_json("case_dict.json", case_dict)
 
     def refresh_accuracy_df(self):
