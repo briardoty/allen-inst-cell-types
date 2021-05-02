@@ -1,9 +1,10 @@
+from modules.PredictionVisualizer import PredictionVisualizer
 from modules.AccuracyVisualizer import AccuracyVisualizer
 import os
 import json
 
 data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
-scheme = "adam-lr-avg"
+scheme = "adam_lravg_nosplit"
 metric = "val_acc"
 
 # build group: case dict
@@ -18,7 +19,7 @@ for g in net_configs.keys():
     group_dict[g] = list(case_names)
 
 # init visualizer
-vis = AccuracyVisualizer(
+vis = PredictionVisualizer(
     data_dir, 
     save_fig=True,
     save_png=False,
@@ -26,19 +27,26 @@ vis = AccuracyVisualizer(
 )
 
 # summary
-# cases = group_dict["cross-swish-tanh"]
-# vis.plot_predictions("cifar10",
-#     ["vgg11", "sticknet8"],
-#     [scheme],
-#     cases=cases,
-#     excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
-#     pred_type="max",
-#     metric=metric,
-#     cross_family=True,
-#     pred_std=False,
-#     small=True,
-#     filename=f"manuscript fig2 prediction"
-# )
+cases = group_dict["cross-swish-tanh"]
+vis.plot_predictions("cifar10",
+    ["vgg11", "sticknet8"],
+    [scheme],
+    cases=cases,
+    excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
+    pred_type="max",
+    metric=metric,
+    cross_family=True,
+    pred_std=False,
+    small=True,
+    filename=f"manuscript fig2 prediction"
+)
+
+vis = AccuracyVisualizer(
+    data_dir, 
+    save_fig=True,
+    save_png=False,
+    sub_dir_name="manuscript fig2"
+)
 
 # histograms
 pred_types = ["max", "linear"]
@@ -59,14 +67,14 @@ vis.heatmap_acc("cifar10",
     scheme, 
     metric=metric,
     cmap="Reds",
-    v_min=85,
-    v_max=89
+    v_min=85.5,
+    v_max=89.5
 )
 vis.heatmap_acc("cifar10", 
     "sticknet8", 
     scheme, 
     metric=metric,
     cmap="Reds",
-    v_min=58,
-    v_max=64
+    v_min=61,
+    v_max=69
 )
