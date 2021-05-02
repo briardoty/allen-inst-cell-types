@@ -268,6 +268,9 @@ class AccuracyVisualizer():
         df, _ = self.get_prediction_df([dataset], net_names, schemes, 
             [], excl_arr=excl_arr, pred_type=pred_type, 
             cross_family=cross_family, mixed=True, metric=metric)
+        
+        # final accuracy
+        df = df.query("epoch == -1")
 
         # filter to just p-val < 0.05
         # df = df[df.max_pred_val_acc_rej_h0 == True]
@@ -279,10 +282,10 @@ class AccuracyVisualizer():
         # x = np.array([i * 1.25 for i in range(len(net_vals))])
         x = 0
 
-        cf_vals = list(df.index.unique(level=6))
+        cf_vals = list(df.index.unique(level=7))
         cf_vals.reverse()
         width = 1.0 / len(cf_vals)
-        clrs = sns.color_palette("husl", len(cf_vals))
+        clrs = sns.color_palette("husl", len(net_vals))
 
         err_kw = dict(lw=1, capsize=15, capthick=1)
 
@@ -291,7 +294,7 @@ class AccuracyVisualizer():
 
             net = net_vals[i]
 
-            for j in range(len(net_vals)):
+            for j in range(len(cf_vals)):
 
                 cf = cf_vals[j]
                 rows = df.query(f"net_name == '{net}'") \
@@ -635,6 +638,9 @@ class AccuracyVisualizer():
         df, case_dict = self.get_prediction_df([dataset], [net_name], [scheme], list(), 
             [], "max", cross_family=None, mixed=False)
         
+        # final accuracy
+        df = df.query("epoch == -1")
+        
         # build parameter matrices
         p_dict = dict()
         for k in df.index.unique(level=df.index.names.index("case")):
@@ -659,7 +665,7 @@ class AccuracyVisualizer():
         vmax = -100
         vm_dict = { "xf": {"vmin": vmin, "vmax": vmax}, "swish": {"vmin": vmin, "vmax": vmax}, "tanh": {"vmin": vmin, "vmax": vmax} }
         for midx, row in df.iterrows():
-            d, n, sch, g, c, m, xf = midx
+            d, n, sch, g, c, e, m, xf = midx
 
 
             cc_arr = get_component_cases(case_dict, c)

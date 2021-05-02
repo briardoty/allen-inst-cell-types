@@ -357,6 +357,7 @@ class PredictionVisualizer():
             excl_arr=excl_arr, pred_type=pred_type, cross_family=cross_family, 
             mixed=True, metric=metric)
         
+        # final accuracy
         sort_df = sort_df.query("epoch == -1")
 
         # determine each label length for alignment
@@ -652,7 +653,7 @@ class PredictionVisualizer():
 if __name__=="__main__":
     
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
-    scheme = "adam-lr-avg"
+    scheme = "adam_lravg_nosplit"
     metric = "val_acc"
 
     # build group: case dict
@@ -704,7 +705,7 @@ if __name__=="__main__":
         excl_arr=["spatial", "test", "ratio", "tanh0.01", "swish0.1"],
         pred_type="max",
         metric=metric,
-        cross_family=False,
+        cross_family=True,
         pred_std=False,
         small=False,
     )

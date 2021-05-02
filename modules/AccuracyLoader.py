@@ -42,7 +42,7 @@ class AccuracyLoader():
     def load_max_acc_df_ungrouped(self):
 
         # load
-        df = pd.read_csv(os.path.join(self.df_sub_dir, "max_acc_df.csv"))
+        df = pd.read_csv(os.path.join(self.df_sub_dir, "final_acc_df.csv"))
         with open(os.path.join(self.df_sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
 
@@ -62,7 +62,7 @@ class AccuracyLoader():
         """
 
         # load
-        acc_df = pd.read_csv(os.path.join(self.df_sub_dir, "max_acc_df.csv"))
+        acc_df = pd.read_csv(os.path.join(self.df_sub_dir, "final_acc_df.csv"))
         with open(os.path.join(self.df_sub_dir, "case_dict.json"), "r") as json_file:
             case_dict = json.load(json_file)
 
