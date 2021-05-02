@@ -314,7 +314,7 @@ class DataframeProcessor():
                 cols = ["max_pred_val_acc", "linear_pred_val_acc", "max_pred_test_acc", "linear_pred_test_acc"]
                 for upper, lower, col in zip(upper_dists, lower_dists, cols):
 
-                    t, p = ttest_ind(ndf.at[(d, n, sch, g, c, e), upper], ndf.at[(d, n, sch, g, c), lower])
+                    t, p = ttest_ind(ndf.at[(d, n, sch, g, c, e), upper], ndf.at[(d, n, sch, g, c, e), lower])
                     if t < 0:
                         p = 1. - p / 2.
                     else:
