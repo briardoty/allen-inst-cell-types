@@ -32,6 +32,12 @@ try:
 except:
     from util import *
 
+import matplotlib
+large_font_size = 16
+small_font_size = 14
+matplotlib.rc("xtick", labelsize=16) 
+matplotlib.rc("ytick", labelsize=16) 
+
 from enum import Enum
 class TargetLayers(Enum):
     NOTHING = 0
@@ -568,24 +574,41 @@ class NetManager():
 
         # plot loss vs lr
         fig, ax = plt.subplots(figsize=(5,5))
-        clrs = sns.color_palette("Set2", 2)
+        clrs = sns.color_palette("Set2", 3)
         ax.plot(lr_arr, loss_arr, c=clrs[1], linewidth=2)
         ax.set_xscale("log")
         ax.set_xlabel("Learning rate", fontsize=16)
         ax.set_ylabel("Loss", fontsize=16)
-        plt.tight_layout()
-        plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
-        plt.savefig(plot_filepath)
 
         # find best LR
         i_best_loss = np.argmin(loss_arr)
         best_lr = lr_arr[i_best_loss]
+        chosen_lr = best_lr / 2.0
+
+        def closest(lst, K):    
+            return lst[min(range(len(lst)), key = lambda i: abs(lst[i]-K))]
+
+        closest_lr = closest(lr_arr, chosen_lr)
+        i_closest = lr_arr.index(closest_lr)
+
+        # mark them on plot
+        ms = 10
+        alpha = 0.8
+        peak_label = "Peak LR: {:.3f}".format(best_lr)
+        pick_label = "Take LR: {:.3f}".format(chosen_lr)
+        ax.plot(best_lr, loss_arr[i_best_loss], c=clrs[0], marker="o", label=peak_label, markersize=ms, alpha=alpha)
+        ax.plot(closest_lr, loss_arr[i_closest], c=clrs[2], marker="o", label=pick_label, markersize=ms, alpha=alpha)
+        ax.legend(fontsize=small_font_size, loc="lower left")
 
         # gc?
         torch.cuda.empty_cache()
         gc.collect()
 
-        return best_lr / 2.0
+        plt.tight_layout()
+        plot_filepath = os.path.join(self.net_dir, "lr_find.svg")
+        plt.savefig(plot_filepath)
+
+        return chosen_lr
 
     def get_convergence_metric(self, epoch, metric="deriv"):
 
@@ -689,7 +712,7 @@ class NetManager():
 if __name__=="__main__":
     data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/"
     dataset = "cifar10"
-    net = "vgg11"
+    net = "sticknet8"
     scheme = "adam-lr-avg"
     group = "within-swish"
     case = "swish0.1-1"
@@ -711,8 +734,8 @@ if __name__=="__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(mgr.net.parameters(), lr=1e-7)
 
-    # lr_low, lr_high = 1e-7, 0.1
-    # x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
+    lr_low, lr_high = 1e-7, 0.1
+    x = mgr.find_initial_lr(criterion, optimizer, lr_low, lr_high)
 
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=6, gamma=0.6)
     

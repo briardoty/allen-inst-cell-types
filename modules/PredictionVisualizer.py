@@ -65,8 +65,8 @@ class PredictionVisualizer():
             df = df.query(f"not case.str.contains('{excl}')", engine="python")
 
         # filter vgg tanh2 because it's terrible
-        # df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
-        #     engine="python")
+        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+            engine="python")
 
         sort_df = df.sort_values(["net_name", f"{metric}_vs_{pred_type}"])
 
@@ -86,18 +86,18 @@ class PredictionVisualizer():
         # filter dataframe
         df = df.query(f"dataset == '{dataset}'") \
             .query(f"net_name == '{net_name}'") \
-            .query(f"train_scheme == '{scheme}'")
+            .query(f"train_scheme == '{scheme}'") \
+            .query(f"epoch == -1")
 
         # plot...
         markersize = 18
         c_labels = dict()
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5,4), sharey=True)
         fig.subplots_adjust(wspace=0)
-        c_clrs = sns.color_palette("hls", len(component_cases))
+        c_clrs = sns.color_palette("husl", len(component_cases))
         c_clrs.reverse()
         
         # plot component nets
-        x = [-2]
         width = 0.35
         lw = 4
         for i in range(len(component_cases)):
@@ -105,8 +105,6 @@ class PredictionVisualizer():
             cc = component_cases[i]
             cc_rows = df.query(f"case == '{cc}'")
             yvals = cc_rows["val_acc"].values * 100
-            start = x[-1] + 2
-            x = [i for i in range(start, start + len(yvals))]
 
             axes[0].plot([i] * len(yvals), yvals, ".", label=cc,
                 c=c_clrs[i], markersize=markersize, alpha=0.6)
@@ -119,7 +117,7 @@ class PredictionVisualizer():
         # plot mixed case
         # actual
         mwidth = width + 0.09
-        m_clrs = sns.color_palette("hls", len(component_cases) + 3)
+        m_clrs = sns.color_palette("husl", len(component_cases) + 3)
         m_rows = df.query(f"case == '{mixed_case}'")
         yact = m_rows["val_acc"].values * 100
         axes[1].plot([0] * len(yact), yact, ".", label=cc,
@@ -131,7 +129,7 @@ class PredictionVisualizer():
         pred_types = ["max", "linear"]
         handles = dict()
         for pred_type, clr in zip(pred_types, m_clrs[-2:]):
-            ypred = m_rows[f"{pred_type}_pred"].mean() * 100
+            ypred = m_rows[f"{pred_type}_pred_val_acc"].mean() * 100
             h = axes[1].plot([-width, width], [ypred, ypred], 
                 label=cc, c=clr, linewidth=lw)
 
@@ -675,6 +673,7 @@ if __name__=="__main__":
         )
 
     # plot
+    vis.plot_final_acc_decomp("cifar10", "vgg11", scheme, "swish7.5-tanh1")
     cases = group_dict["cross-swish-tanh"]
     # vis.plot_predictions_over_epochs("cifar10",
     #     ["vgg11", "sticknet8"],

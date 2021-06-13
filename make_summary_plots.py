@@ -1,4 +1,4 @@
-from modules.AccuracyVisualizer import AccuracyVisualizer
+from modules.PredictionVisualizer import PredictionVisualizer
 import os
 import json
 
@@ -16,7 +16,7 @@ for g in net_configs.keys():
     group_dict[g] = list(case_names)
 
 # init visualizer
-vis = AccuracyVisualizer(
+vis = PredictionVisualizer(
     data_dir, 
     save_fig=True,
     save_png=True
@@ -29,7 +29,7 @@ vis = AccuracyVisualizer(
 # for lg in layer_groups:
 #     cases = group_dict[lg] + [lg[len("layers-"):]]
 #     vis.plot_predictions("cifar10",
-#         ["vgg11", "sticknet8"],
+#         ["sticknet8"],
 #         ["adam"],
 #         cases=cases,
 #         excl_arr=["spatial", "test"],
@@ -41,22 +41,26 @@ vis = AccuracyVisualizer(
 #         )
 
 # all nets, all datasets
-nets = ["sticknet8"]
+nets = ["vgg11", "sticknet8"]
 datasets = ["cifar10"]
+schemes = ["adam_lravg_nosplit"]
+metric = "val_acc"
+pred_type = "max"
 for n in nets:
     for d in datasets:
-        vis.plot_predictions(d,
-            [n],
-            ["adam"],
-            cases=[],
-            excl_arr=["spatial", "test", "ratio", "fc", "conv", "all"],
-            pred_type="max_pred",
-            metric="test_acc",
-            cross_family=None,
-            pred_std=True,
-            small=False,
-            filename=f"{n} {d} prediction"
-            )
+        for s in schemes:
+            vis.plot_predictions(d,
+                [n],
+                [s],
+                cases=[],
+                excl_arr=["spatial", "test", "ratio", "fc", "conv", "all"],
+                pred_type=pred_type,
+                metric=metric,
+                cross_family=None,
+                pred_std=True,
+                small=False,
+                filename=f"{n} {d} {s} {metric}"
+                )
 
 # plot ratio groups
 ratio_groups = ["ratios-swish5-tanh0.5", "ratios-swish2-tanh2", "ratios-relu-tanh1"]

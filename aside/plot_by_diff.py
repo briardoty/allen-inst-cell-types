@@ -3,7 +3,7 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 
-acc_df = pd.read_csv("max_acc_df.csv")
+acc_df = pd.read_csv("final_acc_df.csv")
 with open("case_dict.json", "r") as json_file:
     case_dict = json.load(json_file)
 

@@ -78,113 +78,6 @@ class AccuracyVisualizer():
 
         return sort_df, case_dict
 
-    def plot_final_acc_decomp(self, dataset, net_name, scheme, mixed_case):
-        """
-        Plot accuracy at the end of training for mixed case, 
-        including predicted mixed case accuracy based
-        on combination of component cases
-        """
-
-        # pull data
-        df, case_dict, idx_cols = self.stats_processor.load_max_acc_df_ungrouped()
-        component_cases = get_component_cases(case_dict, mixed_case)
-
-        # filter dataframe
-        df = df.query(f"dataset == '{dataset}'") \
-            .query(f"net_name == '{net_name}'") \
-            .query(f"train_scheme == '{scheme}'")
-
-        # plot...
-        markersize = 18
-        c_labels = dict()
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(5,4), sharey=True)
-        fig.subplots_adjust(wspace=0)
-        c_clrs = sns.color_palette("hls", len(component_cases))
-        c_clrs.reverse()
-        
-        # plot component nets
-        x = [-2]
-        width = 0.35
-        lw = 4
-        for i in range(len(component_cases)):
-
-            cc = component_cases[i]
-            cc_rows = df.query(f"case == '{cc}'")
-            yvals = cc_rows["val_acc"].values * 100
-            start = x[-1] + 2
-            x = [i for i in range(start, start + len(yvals))]
-
-            axes[0].plot([i] * len(yvals), yvals, ".", label=cc,
-                c=c_clrs[i], markersize=markersize, alpha=0.6)
-            axes[0].plot([i-width, i+width], [np.mean(yvals), np.mean(yvals)], 
-                linestyle=":", label=cc, c=c_clrs[i], linewidth=lw)
-            
-            cc = cc.replace("tanh", "ptanh")
-            c_labels[i] = cc
-            
-        # plot mixed case
-        # actual
-        mwidth = width + 0.09
-        m_clrs = sns.color_palette("hls", len(component_cases) + 3)
-        m_rows = df.query(f"case == '{mixed_case}'")
-        yact = m_rows["val_acc"].values * 100
-        axes[1].plot([0] * len(yact), yact, ".", label=cc,
-            c=m_clrs[len(component_cases)], markersize=markersize, alpha=0.6)
-        axes[1].plot([-mwidth, mwidth], [np.mean(yact), np.mean(yact)], 
-                linestyle=":", c=m_clrs[len(component_cases)], linewidth=lw)
-
-        # predicted
-        pred_types = ["max", "linear"]
-        handles = dict()
-        for pred_type, clr in zip(pred_types, m_clrs[-2:]):
-            ypred = m_rows[f"{pred_type}_pred"].mean() * 100
-            h = axes[1].plot([-width, width], [ypred, ypred], 
-                label=cc, c=clr, linewidth=lw)
-
-            # legend stuff
-            handles[pred_type] = h[0]
-
-        # legend stuff
-        handles["mean"] = axes[0].plot(-100, ypred, "k:", 
-            linewidth=lw, alpha=0.5)[0]
-
-        # set figure text
-        axes[0].set_xlabel("Component", fontsize=16, 
-            labelpad=10)
-        axes[1].set_xlabel("Mixed", fontsize=large_font_size, 
-            labelpad=10)
-        axes[0].set_ylabel("Final validation accuracy (%)", 
-            fontsize=large_font_size, labelpad=10)
-        axes[0].set_xlim([-0.5, len(component_cases) - 0.5])
-        axes[1].set_xlim([-0.5, 0.5])
-        axes[0].set_xticks(list(c_labels.keys()))
-        axes[0].tick_params(axis="y", labelsize=12)
-        axes[0].set_xticklabels(list(c_labels.values()), fontsize=12)
-        axes[1].set_xticks([0])
-        l = mixed_case.replace("tanh", "ptanh")
-        axes[1].set_xticklabels([l], fontsize=12)
-        plt.tight_layout()
-        # plt.tight_layout(rect=[0, 0, 1, 0.92])
-
-        # shrink axes...
-        box1 = axes[0].get_position()
-        axes[0].set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
-        box2 = axes[1].get_position()
-        axes[1].set_position([box1.x0 + box1.width * 1.2, box2.y0, box2.width * 0.3, box2.height])
-
-        # append legend to second axis
-        axes[1].legend(handles.values(), handles.keys(), 
-            fontsize=12, loc="center left", bbox_to_anchor=(1, 0.5))
-         
-        # optional saving
-        if not self.save_fig:
-            print("Not saving.")
-            plt.show()
-            return
-
-        filename = f"{mixed_case} comparison"
-        self.save("decomposition", filename)
-
     def plot_ratio_group(self, dataset, net_name, scheme, ratio_group):
 
         # build dict for looking up cases in group
@@ -275,6 +168,11 @@ class AccuracyVisualizer():
         # filter to just p-val < 0.05
         # df = df[df.max_pred_val_acc_rej_h0 == True]
 
+        # filter vgg tanh2 because it's terrible
+        df = df.query(f"not (net_name == 'vgg11' and (case.str.contains('tanh2') or (case.str.startswith('tanh') and case.str.endswith('-2'))))",
+            engine="python")
+
+
         # plot
         fig, ax = plt.subplots(figsize=(5,5))
         net_vals = list(df.index.unique(level=1))
@@ -284,12 +182,12 @@ class AccuracyVisualizer():
 
         cf_vals = list(df.index.unique(level=7))
         cf_vals.reverse()
-        width = 1.0 / len(cf_vals)
+        width = 0.35
         clrs = sns.color_palette("husl", len(net_vals))
 
-        err_kw = dict(lw=1, capsize=15, capthick=1)
-
         handles = dict()
+        markersize = 18
+        lw = 4
         for i in range(len(net_vals)):
 
             net = net_vals[i]
@@ -297,42 +195,44 @@ class AccuracyVisualizer():
             for j in range(len(cf_vals)):
 
                 cf = cf_vals[j]
-                rows = df.query(f"net_name == '{net}'") \
-                    .query(f"cross_fam == {cf}")[f"{metric}_vs_{pred_type}"]
-                yval = np.mean(rows) * 100
+                yvals = df.query(f"net_name == '{net}'") \
+                    .query(f"cross_fam == {cf}")[f"{metric}_vs_{pred_type}"].values *100
+                ymean = np.mean(yvals)
 
                 # plot
                 label = "Cross-family" if cf else "Within-family"
                 clr = clrs[i]
                 alpha = 1 if cf else 0.4
-                ax.bar(x, yval, width, label=label, 
-                    color=clr, alpha=alpha)
 
-                x += width
+                ax.plot([x] * len(yvals), yvals, ".", label=label,
+                    c=clr, markersize=markersize, alpha=alpha)
+                ax.plot([x-width, x+width], [ymean, ymean], 
+                    label=label, c=clr, linewidth=lw, alpha=alpha)
 
-            x += 0.25
+                x += 1
             
         # legend
         gray = (0.5, 0.5, 0.5)
-        h2 = ax.bar(100, yval, width, label=label, 
-            color=gray, alpha=0.4)
-        handles["Within-family"] = h2
-        h1 = ax.bar(100, yval, width, label=label, 
-            color=gray, alpha=1)
-        handles["Cross-family"] = h1
+        h1 = ax.plot(100, ymean, ".", label=label, 
+            color=gray, markersize=markersize, alpha=1)
+        handles["Cross-family"] = h1[0]
+        h2 = ax.plot(100, ymean, ".", label=label, 
+            color=gray, markersize=markersize, alpha=0.4)
+        handles["Within-family"] = h2[0]
+        handles["Mean"] = ax.plot(-100, ymean, "k", 
+            linewidth=lw, alpha=0.5)[0]
 
         # plot text
-        loc = (len(cf_vals) - 1) / (2. * len(cf_vals))
-        ax.set_xticks([loc + i * 1.25 for i in range(len(net_vals))])
+        ax.set_xticks([0.5, 2.5])
         ax.set_xticklabels(net_vals)
-        ax.set_xlim([-3/8., x - width + 1/8.])
+        ax.set_xlim([-1/2., 3.5])
         ax.set_ylim([ymin, ymax])
 
         ax.axhline(y=0, color="k", linestyle="--", alpha=0.2)
         ax.set_xlabel("Network", fontsize=large_font_size + 2)
         metric = "val acc" if metric == "val_acc" else "test acc"
         ax.set_ylabel(f"Mean {metric} relative to {pred_type} (%)", fontsize=large_font_size + 2)
-        ax.legend(handles.values(), handles.keys(), fontsize=16, loc="upper left")
+        ax.legend(handles.values(), handles.keys(), fontsize=14, loc="upper left")
         plt.tight_layout()
 
         self.save("supplementary", f"family_{pred_type}")

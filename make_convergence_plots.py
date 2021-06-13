@@ -12,9 +12,9 @@ vis = AccuracyVisualizer(
 )
 
 dataset = "cifar10"
-net = "vgg11"
+net = "sticknet8"
 scheme = "adam"
-case = "swish10"
+case = "swish5-tanh0.5"
 metric = "alex"
 
 for s in range(10):

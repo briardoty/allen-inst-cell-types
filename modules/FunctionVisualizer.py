@@ -139,7 +139,7 @@ if __name__=="__main__":
 
     # visualizer.plot_activation_fns([Tanh(1), Swish(1), Relu()])
     # visualizer.plot_activation_fns([Swish(1), Swish(2), Swish(10)])
-    # visualizer.plot_activation_fns([Tanh(0.1), Tanh(0.5), Tanh(1)])
-    visualizer.plot_activation_fns([PTanh(1), Swish(5)])
+    visualizer.plot_activation_fns([PTanh(0.1), PTanh(0.5), PTanh(1)], clr_set="Set2")
+    visualizer.plot_activation_fns([PTanh(1), Swish(7.5)])
 
     # visualizer.plot_act_fn_mapping(Swish(1), torch.tanh)

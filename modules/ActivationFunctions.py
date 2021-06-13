@@ -159,7 +159,7 @@ class PTanh(nn.Module):
 
     def __repr__(self):
         
-        return rf"PTanh($\beta$={self.beta}, x)"
+        return rf"PTanh($\alpha$={self.beta}, x)"
     
     def forward(self, input_tensor):
 

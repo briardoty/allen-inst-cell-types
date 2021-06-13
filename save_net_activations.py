@@ -48,15 +48,15 @@ def main(net_filepath, data_dir, net_name, batch_size, dataset):
 
 
 if __name__=="__main__":
-    args = parser.parse_args()
-    print(args)
-    main(**vars(args))
+    # args = parser.parse_args()
+    # print(args)
+    # main(**vars(args))
     
-    # net_filepath = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam-lr-avg/component-tanh/tanh1/sample-1/sticknet8_case-tanh1_sample-1_epoch-500.pt"
-    # data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
-    # net_name = "sticknet8"
-    # batch_size = 128
-    # dataset = "cifar10"
+    net_filepath = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint/nets/cifar10/sticknet8/adam-lr-avg/component-tanh/tanh1/sample-1/sticknet8_case-tanh1_sample-1_epoch-500.pt"
+    data_dir = "/home/briardoty/Source/allen-inst-cell-types/data_mountpoint"
+    net_name = "sticknet8"
+    batch_size = 128
+    dataset = "cifar10"
 
-    # main(net_filepath, data_dir, net_name, batch_size, dataset)
+    main(net_filepath, data_dir, net_name, batch_size, dataset)
     
